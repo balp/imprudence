@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2006&license=viewergpl$
  * 
- * Copyright (c) 2006-2008, Linden Research, Inc.
+ * Copyright (c) 2006-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -902,7 +902,7 @@ namespace {
 			return;
 		}
 		
-		const int MAX_RETRIES = 5;
+		const int MAX_RETRIES = 10;
 		for (int attempts = 0; attempts < MAX_RETRIES; ++attempts)
 		{
 			apr_status_t s = apr_thread_mutex_trylock(gLogMutexp);
@@ -914,9 +914,7 @@ namespace {
 			}
 
 			ms_sleep(1);
-			//apr_thread_yield();
-				// Just yielding won't necessarily work, I had problems with
-				// this on Linux - doug 12/02/04
+			apr_thread_yield();
 		}
 
 		// We're hosed, we can't get the mutex.  Blah.
@@ -1170,6 +1168,10 @@ namespace LLError
 		return s.shouldLogCallCounter;
 	}
 
+#if LL_WINDOWS
+		// VC80 was optimizing the error away.
+		#pragma optimize("", off)
+#endif
 	void crashAndLoop(const std::string& message)
 	{
 		// Now, we go kaboom!
@@ -1182,6 +1184,9 @@ namespace LLError
 			// Loop forever, in case the crash didn't work?
 		}
 	}
+#if LL_WINDOWS
+		#pragma optimize("", on)
+#endif
 
 	std::string utcTime()
 	{

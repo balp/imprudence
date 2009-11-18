@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -32,8 +32,6 @@
 #ifndef LL_VIEWERAUDIO_H
 #define LL_VIEWERAUDIO_H
 
-// comment out to turn off wind
-#define kAUDIO_ENABLE_WIND 
 //#define kAUDIO_ENABLE_WATER 1	// comment out to turn off water
 #define kAUDIO_NUM_BUFFERS 30
 #define kAUDIO_NUM_SOURCES 30 

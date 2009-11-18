@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -35,6 +35,7 @@
 #include "llpanelface.h"
  
 // library includes
+#include "llcalc.h"
 #include "llerror.h"
 #include "llfocusmgr.h"
 #include "llrect.h"
@@ -60,6 +61,7 @@
 #include "llviewermedia.h"
 #include "llviewerobject.h"
 #include "llviewerstats.h"
+#include "llviewerwindow.h"
 #include "lluictrlfactory.h"
 
 //
@@ -179,6 +181,7 @@ BOOL	LLPanelFace::postBuild()
 	childSetCommitCallback("TexOffsetU",LLPanelFace::onCommitTextureInfo, this);
 	childSetCommitCallback("TexOffsetV",LLPanelFace::onCommitTextureInfo, this);
 	childSetAction("button align",onClickAutoFix,this);
+	childSetAction("texture_math_constants",onClickTextureConstants,this);
 
 	clearCtrls();
 
@@ -381,6 +384,7 @@ void LLPanelFace::sendTextureInfo()
 void LLPanelFace::getState()
 {
 	LLViewerObject* objectp = LLSelectMgr::getInstance()->getSelection()->getFirstObject();
+	LLCalc* calcp = LLCalc::getInstance();
 
 	if( objectp
 		&& objectp->getPCode() == LL_PCODE_VOLUME
@@ -754,6 +758,16 @@ void LLPanelFace::getState()
 				childSetEnabled("button apply",enabled);
 			}
 		}
+		childSetEnabled("texture_math_constants",true);
+
+		// Set variable values for numeric expressions
+		calcp->setVar(LLCalc::TEX_U_SCALE, childGetValue("TexScaleU").asReal());
+		calcp->setVar(LLCalc::TEX_V_SCALE, childGetValue("TexScaleV").asReal());
+		calcp->setVar(LLCalc::TEX_U_OFFSET, childGetValue("TexOffsetU").asReal());
+		calcp->setVar(LLCalc::TEX_V_OFFSET, childGetValue("TexOffsetV").asReal());
+		calcp->setVar(LLCalc::TEX_ROTATION, childGetValue("TexRot").asReal());
+		calcp->setVar(LLCalc::TEX_TRANSPARENCY, childGetValue("ColorTrans").asReal());
+		calcp->setVar(LLCalc::TEX_GLOW, childGetValue("glow").asReal());
 	}
 	else
 	{
@@ -787,6 +801,17 @@ void LLPanelFace::getState()
 
 		childSetEnabled("button align",FALSE);
 		childSetEnabled("button apply",FALSE);
+
+		childSetEnabled("texture_math_constants",false);
+
+		// Set variable values for numeric expressions
+		calcp->clearVar(LLCalc::TEX_U_SCALE);
+		calcp->clearVar(LLCalc::TEX_V_SCALE);
+		calcp->clearVar(LLCalc::TEX_U_OFFSET);
+		calcp->clearVar(LLCalc::TEX_V_OFFSET);
+		calcp->clearVar(LLCalc::TEX_ROTATION);
+		calcp->clearVar(LLCalc::TEX_TRANSPARENCY);
+		calcp->clearVar(LLCalc::TEX_GLOW);		
 	}
 }
 
@@ -968,4 +993,10 @@ void LLPanelFace::onClickAutoFix(void* userdata)
 
 	LLPanelFaceSendFunctor sendfunc;
 	LLSelectMgr::getInstance()->getSelection()->applyToObjects(&sendfunc);
+}
+
+// static
+void LLPanelFace::onClickTextureConstants(void *)
+{
+	gViewerWindow->alertXml("ClickTextureConstants");
 }

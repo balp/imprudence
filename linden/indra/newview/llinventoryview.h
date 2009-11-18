@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -58,6 +58,7 @@ class LLCheckBoxCtrl;
 class LLSpinCtrl;
 class LLScrollableContainerView;
 class LLTextBox;
+class LLComboBox;
 class LLIconCtrl;
 class LLSaveFolderState;
 class LLSearchEditor;
@@ -86,6 +87,7 @@ public:
 	static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
 
 	// LLView methods
+	void draw();
 	BOOL handleHover(S32 x, S32 y, MASK mask);
 	BOOL handleDragAndDrop(S32 x, S32 y, MASK mask, BOOL drop,
 								   EDragAndDropType cargo_type,
@@ -107,6 +109,9 @@ public:
 	U32 getFilterPermMask() const { return mFolders->getFilterPermissions(); }
 	void setFilterSubString(const std::string& string);
 	const std::string getFilterSubString() { return mFolders->getFilterSubString(); }
+	void setFilterWorn(bool worn);
+	bool getFilterWorn() const { return mFolders->getFilterWorn(); }
+	
 	void setSortOrder(U32 order);
 	U32 getSortOrder() { return mFolders->getSortOrder(); }
 	void setSinceLogoff(BOOL sl);
@@ -150,7 +155,8 @@ protected:
 	LLFolderView*				mFolders;
 	LLScrollableContainerView*	mScroller;
 	BOOL 						mAllowMultiSelect;
-	const std::string				mSortOrderSetting;
+	const std::string			mSortOrderSetting;
+	LLUUID						mSelectThisID; // if non null, select this item
 };
 
 class LLInventoryView;
@@ -161,14 +167,18 @@ public:
 	LLInventoryViewFinder(const std::string& name,
 						const LLRect& rect,
 						LLInventoryView* inventory_view);
-	virtual void draw();
+	virtual void rebuildFilter();
 	virtual void onClose(bool app_quitting);
 	void changeFilter(LLInventoryFilter* filter);
 	void updateElementsFromFilter();
 	BOOL getCheckShowEmpty();
 	BOOL getCheckSinceLogoff();
 
+	/** Callback when an inventory type checkbox is changed. */
+	static void onCheckFilterType(LLUICtrl *ctrl, void *user_data);
+
 	static void onTimeAgo(LLUICtrl*, void *);
+	static void onCheckShowEmptyFolders(LLUICtrl*, void *);
 	static void onCheckSinceLogoff(LLUICtrl*, void *);
 	static void onCloseBtn(void* user_data);
 	static void selectAllTypes(void* user_data);
@@ -215,6 +225,34 @@ public:
 	static void toggleVisibility();
 	static void toggleVisibility(void*) { toggleVisibility(); }
 
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g)
+	static void closeAll() 
+	{
+		// If there are mulitple inventory floaters open then clicking the "Inventory" button will close
+		// them one by one (see LLToolBar::onClickInventory() => toggleVisibility() ) until we get to the
+		// last one which will just be hidden instead of closed/destroyed (see LLInventoryView::onClose)
+		//
+		// However the view isn't removed from sActiveViews until its destructor is called and since
+		// 'LLMortician::sDestroyImmediate == FALSE' while the viewer is running the destructor won't be 
+		// called right away
+		//
+		// Result: we can't call close() on the last (sActiveViews.count() will still be > 1) because
+		//         onClose() would take the wrong branch and destroy() it as well
+		//
+		// Workaround: "fix" onClose() to count only views that aren't marked as "dead"
+
+		LLInventoryView* pView; U8 flagsSound;
+		for (S32 idx = sActiveViews.count() - 1; idx >= 0; idx--)
+		{
+			pView = sActiveViews.get(idx);
+			flagsSound = pView->getSoundFlags();
+			pView->setSoundFlags(LLView::SILENT);	// Suppress the window close sound
+			pView->close();							// onClose() protects against closing the last inventory floater
+			pView->setSoundFlags(flagsSound);		// One view won't be destroy()'ed so it needs its sound flags restored
+		}
+	}
+// [/RLVa:KB]
+
 	// Final cleanup, destroy all open inventory views.
 	static void cleanup();
 
@@ -239,6 +277,8 @@ public:
 	static void onFoldersByName(void *user_data);
 	static BOOL checkFoldersByName(void *user_data);
 	static void onSearchEdit(const std::string& search_string, void* user_data );
+  static void onQuickFilterCommit(LLUICtrl* ctrl, void* user_data);
+  static void refreshQuickFilter(LLUICtrl* ctrl);
 	static void onFilterSelected(void* userdata, bool from_click);
 	static void onSelectionChange(const std::deque<LLFolderViewItem*> &items, BOOL user_action, void* data);
 
@@ -259,6 +299,7 @@ protected:
 
 protected:
 	LLSearchEditor*				mSearchEditor;
+	LLComboBox*						mQuickFilterCombo;
 	LLTabContainer*				mFilterTabs;
 	LLHandle<LLFloater>				mFinderHandle;
 	LLInventoryPanel*			mActivePanel;
@@ -342,6 +383,9 @@ void open_texture(const LLUUID& item_id, const std::string& title, BOOL show_kee
 std::string get_item_icon_name(LLAssetType::EType asset_type,
 							 LLInventoryType::EType inventory_type,
 							 U32 attachment_point, 
+							 BOOL item_is_multi );
+
+std::string get_item_icon_name(LLInventoryType::NType inv_ntype,
 							 BOOL item_is_multi );
 
 LLUIImagePtr get_item_icon(LLAssetType::EType asset_type,

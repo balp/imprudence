@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -82,6 +82,8 @@ public:
 	virtual BOOL	handleHover(S32 x, S32 y, MASK mask);
 	virtual BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks);
 	virtual BOOL	handleDoubleClick(S32 x, S32 y, MASK mask );
+	virtual BOOL	handleMiddleMouseDown(S32 x,S32 y,MASK mask);
+
 	virtual BOOL	handleKeyHere(KEY key, MASK mask );
 	virtual BOOL	handleUnicodeCharHere(llwchar uni_char);
 
@@ -110,12 +112,17 @@ public:
 	virtual BOOL	canUndo() const;
 	virtual void	redo();
 	virtual BOOL	canRedo() const;
+
 	virtual void	cut();
 	virtual BOOL	canCut() const;
 	virtual void	copy();
 	virtual BOOL	canCopy() const;
 	virtual void	paste();
 	virtual BOOL	canPaste() const;
+	virtual void	updatePrimary();
+	virtual void	copyPrimary();
+	virtual void	pastePrimary();
+	virtual BOOL	canPastePrimary() const;
 	virtual void	doDelete();
 	virtual BOOL	canDoDelete() const;
 	virtual void	selectAll();
@@ -139,16 +146,16 @@ public:
 	void			insertText(const std::string &text);
 	// appends text at end
 	void 			appendText(const std::string &wtext, bool allow_undo, bool prepend_newline,
-							   const LLStyleSP *stylep = NULL);
+							   const LLStyleSP stylep = NULL);
 
-	void 			appendColoredText(const std::string &wtext, bool allow_undo, 
+	void 			appendColoredText(const std::string &wtext, bool allow_undo,
 									  bool prepend_newline,
 									  const LLColor4 &color,
 									  const std::string& font_name = LLStringUtil::null);
 	// if styled text starts a line, you need to prepend a newline.
-	void 			appendStyledText(const std::string &new_text, bool allow_undo, 
+	void 			appendStyledText(const std::string &new_text, bool allow_undo,
 									 bool prepend_newline,
-									 const LLStyleSP *stylep = NULL);
+									 const LLStyleSP stylep = NULL);
 
 	// Removes text from the end of document
 	// Does not change highlight or cursor position.
@@ -245,9 +252,11 @@ public:
 	llwchar			getWChar(S32 pos) const { return mWText[pos]; }
 	LLWString		getWSubString(S32 pos, S32 len) const { return mWText.substr(pos, len); }
 	
-	const LLTextSegment*	getCurrentSegment() { return getSegmentAtOffset(mCursorPos); }
-	const LLTextSegment*	getPreviousSegment();
-	void getSelectedSegments(std::vector<const LLTextSegment*>& segments);
+	const LLTextSegment*	getCurrentSegment() const { return getSegmentAtOffset(mCursorPos); }
+	const LLTextSegment*	getPreviousSegment() const;
+	void getSelectedSegments(std::vector<const LLTextSegment*>& segments) const;
+
+	static bool		isPartOfWord(llwchar c) { return (c == '_') || LLStringOps::isAlnum((char)c); }
 
 protected:
 	//
@@ -266,8 +275,6 @@ protected:
 	void 			assignEmbedded(const std::string &s);
 	BOOL 			truncate();				// Returns true if truncation occurs
 	
-	static BOOL		isPartOfWord(llwchar c) { return (c == '_') || isalnum(c); }
-
 	void			removeCharOrTab();
 	void			setCursorAtLocalPos(S32 x, S32 y, BOOL round);
 	S32				getCursorPosFromLocalCoord( S32 local_x, S32 local_y, BOOL round ) const;
@@ -424,6 +431,8 @@ private:
 	//
 	// Methods
 	//
+	void	                pasteHelper(bool is_primary);
+
 	void			updateSegments();
 	void			pruneSegments();
 
@@ -432,6 +441,14 @@ private:
 	void			drawCursor();
 	void			drawText();
 	void			drawClippedSegment(const LLWString &wtext, S32 seg_start, S32 seg_end, F32 x, F32 y, S32 selection_left, S32 selection_right, const LLStyleSP& color, F32* right_x);
+
+	void			needsReflow() 
+	{ 
+		mReflowNeeded = TRUE; 
+		// cursor might have moved, need to scroll
+		mScrollNeeded = TRUE;
+	}
+	void			needsScroll() { mScrollNeeded = TRUE; }
 
 	//
 	// Data
@@ -489,6 +506,8 @@ private:
 	};
 	typedef std::vector<line_info> line_list_t;
 	line_list_t mLineStartList;
+	BOOL			mReflowNeeded;
+	BOOL			mScrollNeeded;
 
 	LLFrameTimer	mKeystrokeTimer;
 

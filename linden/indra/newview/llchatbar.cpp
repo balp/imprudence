@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -48,10 +48,12 @@
 #include "llcommandhandler.h"	// secondlife:///app/chat/ support
 #include "llviewercontrol.h"
 #include "llfloaterchat.h"
+#include "llfloatergesture.h"
 #include "llgesturemgr.h"
 #include "llkeyboard.h"
 #include "lllineeditor.h"
 #include "llstatusbar.h"
+#include "llspinctrl.h"
 #include "lltextbox.h"
 #include "lluiconstants.h"
 #include "llviewergesture.h"			// for triggering gestures
@@ -77,7 +79,10 @@ LLChatBar *gChatBar = NULL;
 
 // legacy calllback glue
 void toggleChatHistory(void* user_data);
-void send_chat_from_viewer(const std::string& utf8_out_text, EChatType type, S32 channel);
+//void send_chat_from_viewer(const std::string& utf8_out_text, EChatType type, S32 channel);
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d) | Modified: RLVa-0.2.2a
+void send_chat_from_viewer(std::string utf8_out_text, EChatType type, S32 channel);
+// [/RLVa:KB]
 
 
 class LLChatBarGestureObserver : public LLGestureManagerObserver
@@ -97,6 +102,7 @@ private:
 
 LLChatBar::LLChatBar() 
 :	LLPanel(LLStringUtil::null, LLRect(), BORDER_NO),
+	mChanCtrlEnabled(FALSE),
 	mInputEditor(NULL),
 	mGestureLabelTimer(),
 	mLastSpecialChatChannel(0),
@@ -114,6 +120,7 @@ LLChatBar::LLChatBar()
 
 LLChatBar::~LLChatBar()
 {
+	gGestureManager.removeObserver(mObserver);
 	delete mObserver;
 	mObserver = NULL;
 	// LLView destructor cleans up children
@@ -149,6 +156,10 @@ BOOL LLChatBar::postBuild()
 		mInputEditor->setMaxTextLength(1023);
 		mInputEditor->setEnableLineHistory(TRUE);
 	}
+
+	mChannelControl = getChild<LLSpinCtrl>("channel_control");
+
+	toggleChannelControl();
 
 	mIsBuilt = TRUE;
 
@@ -209,6 +220,7 @@ void LLChatBar::refresh()
 
 	childSetValue("History", LLFloaterChat::instanceVisible(LLSD()));
 
+	//childSetValue("channel_control",( 1.f * ((S32)(mChannelControl->get()))) );
 	childSetEnabled("Say", mInputEditor->getText().size() > 0);
 	childSetEnabled("Shout", mInputEditor->getText().size() > 0);
 
@@ -369,8 +381,11 @@ LLWString LLChatBar::stripChannelNumber(const LLWString &mesg, S32* channel)
 	}
 	else
 	{
-		// This is normal chat.
-		*channel = 0;
+		if (!mChanCtrlEnabled)
+		{
+			// This is normal chat.
+			*channel = 0;
+		}
 		return mesg;
 	}
 }
@@ -386,7 +401,8 @@ void LLChatBar::sendChat( EChatType type )
 			// store sent line in history, duplicates will get filtered
 			if (mInputEditor) mInputEditor->updateHistory();
 			// Check if this is destined for another channel
-			S32 channel = 0;
+			S32 channel = mChanCtrlEnabled ? (S32)(mChannelControl->get()) : 0;
+
 			stripChannelNumber(text, &channel);
 			
 			std::string utf8text = wstring_to_utf8str(text);
@@ -422,6 +438,31 @@ void LLChatBar::sendChat( EChatType type )
 	{
 		stopChat();
 	}
+}
+
+void LLChatBar::toggleChannelControl()
+{
+	LLRect input_rect = mInputEditor->getRect();
+	S32 chan_width = mChannelControl->getRect().getWidth();
+	BOOL visible = gSavedSettings.getBOOL("ChatChannelSelect");
+	BOOL control = mChannelControl->getVisible();
+
+	if (visible && !control)
+	{
+		input_rect.setLeftTopAndSize(input_rect.mLeft+chan_width, input_rect.mTop, 
+									 input_rect.getWidth()-chan_width, input_rect.getHeight());
+	}
+	else if (!visible && control)
+	{
+		input_rect.setLeftTopAndSize(input_rect.mLeft-chan_width, input_rect.mTop, 
+									 input_rect.getWidth()+chan_width, input_rect.getHeight());
+		
+	}
+	mInputEditor->setRect(input_rect);
+
+	childSetVisible("channel_control", visible);
+	childSetEnabled("channel_control", visible);
+	mChanCtrlEnabled = visible;
 }
 
 
@@ -481,7 +522,10 @@ void LLChatBar::onInputEditorKeystroke( LLLineEditor* caller, void* userdata )
 
 	S32 length = raw_text.length();
 
-	if( (length > 0) && (raw_text[0] != '/') )  // forward slash is used for escape (eg. emote) sequences
+	//if( (length > 0) && (raw_text[0] != '/') )  // forward slash is used for escape (eg. emote) sequences
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d)
+	if ( (length > 0) && (raw_text[0] != '/') && (!gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT)) )
+// [/RLVa:KB]
 	{
 		gAgent.startTyping();
 	}
@@ -553,15 +597,17 @@ void LLChatBar::onInputEditorGainFocus( LLFocusableElement* caller, void* userda
 // static
 void LLChatBar::onClickSay( LLUICtrl* ctrl, void* userdata )
 {
-	LLChatBar* self = (LLChatBar*) userdata;
+	e_chat_type chat_type = CHAT_TYPE_NORMAL;
 	if (ctrl->getValue().asString() == "shout")
 	{
-		self->sendChat( CHAT_TYPE_SHOUT );
+		chat_type = CHAT_TYPE_SHOUT;
 	}
-	else
+	else if (ctrl->getValue().asString() == "whisper")
 	{
-		self->sendChat( CHAT_TYPE_NORMAL );
+		chat_type = CHAT_TYPE_WHISPER;
 	}
+	LLChatBar* self = (LLChatBar*) userdata;
+	self->sendChat(chat_type);
 }
 
 void LLChatBar::sendChatFromViewer(const std::string &utf8text, EChatType type, BOOL animate)
@@ -572,7 +618,8 @@ void LLChatBar::sendChatFromViewer(const std::string &utf8text, EChatType type, 
 void LLChatBar::sendChatFromViewer(const LLWString &wtext, EChatType type, BOOL animate)
 {
 	// Look for "/20 foo" channel chats.
-	S32 channel = 0;
+	S32 channel = mChanCtrlEnabled ? (S32)(mChannelControl->get()) : 0;
+
 	LLWString out_text = stripChannelNumber(wtext, &channel);
 	std::string utf8_out_text = wstring_to_utf8str(out_text);
 	std::string utf8_text = wstring_to_utf8str(wtext);
@@ -582,6 +629,21 @@ void LLChatBar::sendChatFromViewer(const LLWString &wtext, EChatType type, BOOL 
 	{
 		utf8_text = utf8str_truncate(utf8_text, MAX_STRING - 1);
 	}
+
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d) | Modified: RLVa-0.2.0b
+	if ( (0 == channel) && (rlv_handler_t::isEnabled()) )
+	{
+		// Adjust the (public) chat "volume" on chat and gestures (also takes care of playing the proper animation)
+		if ( ((CHAT_TYPE_SHOUT == type) || (CHAT_TYPE_NORMAL == type)) && (gRlvHandler.hasBehaviour("chatnormal")) )
+			type = CHAT_TYPE_WHISPER;
+		else if ( (CHAT_TYPE_SHOUT == type) && (gRlvHandler.hasBehaviour("chatshout")) )
+			type = CHAT_TYPE_NORMAL;
+		else if ( (CHAT_TYPE_WHISPER == type) && (gRlvHandler.hasBehaviour("chatwhisper")) )
+			type = CHAT_TYPE_NORMAL;
+
+		animate &= !gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT);
+	}
+// [/RLVa:KB]
 
 	// Don't animate for chats people can't hear (chat to scripts)
 	if (animate && (channel == 0))
@@ -618,8 +680,57 @@ void LLChatBar::sendChatFromViewer(const LLWString &wtext, EChatType type, BOOL 
 	send_chat_from_viewer(utf8_out_text, type, channel);
 }
 
-void send_chat_from_viewer(const std::string& utf8_out_text, EChatType type, S32 channel)
+// void send_chat_from_viewer(const std::string& utf8_out_text, EChatType type, S32 channel)
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d) | Modified: RLVa-0.2.2a
+void send_chat_from_viewer(std::string utf8_out_text, EChatType type, S32 channel)
+// [/RLVa:KB]
 {
+// [RLVa:KB] - Checked: 2009-08-05 (RLVa-1.0.1e) | Modified: RLVa-1.0.1e
+	// Only process chat messages (ie not CHAT_TYPE_START, CHAT_TYPE_STOP, etc)
+	if ( (rlv_handler_t::isEnabled()) && ( (CHAT_TYPE_WHISPER == type) || (CHAT_TYPE_NORMAL == type) || (CHAT_TYPE_SHOUT == type) ) )
+	{
+		if (0 == channel)
+		{
+			// (We already did this before, but LLChatHandler::handle() calls this directly)
+			if ( ((CHAT_TYPE_SHOUT == type) || (CHAT_TYPE_NORMAL == type)) && (gRlvHandler.hasBehaviour("chatnormal")) )
+				type = CHAT_TYPE_WHISPER;
+			else if ( (CHAT_TYPE_SHOUT == type) && (gRlvHandler.hasBehaviour("chatshout")) )
+				type = CHAT_TYPE_NORMAL;
+			else if ( (CHAT_TYPE_WHISPER == type) && (gRlvHandler.hasBehaviour("chatwhisper")) )
+				type = CHAT_TYPE_NORMAL;
+
+			// Redirect chat if needed
+			if ( ( (gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT) || (gRlvHandler.hasBehaviour(RLV_BHVR_REDIREMOTE)) ) && 
+				 (gRlvHandler.redirectChatOrEmote(utf8_out_text)) ) )
+			{
+				return;
+			}
+
+			// Filter public chat if sendchat restricted (and filter anything that redirchat didn't redirect)
+			if ( (gRlvHandler.hasBehaviour("sendchat")) || (gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT)) )
+				gRlvHandler.filterChat(utf8_out_text, true);
+		}
+		else
+		{
+			// Don't allow chat on a non-public channel if sendchannel restricted (unless the channel is an exception)
+			if ( (gRlvHandler.hasBehaviour("sendchannel")) && (!gRlvHandler.hasBehaviour("sendchannel", llformat("%d", channel))) )
+				return;
+
+			// Don't allow chat on debug channel if @sendchat, @redirchat or @rediremote restricted (shows as public chat on viewers)
+			if (channel >= CHAT_CHANNEL_DEBUG)
+			{
+				bool fIsEmote = rlvIsEmote(utf8_out_text);
+				if ( (gRlvHandler.hasBehaviour("sendchat")) || 
+					 ((!fIsEmote) && (gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT))) || 
+					 ((fIsEmote) && (gRlvHandler.hasBehaviour(RLV_BHVR_REDIREMOTE))) )
+				{
+					return;
+				}
+			}
+		}
+	}
+// [/RLVa:KB]
+
 	LLMessageSystem* msg = gMessageSystem;
 	msg->newMessageFast(_PREHASH_ChatFromViewer);
 	msg->nextBlockFast(_PREHASH_AgentData);
@@ -644,8 +755,9 @@ void LLChatBar::onCommitGesture(LLUICtrl* ctrl, void* data)
 	if (gestures)
 	{
 		S32 index = gestures->getFirstSelectedIndex();
-		if (index == 0)
+		if (index <= 0)
 		{
+			LLFloaterGesture::toggleVisibility();
 			return;
 		}
 		const std::string& trigger = gestures->getSelectedValue().asString();
@@ -655,7 +767,6 @@ void LLChatBar::onCommitGesture(LLUICtrl* ctrl, void* data)
 		std::string text(trigger);
 		std::string revised_text;
 		gGestureManager.triggerAndReviseString(text, &revised_text);
-
 		revised_text = utf8str_trim(revised_text);
 		if (!revised_text.empty())
 		{

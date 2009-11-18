@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -34,6 +34,7 @@
 
 #include "lldarray.h"
 #include "message.h" // TODO: babbage: Remove...
+#include "llstat.h"
 #include "llstl.h"
 
 class LLMsgVarData
@@ -370,20 +371,23 @@ public:
 	{
 		if (mHandlerFunc)
 		{
+            LLPerfBlock msg_cb_time("msg_cb", mName);
 			mHandlerFunc(msgsystem, mUserData);
 			return TRUE;
 		}
 		return FALSE;
 	}
 
-	bool isBanned(bool trustedSource) const
-	{
-		return trustedSource ? mBanFromTrusted : mBanFromUntrusted;
-	}
-
 	bool isUdpBanned() const
 	{
 		return mDeprecation == MD_UDPBLACKLISTED;
+	}
+
+	void banUdp();
+
+	bool isBanned(bool trustedSource) const
+	{
+		return trustedSource ? mBanFromTrusted : mBanFromUntrusted;
 	}
 
 	friend std::ostream&	 operator<<(std::ostream& s, LLMessageTemplate &msg);

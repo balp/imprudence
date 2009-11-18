@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -81,6 +81,8 @@ public:
 	static void loadHistory();
 	static void* createSpeakersPanel(void* data);
 	static void* createChatPanel(void* data);
+
+	static void toggleHistoryChannelControl();
 
 	// visibility policy for LLUISingleton
 	static bool visible(LLFloater* instance, const LLSD& key);

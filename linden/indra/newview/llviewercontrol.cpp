@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -44,7 +44,6 @@
 #include "llflexibleobject.h"
 #include "llfeaturemanager.h"
 #include "llviewershadermgr.h"
-#include "llnetmap.h"
 #include "llpanelgeneral.h"
 #include "llpanelinput.h"
 #include "llsky.h"
@@ -70,6 +69,7 @@
 #include "llvosurfacepatch.h"
 #include "llvowlsky.h"
 #include "llrender.h"
+#include "llmediamanager.h"
 
 #ifdef TOGGLE_HACKED_GODLIKE_VIEWER
 BOOL 				gHackGodmode = FALSE;
@@ -408,12 +408,6 @@ bool handleEffectColorChanged(const LLSD& newvalue)
 	return true;
 }
 
-bool handleRotateNetMapChanged(const LLSD& newvalue)
-{
-	LLNetMap::setRotateMap(newvalue.asBoolean());
-	return true;
-}
-
 bool handleVectorizeChanged(const LLSD& newvalue)
 {
 	LLViewerJointMesh::updateVectorize();
@@ -425,6 +419,36 @@ bool handleVoiceClientPrefsChanged(const LLSD& newvalue)
 	if(gVoiceClient)
 	{
 		gVoiceClient->updateSettings();
+	}
+	return true;
+}
+
+// [RLVa:KB] - Checked: 2009-08-11 (RLVa-1.0.1h) | Added: RLVa-1.0.1h
+bool rlvHandleEnableLegacyNamingChanged(const LLSD& newvalue)
+{
+	rlv_handler_t::fLegacyNaming = newvalue.asBoolean();
+	return true;
+}
+
+bool rlvHandleShowNameTagsChanged(const LLSD& newvalue)
+{
+	RlvSettings::fShowNameTags = newvalue.asBoolean();
+	return true;
+}
+// [/RLVa:KB]
+
+bool handleMediaDebugLevelChanged(const LLSD& newvalue)
+{
+	LLMediaManager *mgr = LLMediaManager::getInstance();
+	if (mgr)
+	{
+		LLMediaBase *impl = 
+		  mgr->createSourceFromMimeType("http", "audio/mpeg");
+
+		if (impl)
+		{
+			impl->setDebugLevel( (LLMediaBase::EDebugLevel)newvalue.asInteger() );
+		}
 	}
 	return true;
 }
@@ -542,7 +566,6 @@ void settings_setup_listeners()
     gSavedSettings.getControl("UserLogFile")->getSignal()->connect(boost::bind(&handleLogFileChanged, _1));
 	gSavedSettings.getControl("RenderHideGroupTitle")->getSignal()->connect(boost::bind(handleHideGroupTitleChanged, _1));
 	gSavedSettings.getControl("EffectColor")->getSignal()->connect(boost::bind(handleEffectColorChanged, _1));
-	gSavedSettings.getControl("MiniMapRotate")->getSignal()->connect(boost::bind(handleRotateNetMapChanged, _1));
 	gSavedSettings.getControl("VectorizePerfTest")->getSignal()->connect(boost::bind(&handleVectorizeChanged, _1));
 	gSavedSettings.getControl("VectorizeEnable")->getSignal()->connect(boost::bind(&handleVectorizeChanged, _1));
 	gSavedSettings.getControl("VectorizeProcessor")->getSignal()->connect(boost::bind(&handleVectorizeChanged, _1));
@@ -552,10 +575,18 @@ void settings_setup_listeners()
 	gSavedSettings.getControl("PushToTalkButton")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
 	gSavedSettings.getControl("PushToTalkToggle")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
 	gSavedSettings.getControl("VoiceEarLocation")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
-	gSavedSettings.getControl("VivoxDebugServerName")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
 	gSavedSettings.getControl("VoiceInputAudioDevice")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
 	gSavedSettings.getControl("VoiceOutputAudioDevice")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
+	gSavedSettings.getControl("AudioLevelMic")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));
 	gSavedSettings.getControl("LipSyncEnabled")->getSignal()->connect(boost::bind(&handleVoiceClientPrefsChanged, _1));	
+	gSavedSettings.getControl("MediaDebugLevel")->getSignal()->connect(boost::bind(&handleMediaDebugLevelChanged, _1));	
+
+// [RLVa:KB] - Checked: 2009-08-11 (RLVa-1.0.1h) | Added: RLVa-1.0.1h
+	if (gSavedSettings.controlExists(RLV_SETTING_ENABLELEGACYNAMING))
+		gSavedSettings.getControl(RLV_SETTING_ENABLELEGACYNAMING)->getSignal()->connect(boost::bind(&rlvHandleEnableLegacyNamingChanged, _1));
+	if (gSavedSettings.controlExists(RLV_SETTING_SHOWNAMETAGS))
+		gSavedSettings.getControl(RLV_SETTING_SHOWNAMETAGS)->getSignal()->connect(boost::bind(&rlvHandleShowNameTagsChanged, _1));
+// [/RLVa:KB]
 }
 
 template <> eControlType get_control_type<U32>(const U32& in, LLSD& out) 

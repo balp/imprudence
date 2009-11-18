@@ -6,7 +6,7 @@
  *
  * $LicenseInfo:firstyear=2006&license=viewergpl$
  * 
- * Copyright (c) 2006-2008, Linden Research, Inc.
+ * Copyright (c) 2006-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -324,7 +324,7 @@ S32 LLSDParser::parse(std::istream& istr, LLSD& data, S32 max_bytes)
 S32 LLSDParser::parseLines(std::istream& istr, LLSD& data)
 {
 	mCheckLimits = false;
-	mParseLines = false;		// was true, Emergency fix DEV-17785 parsing newline failure
+	mParseLines = true;
 	return doParse(istr, data);
 }
 

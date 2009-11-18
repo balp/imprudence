@@ -1,0 +1,1118 @@
+
+  Release Notes for the Imprudence Viewer
+  http://imprudenceviewer.org
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                      1.2.0 BETA                        -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   KNOWN ISSUES
+
+     * When you try to quit after having logged out at least once, the
+       viewer may crash (Linux & Mac) or not quit (Windows). As a
+       work-around (particularly for Windows users), we recommend not
+       using "File > Logout" until this has been fixed.
+
+     * Many new UI additions only provide English text. We'd love to
+       have some bilingual users help us translate them. If you can
+       help, please post in the forums.
+
+     * The custom chat channel number entry doesn't behave properly
+       for channel numbers longer than 6 digits. As a temporary
+       work-around until we fix this, use the old "/NUMBER" (e.g.
+       "/123456789 Hi") and "//" chat commands for chatting on large
+       channel numbers.
+
+     * The grid selection box on the login screen always defaults to
+       "secondlife" at startup, when it should default to the most
+       recently used grid.
+
+     * The grid selection box on the login screen always shows
+       "secondlife" after logging out, but behaves like it is still
+       set to the grid you logged out from.
+
+     * The minimap radar cannot be hidden yet. We're working on it.
+
+     * The Windlight Water settings window doesn't have previous/next
+       arrows like the Sky window does.
+
+     * The Windlight toolbar sometimes forgets the last selected
+       preset.
+
+     * "File > Import" and "File > Upload & Import" may not work
+       correctly for Mac users.
+
+
+   CHANGES
+
+     This version of Imprudence includes the following changes (as
+     compared to Imprudence 1.1.0).
+
+
+     VERSION HIGHLIGHTS
+
+       * Object Backup. You can now download objects that you have
+         created and have full permissions for to your computer, and
+         upload them back into the world (or another grid). Thanks to
+         the Meerkat Viewer for developing this feature, and to Armin
+         for helping us import it!
+
+       * Grid Manager. You can now modify the list of grids available
+         at the login screen. We have further plans for extending this
+         feature, but this will serve for now. Thanks to the Hippo
+         Viewer and Meerkat Viewer for this, and to Armin for helping
+         import it!
+       
+       * Restrained Life support. Imprudence now provides optional
+         support for the Restrained Life API (used by BDSM items and
+         various scripted gadgets). Enable it with "Advanced >
+         Restrained Life Support". Many thanks to Kitty Barnett for
+         developing RLVa and working with us to integrate it into
+         Imprudence!
+
+       * Radar. The minimap now features a list of nearby avatars.
+         Thanks so much, McCabe and Dale Glass!
+
+       * Emerald features. We've imported a variety of features from
+         the Green Life Emerald Viewer. Thanks to the Emerald folks
+         for developing these, and McCabe for importing them!
+
+          - "Advanced > Asset Browser" (Alt-Shift-A). Visual browser
+            for textures in your inventory.
+
+          - "Advanced > Animation List". Lists the animations you are
+            playing, and allows you to selectively stop them and revoke
+            animation permissions from scripted objects.
+
+          - "Advanced > Phantom Avatar" (Ctrl-Alt-P). Prevents your
+            avatar from being pushed, but also prevents you from
+            moving.
+
+          - "Advanced > Ground Sit" (Ctrl-Alt-S). Makes your avatar sit
+            down at your current location.
+
+          - Build tool shows objects' Last (previous) Owner.
+
+          - When viewing your own profile, the Profile window indicates
+            which of your groups are hidden.
+
+          - You can now search your inventory by Creator name.
+            ("Search" menu in the Inventory window.)
+
+          - You can now double-click on a location in the 3D world to
+            teleport there.
+
+          - Added "BlockClickSit" debug setting. Set it to true to
+            prevent yourself from sitting on things when you accidently
+            click on them.
+
+          - Particle chat, which sends a message on channel 9000 when
+            you select an object, for enhanced integration with
+            scripted objects. You can disable this feature by changing
+            the "ParticleChat" setting to False in "Advanced > Debug
+            Settings".
+
+
+     BUILDING
+
+       * You can now choose which kind of grass or tree to rez.
+         Before, it always rezzed a random kind. Thanks to Mana Janus
+         for this!
+
+       * Added "Link" and "Unlink" to the pie menu for objects.
+         Thanks, McCabe!
+
+       * Added "Link" and "Unlink" buttons to the Build window.
+         Thanks, McCabe!
+
+       * Several changes to the main menus. Thanks, McCabe!
+
+          - "Edit > Duplicate" is now in the Tools menu.
+
+          - Moved the selection-related options in the Tools menu to a
+            new submenu, "Tools > Selection Options".
+
+          - The "Tools > Select Tool" submenu has been renamed to
+            "Choose Tool" to avoid confusion with the Selection
+            Options.
+
+          - "Tools > Set permissions on selected task inventory" has
+            been renamed to "Set Bulk Permissions".
+
+       * "Advanced > Rendering > Selected Texture Info" now displays
+         partial UUIDs for the textures. Thanks to Henri Beauchamp and
+         McCabe for developing this!
+
+       * Added "Tools > Selection Options > Hide Selection Outline"
+         (VWR-6918). This can help make it easier to see when editing
+         small objects, and improves performance when selecting a
+         large number of prims. Thanks a bunch, Aimee Trescothick!
+
+
+     MAP & MINIMAP
+
+       * The minimap has many improvements. Our enduring gratitude to
+         Aimee Trescothick for these!
+
+          - Enhanced zoom behavior and range.
+
+          - It can be panned with Shift-Click and drag. (Right click
+            the minimap and disable "Center on Camera" if you want to
+            stop it from moving back automatically.)
+
+          - Hovering the mouse over someone's dot on the minimap will
+            show their name in the tooltip. Right click on a dot and
+            choose "Profile" to open that person's profile window.
+
+          - Window layout converted to XUI under the hood.
+
+       * But wait — the minimap has other improvements, too. Thanks to
+         McCabe for these!
+
+          - Muted avatars are colored gray in the minimap.
+
+          - Added "Show World Map" to the minimap right-click menu.
+
+          - Moved "Rotate Mini-Map" to the minimap right-click menu.
+
+       * The World Map displays the number of avatars in each sim,
+         above the sim's name. That's pretty handy, Jacek and McCabe!
+
+
+     MISC. UI
+
+       * The Communicate window title and "IM Received" popup button
+         now show the number of unread IMs you've received. Nice work,
+         McCabe!
+
+       * The "About Land" window displays the L$/sqm cost for land for
+         sale. Thanks to Linden Lab for this feature in SL 1.23.
+
+       * The Resident chooser now has a "Near Me" tab with a list of
+         nearby people (VWR-2681). Thanks to Matthew Dowd, Vadim
+         Bigbear, and Coco Linden for developing this feature.
+
+       * Double clicking an object in your inventory wears it (or
+         detaches it, if you are already wearing it). Thanks to
+         Nicholaz Beresford and Henri Beauchamp for developing this!
+
+       * Quick access to Windlight presets and draw distance from the
+         toolbar. You can toggle this in "Preferences > Graphics >
+         Show environment control in toolbar" (a checkbox near the top
+         right corner of the window). Nice work, McCabe!
+
+       * When listening to audio streams, song info is output to your
+         chat window. You can toggle this in "Preferences > Audio &
+         Video > Show stream info in chat" (a checkbox about halfway
+         down the window). Thanks to Dale Glass for developing this
+         feature!
+
+       * IM windows inform you when the other person has gone on or
+         offline even if you have turned off "Show online Friend
+         notifications". That's pretty handy, McCabe!
+
+       * Added "View > Advanced Menu" to toggle the Advanced menu.
+         Thanks, Armin!
+
+       * The layout of the Profile window has been revamped. Thanks,
+         McCabe!
+
+       * In the Local Chat window, you can now click the name of
+         objects that IM you to view information about the object and
+         its owner. Thanks to Linden Lab for developing this in SL
+         1.23.
+
+       * The Snapshot window can now be minimized. It's the little
+         things, McCabe!
+
+       * The Windlight sky settings window now has arrow buttons for
+         quickly changing to the previous or next preset in the list.
+         Thanks, McCabe!
+
+       * "Show HUD Attachments" has been moved back to the View menu,
+         and its shortcut (Alt-Shift-H) has been restored. It was
+         moved to the Advanced menu and lost its shortcut in
+         Imprudence 1.1. Thanks to mashaeilde on the forums for giving
+         us feedback about this!
+
+       * You can now select a default channel number to chat on, for
+         interacting with scripted devices. Turn on "Preferences >
+         Text Chat > Show custom chat channel" (a checkbox near the
+         bottom of the window), then set the channel using the new
+         number entry field on the chat bar. Channel 0 is normal chat,
+         all other channels are only seen by scripts. You can still
+         chat to other channels using "/1", etc. Thanks to the Emerald
+         Viewer for the inspiration, and to McCabe for the
+         implementation!
+
+
+     OTHER
+
+       * Imprudence 1.2 has been rebased to SL 1.22.11. Previous
+         versions of Imprudence were based on SL 1.21.6. Thanks,
+         Jacek!
+
+       * Ability to logout without quitting and restarting the viewer
+         (File > Logout). Thanks to the Meerkat Viewer for this!
+
+       * Several bundled software libraries have been updated to new
+         versions:
+
+          - Gstreamer, Zlib and Iconv on Windows. Thanks, McCabe!
+
+          - OpenJPEG on Linux. Thanks, Armin!
+
+       * The login screen displays the awesome Imprudence logo while
+         the login page is still loading, instead of that smelly old
+         SL logo. Way to go, McCabe!
+
+       * Linux-style middle mouse paste on Linux viewers. Thanks,
+         Armin!
+
+       * The maximum bandwidth setting has been raised to 5000kbps,
+         and the default set to 1000kbps. Thanks, McCabe!
+
+       * Added several new windlight settings by CodeBastard Redgrave,
+         Ana Lutetia, and Torley Linden. Thanks, Codie, Ana, and
+         Torley!
+
+       * Added the adult_compliant capability, for teleport
+         compatibility with Linden Lab's adult content policy. Thanks
+         for providing a patch for this, Linden Lab!
+
+       * Added two patches (VWR-11128 and VWR-11138) to support Visual
+         Studio Express. Thanks, Robin Cornelius!
+
+
+     BUG FIXES
+
+       * "Stop All Animations" (aka "Stop Animating My Avatar") only
+         affected your own viewer; other people would still see your
+         avatar being animated (VWR-2850). Thanks to Tofu Linden for
+         fixing that in SL 1.23.
+
+       * The Resident chooser was showing hair instead of calling
+         cards. Thanks for fixing that, McCabe!
+
+       * "View > Communicate" wasn't toggling the Communicate window
+         like it was supposed to. Thanks for fixing it, McCabe!
+
+       * Small textures weren't being cached (VWR-12686). Thanks for
+         fixing that, Robin Cornelius!
+
+       * Certain malformed animations could cause the viewer to abort
+         with an assertion about the joint number. Thanks to Linden
+         Lab for fixing this in SL 1.23.
+
+       * The chat history window couldn't be minimized. Thanks,
+         McCabe!
+
+       * The Contacts window couldn't be toggled with "Edit > Friends"
+         (Ctrl-Shift-F) if it was detached from the Communicate window
+         (VWR-5370). Thanks to Latif Khalifa for making the patch to
+         fix that!
+
+       * When trying to attach multiple objects at once from your
+         inventory, it would fail with a message, "Cannot complete
+         attachment. An Attachment is pending for that spot". Many
+         thanks to Kitty Barnett for fixing that awful bug!
+
+       * Teleporting very long distances on OpenSim Hypergrid would
+         sometimes cause weird issues (SVC-2941). Thanks to Mana Janus
+         for the fix!
+
+       * Avatars would be invisible until you zoomed in on them (in SL
+         1.22). Thanks for the patch to fix this, Aleric Inglewood!
+
+       * Special symbols in group titles were appearing as question
+         marks in avatar name tags. McCabe fixed the heck outta that
+         one!
+
+
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                         1.1.0                          -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   KNOWN ISSUES
+
+     * Mac users may have problems playing some music or video
+       streams.
+
+     * Local Chat (aka. Chat History) still stops automatically
+       scrolling down to show new chat if you click it at the same
+       time as a new line of chat arrives. Manually scrolling down to
+       the bottom will start it autoscrolling again.
+
+     * If you come within range of a looped sound while your volume is
+       muted, the sound won't play when you unmute your volume. As a
+       workaround, move out of range of the sound and then back again
+       to trigger it to play.
+
+
+   CHANGES
+
+     This version of Imprudence includes the following changes (as
+     compared to Imprudence 1.1.0 RC2).
+
+
+     VERSION HIGHLIGHTS
+
+       * Mac Version! Thanks, Jacek!
+         (And Thomas Shikami for his OpenAL help!)
+
+       * Improved pie menus! (Again.) Thanks, McCabe!
+
+       * Improved sound, music, and video support!
+         Thanks, McCabe and Jacek!
+
+
+     UI
+
+       * The Pie Menus have been reorganized again in response to user
+         feedback. Thanks, McCabe!
+
+          - Check out the Pie Menus wiki page for pictures and
+            descriptions of all the changes! 
+            <http://imprudenceviewer.org/wiki/Pie_Menus>
+
+       * Ctrl-D has been reverted to Edit > Duplicate. (It had been
+         assigned to World > Create Landmark Here since 1.1.0 RC1.)
+         Thanks, Jacek!
+
+       * Added several optional confirmation dialogs (i.e. "Are you
+         sure?" popups). Thanks, Jacek!
+
+          - Teleport Home (via keyboard shortcut, the World menu, or
+            Map window)
+
+          - Toggle Fullscreen (via keyboard shortcut or the View menu)
+
+          - Take Off All Clothes (via the Edit menu or the pie menu)
+
+          - Restore to Last Position (via the inventory context menu)
+
+          - Mute avatars or objects (via the pie menu or the avatar's
+            Profile)
+
+          - Note: All of these can be disabled by checking the
+            appropriate box the first time they appear.
+
+       * Added a separator bar between "Wear" and "Restore to Last
+         Position" on the inventory context menu. Thanks, Jacek!
+
+       * You can now access the Gestures manager window from the chat
+         bar. (IMP-116). Thanks, Armin Weatherwax!
+
+       * The top menu bar no longer turns red when connecting to
+         third-party grids. Thanks, McCabe!
+
+       * The login screen now shows pretty pictures like the SL viewer
+         does. It will display something Imprudence-specific in the
+         future. Thanks, Jacek!
+
+
+     BUG FIXES
+
+       * Fixed PARCEL_FLAG_ALLOW_CREATE_GROUP_OBJECTS not being
+         highlighted in the script editor (VWR-8454). Thanks, McCabe!
+
+       * Fixed a crash when uploading files with non-ASCII characters
+         in path on Linux (VWR-5575). Thanks for the patch, Alissa
+         Sabre!
+
+       * Fixed two small memory leaks when uploading LSL scripts
+         (VWR-9400). Thanks for the patches, Carjay McGinnis and Henri
+         Beauchamp!
+
+       * Fixed the "Pay Object" mouse cursor for Linux (it had been
+         showing the "Play Media" cursor) (VWR-10829). Thanks, Jacek!
+
+       * Fixed the "High Resolution Snapshot" checkbox being visible
+         in cases where it shouldn't have been. Thanks, McCabe!
+
+       * Backported several bug fixes from the SL 1.22 viewer. Thanks,
+         McCabe!
+
+          - Fixed: Wrong visualisation of animations (VWR-996).
+            Thanks, Unknown Linden!
+
+          - Fixed: Reset Scripts in Selection failed if the parent
+            object had no scripts (SVC-2771). Thanks, Si Linden!
+
+          - Fixed: Prim position appears to be wrong (VWR-3871).
+            Thanks, Unknown Linden!
+
+          - Fixed: Possible crash in llfloater.cpp.
+            Thanks, Unknown Linden!
+
+          - Fixed: Possible crash while changing graphics settings.
+            Thanks, Unknown Linden!
+
+          - Fixed: No way to hide IMs in chat console (VWR-3060).
+            Thanks for the patch, Henri Beauchamp!
+
+          - Fixed: Texture decoder would try to decode more texture
+            channels than the texture had (VWR-4070). Thanks for the
+            patch, Carjay McGinnis!
+
+
+     MISC.
+
+       * Sounds are no longer downloaded if the volume slider is muted
+         or zero, to conserve bandwidth, etc. (VWR-11674). Thanks for
+         the patch, Zwagoth Klaar!
+
+       * Tons of work under the hood on GStreamer and OpenAL. You
+         deserve gold medals, McCabe and Jacek!
+
+
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                       1.1.0 RC2                        -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   KNOWN ISSUES
+
+     * Mac version is still forthcoming.
+
+     * Viewer freezes permanently when playing streaming media if the
+       parcel's media type doesn't match the actual stream type.
+
+     * Viewer may freeze for a few moments when starting or changing
+       music or media stream, especially for slow or dead URLs.
+
+     * Streaming music and media may not work for some Vista users.
+       Cause is unknown.
+
+     * Local Chat (aka. Chat History) stops automatically scrolling
+       down to show new chat if you click it at the same time as a new
+       line of chat arrives. Manually scrolling down to the bottom
+       will start it autoscrolling again.
+
+
+   CHANGES
+
+     This version of Imprudence includes the following changes (as
+     compared to Imprudence 1.1.0 RC1).
+
+
+     BUG FIXES
+
+       * Fixed a nasty crash when receiving an IM, when the IM history
+         had certain kinds of links in them. Thanks so much for
+         finding and fixing that, Anders Arnholm (Balp Allen)!
+
+       * Fixed the viewer crashing when opening the Top Scripts window
+         (in the Estate tools). Thanks, McCabe!
+
+       * Fixed certain types of sounds (footsteps/bumps, gestures,
+         typing, and others) not being affected by volume controls.
+         Thanks, McCabe!
+
+       * Fixed inventory folders repeatedly expanding after using
+         Quick Filter. Thanks, Jacek!
+
+       * Fixed the pie menu not showing correct Touch text on scripted
+         objects that had used llSetTouchText. Thanks, McCabe!
+
+       * Fixed LSL script syntax highlighting for single line comments
+         ("//" style). Thanks, Jacek!
+
+       * Fixed the viewer not asking if you'd like to play streaming
+         music. Thanks, McCabe!
+
+       * Streaming media should now work for Linux users running the
+         PulseAudio sound server (e.g. Ubuntu users). Thanks, Jacek!
+
+
+     UI
+
+       * HUD attachments now have a separate pie menu from regular
+         attachments, with a layout similar to the pre-1.1.0
+         attachments pie menu. Thanks, McCabe!
+
+       * Items in Advanced > Rendering > Features use "Alt-Shift-F#"
+         instead of "Ctrl-Alt-F#", to avoid conflicts with Linux
+         system keyboard commands. Muchos gracias, McCabe!
+
+       * Removed the Pause button in the music control tab, since it
+         had the same effect as Stop anyway. Thanks, McCabe!
+
+
+     MISC
+
+       * A lot of cleaning and polishing GStreamer stuff under the
+         hood. Thanks for all the effort, McCabe!
+
+       * Song title and artist are printed to the debug console when
+         music streams change songs. That information will be
+         displayed in the UI in a future version. Thanks, Armin
+         Weatherwax!
+
+       * The Help > About Imprudence window now lists your version of
+         Gstreamer. How handy, McCabe!
+
+
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                       1.1.0 RC1                        -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   NOTICE: POTENTIALLY DISRUPTIVE UI CHANGES
+
+     This version contains many changes to the UI, including changes
+     to the names and locations of buttons and menu items. You should
+     expect the UI (especially the pie menus) to feel awkward at
+     first, while your brain and muscle memory adjust to the changes.
+     We think you will find the new layouts to be more usable in the
+     long run, once the initial re-learning period passes.
+
+     Stick with it! :)
+
+
+     In particular, please be aware of the following:
+
+     * There have been major reorganization of all pie menus!
+
+     * Some Advanced menu items have been moved to other locations:
+
+        - "Advanced > Rebake Textures" is now "Edit > Refresh
+          Appearance".
+
+        - "Advanced > Disable Camera Constraints" is now in the
+          "Input/Camera" section of Preferences.
+
+        - "Advanced > High Resolution Snapshots" is now in the
+          Snapshot window.
+
+        - "View > Show HUD Attachments" is now "Advanced > Rendering >
+          Features > HUD Attachments".
+
+     * Some rarely-used menu items have been removed:
+
+        - "Advanced > Compress Snapshots to disk"
+
+     * Some shortcuts have changed:
+
+        - Added Ctrl-B (View > Web Browser)
+
+        - Added Ctrl-D (World > Create Landmark Here)
+
+        - Removed Shift-Alt-H (View > Show HUD Attachments,
+          which has been moved; see above)
+
+     * The "Invite" and "Leave" buttons in the Groups window have
+       switched positions (to move "Leave" further away from
+       "Activate").
+
+     See the CHANGES section below for details, plus other UI and
+     non-UI changes in this version.
+
+
+   KNOWN ISSUES
+
+     * There is no Mac version! We need a volunteer Mac developer to
+       help with this!
+
+     * All platforms still lack voice chat. (But you can add it back
+       with a simple trick...)
+
+     * The sub-menus inside the "Advanced > Rendering" menu (i.e.
+       Types, Features, Info Displays, and Render Tests) sometimes get
+       hidden behind the Advanced menu when they open. This is
+       scheduled to be fixed in a future version; in the meantime, you
+       can work around it by clicking the tear-off stript at the top
+       of the Rendering menu, moving it to the left side of the
+       screen, and then opening the desired sub-menu.
+
+
+   CHANGES
+
+     This version of Imprudence includes the following changes (as
+     compared to Imprudence 1.0.0).
+
+     FEATURE HIGHLIGHTS
+
+       * Windows and Linux versions now support sound effects and
+         streaming audio and video with OpenAL and Gstreamer! Thanks
+         to Tofu Linden for his OpenAL patch, Unknown Linden(s) for
+         their Gstreamer work, and McCabe and Jacek for pounding on it
+         with hammers!
+
+       * New "Quick Filter" list in the Inventory window. Thanks for
+         adding that, Jacek!
+
+       * New "Worn Items" tab in the Inventory window (VWR-2199).
+         Thanks for the patch, Vadim Bigbear!
+
+       * New math expressions support in the Build window's Object and
+         Texture tabs (VWR-675). Thanks for the patch, Aimee
+         Trescothick! See the Build Math Expressions wiki page for
+         details and examples for using this cool feature!
+
+     MENUS
+
+       * Reorganized and improved the pie menus a lot (details below).
+         Thanks, McCabe!
+
+          - Replaced "Go" with "Inventory" in the pie menu for your
+            avatar mesh.
+
+          - Moved "Create" to "More > Build" in the pie menu for
+            objects, and moved "Buy" up to the top level. "Take" is
+            now always "Take".
+
+          - The pie menu for your own attachments is now more
+            consistent with the pie menu for your avatar mesh. This
+            helps users with prim-based avatars / lots of
+            body-covering attachments. (Attachment-specific options
+            are under "More >".)
+
+          - Renamed "Report Abuse..." label to "Abuse..." so it
+            doesn't overrun the pie menu.
+
+          - "Mute" option moved from 6 o'clock to avoid accidental
+            clicks.
+
+          - Added "Create Landmark" to the pie menu for the ground
+            (IMP-38). Thanks for the patch, Armin Weatherwax!
+
+          - Added "Report Abuse" to the pie menu for avatars besides
+            yourself (VWR-8179). Thanks for the patch, Asuka Neely!
+
+       * Moved some commonly-used "Advanced" options to more prominent
+         locations (details below) (IMP-18). Thanks for doing that,
+         McCabe!
+
+          - Moved "Rebake Textures" to "Edit > Refresh Appearance".
+
+          - Moved "Disable Camera Constraints" to be in the
+            "Input/Camera" section of Preferences.
+
+          - Moved "High Resolution Snapshots" to the Snapshot window.
+
+       * Added menu item and shortcut to open the built-in web browser
+         ("View > Web Browser", Ctrl-B). Thanks, McCabe!
+
+       * Removed "Advanced > Compress Snapshot to disk", since it's
+         useless. Thanks, McCabe!
+
+       * Added shortcut (Ctrl-D) to create a new landmark. Also, a
+         message, "You created a landmark at _____", will appear in
+         chat history when creating a landmark. Thanks, McCabe!
+
+       * Moved "View > Show HUD Attachments" to 
+         "Advanced > Rendering > Features > HUD Attachments", and
+         removed its keyboard shortcut.
+
+
+     INVENTORY
+
+       * Added "Restore to World" to right click menu on Objects in
+         inventory (if the sim supports it) (IMP-36). Thanks, Unknown
+         Linden! (This action returns the object to the location
+         in-world where it was before being taken / returned to your
+         inventory.)
+
+       * Added "Discard" buttons for incoming landmarks, and notecards
+         that you created (IMP-30). Thanks for the patches, Henri
+         Beauchamp, and thanks to Balp Allen for pointing them out!
+
+
+     BUILDING
+
+       * High-up prims no longer fall to 256m height when moved
+         outworld (VWR-9352). Thanks for the patch, Aimee Trescothick!
+
+       * Fixed Local ruler mode being oriented incorrectly for linked
+         objects (VWR-1582). Thanks, Jacek!
+
+       * Added "Tools > Select Only Copyable Objects" menu item.
+         Thanks, McCabe!
+
+
+     MAP / MINIMAP
+
+       * Friends now appear yellow on the minimap (VWR-3336). Thanks
+         for the patch, Aimee Trescothick!
+
+       * You can now double-click in the minimap to teleport to that
+         location (IMP-34). Thanks for the patch, Armin Weatherwax!
+
+       * The Map window now supports teleports up to a height of 4096m
+         (VWR-7331). Thanks for the patch, Peter Lameth!
+
+       * Minimap and Map glyph colors can now be set in colors.xml.
+         Thanks, McCabe!
+
+
+     OTHER UI
+
+       * Added syntax highlighting for C-style comments ("/* ... */")
+         in LSL scripts (SVC-2631). Thanks for the patch, Felix
+         Duesenburg!
+
+       * Added Home page functionality in the web browser ("Home", "Set
+         As Home"). Thanks, McCabe!
+
+       * Clicking "Set As Home" informs you of a successful homepage
+         change.
+
+       * Switched the positions of the "Invite" and "Leave" buttons in
+         the Groups panel, so the "Leave" button isn't right next to
+         the "Activate" button. Thanks, McCabe!
+
+       * The "Offer Teleport" button in the IM window has been moved to
+         the left, next to "Profile". Thanks, McCabe!
+
+       * Added "Drag and drop inventory item here to send" text to the
+         IM window. That functionality was already present in the SL
+         viewer, but almost no one knew about it! Thanks, McCabe!
+
+       * Added an "Ignore" button to friendship requests (VWR-4826).
+         Thanks, McCabe!
+
+       * The "invite to group" window now displays the group name in
+         the title. Thanks, McCabe!
+
+
+     MISC
+
+       * Fixed the right/bottom edit arrows on HUDs not working
+         (VWR-5518). Thanks for describing the fix, Zi Ree!
+
+       * Fixed avatars being darker than prims; this matches the
+         changes in SL 1.22 (VWR-8012). Thanks to CG Linden for
+         pointing to the fix!
+
+       * Lip sync for voice chat is enabled by default 
+         ("Advanced > Character > Enable Lip Sync"). Thanks, McCabe!
+
+       * The colors.xml files (for setting skin colors) now has helpful
+         comments describing each entry, to help skin creators. Thanks,
+         McCabe!
+
+       * Beacons no longer stay enabled between sessions, to help users
+         who accidently enable them. Thanks, McCabe!
+
+       * The wind sound is now disabled by default, and doesn't waste
+         CPU time generating white noise when it's off. You can
+         re-enable wind by changing the "MuteWind" debug setting to
+         FALSE. Thanks, McCabe!
+
+       * Added TGA as an available image format for saving snapshots.
+         Thanks, McCabe!
+
+       * llLoadUrl scripts now opens in either the built-in browser or
+         your external browser, depending on your preference. Thanks,
+         McCabe!
+
+       * The URL highlighter now includes closing parentheses ")" as
+         part of the link (VWR-8773). Thanks, Qarl Linden!
+
+       * Windows: Running straight from the .exe uses
+         "settings_imprudence.xml" file. Thanks, McCabe!
+
+       * Windows: Crash dump files are named with "Imprudence" instead
+         of "Second Life". Thanks yet again, McCabe, you busy beaver!
+
+
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                         1.0.0                          -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   KNOWN ISSUES
+
+     * Still no sound or voice yet.
+
+     * Login screen misleadingly displays the last grid you had
+       selected even if you use the --loginuri command line option
+       (IMP-29).
+
+     * The menus for non-English languages still say "Second Life" in
+       some places where they should say "Imprudence" (IMP-27).
+
+
+   CHANGES
+
+     This version of Imprudence includes the following changes (as
+     compared to Imprudence 1.0.0 RC2):
+
+     * Rendering: Windows version ships with OpenJPEG 1.3. This fixes
+       the issue of skirts and some uploaded images appearing
+       half-transparent. Thanks to McCabe and everyone who helped us
+       identify and test that!
+
+     * UI: Added support for displaying a test version identifier
+       (e.g. RC2) at the login screen and About Imprudence, to help
+       people tell the test versions apart. (Note: you won't see it in
+       this release, because this isn't a test version!) Thanks to
+       McCabe for adding that!
+
+     * UI: Rebranded the Help menu at the login screen to match the
+       main Help menu (IMP-23). Thanks to Balp Allen for reporting
+       that, and McCabe for fixing it!
+
+     * UI: The "Release Notes" link in About Imprudence now takes you
+       to the release notes on the Imprudence wiki, instead of to a
+       bogus page on the Second Life wiki. Thanks to McCabe and Jacek
+       for doing that!
+
+     * UI: Grid selector at the login screen no longer has a duplicate
+       entry (IMP-24). Thanks to Balp Allen for fixing that!
+
+     * Misc.: Fixed the viewer stupidly creating a 'url_history.xml'
+       file in 'C:\' on Windows, and perhaps in '/' (root) on Mac
+       (VWR-5808). Thanks to McCabe for fixing that!
+
+     * Code: Patched two small memory leaks when uploading scripts
+       (VWR-9400). Thanks to Carjay McGinnis and Henri Beauchamp for
+       making those patches!
+
+     * Code: Patched two minor code cleanliness issues (VWR-10759,
+       VWR-10837). Thanks to Aleric Inglewood for making those
+       patches!
+
+
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                       1.0.0 RC2                        -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   KNOWN ISSUES
+
+     * Some users have reported that system skirts (not attachments)
+       and some uploaded images with alpha channels appear
+       partially transparent all over, instead of being opaque
+       in some places and transparent in others. You can fix this by
+       upgrading to OpenJPEG 1.3. Future Imprudence releases will
+       have the new OpenJPEG included in the regular download.
+
+     * The grid selection list on the login screen displays a
+       duplicate entry (e.g. two "SL Main Grid" entries). This is
+       harmless, and a PITA to fix.
+
+     * Still no sound or voice yet.
+
+
+   CHANGES
+
+     This version of Imprudence includes the following changes (as
+     compared to Imprudence 1.0.0 RC1):
+
+     * Rendering: Applied a likely fix for VWR-8920 (disappearing
+       attachments when zoomed in). Please let us know in the forums
+       whether this fixes the issue for you. Thanks to an unknown
+       Linden for the fix, and to Strife Onizuka for pointing to it!
+
+     * Rendering: Applied a likely fix for VWR-9358 (problems with
+       palletized textures). Please
+       [http://imprudenceviewer.org/forums/viewtopic.php?f=6&t=66 let
+       us know in the forums] whether this fixes the issue for you.
+       Thanks to Angus Boyd for suggesting the fix!
+
+     * Misc UI.: Grid selection list on the login page has been
+       embraced and cleaned up. It now lists 3 options: SL Main Grid,
+       SL Beta Grid, and Local OpenSim (if you run OpenSim on your
+       computer). It will be made customizable in a future version.
+       Thanks to Jacek for sprucing that up!
+
+     * Misc: Fixed the debug console window always showing up. Thanks
+       to McCabe for fixing it, and to an unknown Linden's testing
+       code for causing it in the first place!
+
+     * Misc: Fixed the Windows viewer crashing when clicking on
+       certain links in embedded web pages (VWR-4828). Thanks
+       to Nyx Linden for pointing to the updated LLMozLib!
+
+     * Misc: Fixed the Windows installer giving an error when
+       launching the viewer after installation. Thanks to McCabe for
+       fixing that!
+
+     * Misc: Imprudence now uses a separate directory from Second Life
+       for storing the cache, settings, and chat logs. This fixes the
+       viewer clearing the cache the first time it's run. On Linux,
+       it's the '.imprudence' directory in your home directory, and on
+       Mac and Windows it's the 'Imprudence' directory in your
+       Application Data directory. Thanks to Jacek for doing this!
+
+     * Misc: Fixed the Search window clearing itself out when closed
+       and re-opened. Thanks to Samantha Poindexter for reporting the
+       problem, to McCabe for fixing it, and to an unknown Linden's
+       testing code for causing it in the first place!
+
+     * Building: Fixed the Silver skin's Build floater not matching
+       the one from the Classic skin. Thanks to Damien Fate for
+       reporting the problem, and to Jacek for fixing it!
+
+     * Code: Fixed several bits of sloppy Linden code that blocked
+       compiling with gcc 4.3. Thanks to Alissa Sabre for suggesting
+       the fix to VWR-9507, and Stephen Zenith for patches
+       IMP-11 and IMP-12!
+
+     * Misc UI.: Changed Group UI to use "Resident" or "Member"
+       instead of "Person", for consistency (VWR-9007).
+       Thanks to McCabe for sprucing that up!
+
+
+
+
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  =-                       1.0.0 RC1                        -=
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+   WHAT TO EXPECT
+
+    * Many small usability improvements.
+
+      The goal of Imprudence is to make significant usability
+      improvements over the standard SL viewer, but for this first
+      release our focus has simply been to get the project
+      established. You'll find many small improvements scattered
+      throughout the viewer, almost all of them programmed by SL
+      Residents and submitted as patches to JIRA, but which LL has not
+      (at least yet) accepted. Future versions of Imprudence will
+      feature more significant improvements made specifically for this
+      project.
+
+    * New fonts.
+
+      Imprudence uses different fonts than regular SL, because SL's
+      fonts are proprietary and very expensive to license. The new
+      fonts might make things seem "not quite right" at first, since
+      your eye expects the old font you normally see in SL. We do
+      think you'll enjoy the new fonts once you get used to them. (For
+      the curious, the fonts used are Liberation Sans for the UI, and
+      Bitstream Vera Mono for the script editor.)
+
+    * No sound or voice.
+
+      This release of Imprudence doesn't have any sound or voice
+      support, because the software libraries SL uses for those things
+      are proprietary and can't be used with open-source viewers. We
+      hope to add back sound support using OpenAL for the next version
+      of Imprudence. We're not sure yet when we'll be able to add
+      voice back in.
+
+    * Slightly slower texture loading.
+
+      Textures may load slightly slower than they do in regular SL.
+      Once again, this is because the texture software library SL uses
+      by default (Kakadu / KDU) is proprietary, so we're using
+      OpenJPEG, which is open source but not quite as speedy. The
+      difference shouldn't be a major issue.
+
+
+  CHANGES
+
+    This version of Imprudence includes the following changes (as
+    compared to Second Life viewer 1.21.6):
+
+    * Building: You can now "Slice" (aka. Dimple / Profile Cut) the
+      Box, Cylinder, and Prism prim types directly, without needing to
+      switch to Sphere and back. (VWR-7827; thanks McCabe Maxsted!)
+
+    * Stability: Several patches by Nicholaz Beresford to fix memory
+      leaks and improve stability. (VWR-2003, VWR-2683, VWR-2685,
+      VWR-3877, and VWR-3878; thanks Nicholaz!)
+
+    * Misc.: The "Advanced" menu is now written in XUI, so you can
+      edit shortcuts in that menu by editing the XML file, instead of
+      needing to recompile the viewer from source. (Note: The file to
+      edit is skins/default/xui/en-us/menu_viewer.xml) (VWR-2896;
+      thanks Jacek Antonelli!)
+
+    * Social: Added "Invite..." button to the Groups section of the
+      Communicate panel, to make it easier to invite people to the
+      selected group. (VWR-8024; thanks McCabe Maxsted!)
+
+    * Building: Up and down arrows change Path Cut / Profile Cut by
+      increments of 0.025 instead of 0.05, to make it easier to
+      path-cut boxes in half, etc. (VWR-7877; thanks McCabe Maxsted!)
+
+    * Misc. UI: Added "Return Object" to the Tools menu, to make it
+      easier to return objects that are hard to right-click on.
+      (VWR-1363; thanks McCabe Maxsted!)
+
+    * Social: Added "Offer Teleport" button to the IM window.
+      (VWR-2072; thanks Paul Churchill!)
+
+    * Building: Added "Tools > Set permissions on selected task
+      inventory" menu item, to set perms on multiple in-world objects
+      and/or their contents. This will have a nicer UI later.
+      (VWR-5082; thanks Michelle2 Zenovka!)
+
+    * Misc. UI: Several usability and UI layout improvements to the
+      land tools floater. (VWR-8430; thanks Aimee Trescothick!)
+
+    * Misc. UI: Added "Flycam" button that appears when you are in
+      flycam mode (using a joystick or SpaceNavigator); click it to
+      cancel flycam mode. (VWR-8341; thanks Aimee Trescothick!)
+
+    * Building: Rephrased "Select Texture" to the more accurate and
+      descriptive phrase "Select Faces to Texture". (Inspired by
+      VWR-5962; thanks McCabe Maxsted and Jacek Antonelli!)
+
+    * Building: Increased maximum settable transparency from 90% to
+      100% in the Textures tab. (Thanks Jacek Antonelli!)
+
+    * Social: "Offer Teleport" buttons throughough the UI are now
+      always clickable, even for avatars who are not on your friends
+      list or who appear offline. (Thanks Jacek Antonelli!)
+
+    * Misc.: Changed the application name, logo, login page, etc. to
+      Imprudence.
+
+    * Misc.: Imprudence has its own version numbers, starting at
+      1.0.0. Use "Help > About Imprudence" to check the SL source
+      version it's based on.
+
+    * Misc.: Disabled FMOD, KDU, and Vivox (SLVoice) proprietary
+      software.
+
+    * Misc.: Changed fonts to Liberation Sans and Bitstream Vera Mono.
+
+
+   KNOWN ISSUES
+
+    * Windows: At the end of the installer, if you leave the "Launch
+      Imprudence Viewer" checkbox enabled and press "Finish", you will
+      receive an error message and it will not automatically start the
+      viewer. But this does not harm anything, and starting the viewer
+      yourself (e.g. from the desktop shortcut) should work fine.
+
+    * Windows: When the viewer is started, a text console window will
+      appear displaying debug information, and then be covered by the
+      main viewer window. This will be disabled in future releases.
+      You can disable it manually by opening "Advanced > Debug
+      Settings" and changing "ShowConsoleWindow" to false, then
+      restarting the viewer.
+
+    * Windows: The viewer may crash when clicking links in embedded
+      web pages, including certain sections of the Search window and
+      the "Web" section of avatar profiles. We hope to fix this in the
+      future. To work around it for now, just avoid clicking on links
+      in embedded web pages in the viewer.
+
+    * All Platforms: The viewer may be (very) slow to start the first
+      time, as it clears the cache.
+
+    * All Platforms: When using the Silver skin, the Tools (aka Build)
+      floater doesn't have the new features (e.g. transparency up to
+      100%, smaller path cut increment), and improperly displays the
+      land tools brush size combo box on every build tab.

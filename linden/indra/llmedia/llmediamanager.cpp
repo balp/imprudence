@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -30,16 +30,29 @@
  */
 
 #include "llmediamanager.h"
+
+#if LL_WINDOWS
+	// GStreamer 0.10.22 - gstutils.h - conversion from 'guint64' to 'guint8'. 
+	// This was an intentional change to make GStreamer more threadsafe, and
+	// is okay. Delete this bit if GStreamer ever gets more VS-friendly -- McCabe
+	#pragma warning(disable : 4244)
+#endif
+#include "llmediaimplgstreamer.h"
+#if LL_WINDOWS
+	#pragma warning(default : 4244)
+#endif
+
 #include "llmediaimplfactory.h"
 
 #include "llmediaimplexample1.h"
 #include "llmediaimplexample2.h"
 #include "llmediaimplquicktime.h"
-#include "llmediaimplgstreamer.h"
+
 #if LL_LLMOZLIB_ENABLED
 # include "llmediaimplllmozlib.h"
 #endif
 
+#include "llerror.h"
 LLMediaManager* LLMediaManager::sInstance = 0;
 
 
@@ -75,6 +88,7 @@ void LLMediaManager::initClass( LLMediaManagerData* init_data )
 	if ( ! sInstance )
 		sInstance = new LLMediaManager();
 
+	LL_DEBUGS("MediaManager") << "LLMediaManager::initClass" << LL_ENDL;
 	// Initialize impl classes here - this breaks the encapsulation model
 	// but some of the initialization takes a long time and we only want to
 	// do it once at app startup before any of the impls have been created
@@ -84,12 +98,14 @@ void LLMediaManager::initClass( LLMediaManagerData* init_data )
 	LLMediaImplExample2::startup( init_data );
 
 #if LL_QUICKTIME_ENABLED
+	LL_DEBUGS("MediaManager") << "LLMediaManager::initClass: starting quicktime." << LL_ENDL;
 	LLMediaImplQuickTime::startup( init_data );
 #endif // LL_QUICKTIME_ENABLED
 
-#if LL_GSTREAMER_ENABLED
+///#if LL_GSTREAMER_ENABLED
+	LL_DEBUGS("MediaManager") << "LLMediaManager::initClass: starting gstreamer" << LL_ENDL;
 	LLMediaImplGStreamer::startup( init_data );
-#endif // LL_GSTREAMER_ENABLED
+///#endif // LL_GSTREAMER_ENABLED
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,9 +145,9 @@ void LLMediaManager::cleanupClass()
 	LLMediaImplQuickTime::closedown();
 #endif // LL_QUICKTIME_ENABLED
 
-#if LL_GSTREAMER_ENABLED
+///#if LL_GSTREAMER_ENABLED
 	LLMediaImplGStreamer::closedown();
-#endif // LL_QUICKTIME_ENABLED
+///#endif // LL_QUICKTIME_ENABLED
 
 	if ( sInstance )
 		delete sInstance;

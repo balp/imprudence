@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -237,11 +237,7 @@ LLFloaterTexturePicker::LLFloaterTexturePicker(
 
 	if(mInventoryPanel)
 	{
-		U32 filter_types = 0x0;
-		filter_types |= 0x1 << LLInventoryType::IT_TEXTURE;
-		filter_types |= 0x1 << LLInventoryType::IT_SNAPSHOT;
-
-		mInventoryPanel->setFilterTypes(filter_types);
+		mInventoryPanel->setFilterTypes( LLInventoryType::NIT_IMAGE );
 		//mInventoryPanel->setFilterPermMask(getFilterPermMask());  //Commented out due to no-copy texture loss.
 		mInventoryPanel->setFilterPermMask(immediate_filter_perm_mask);
 		mInventoryPanel->setSelectCallback(onSelectionChange, this);
@@ -352,6 +348,13 @@ void LLFloaterTexturePicker::updateImageStats()
 		else
 		{
 			mResolutionLabel->setTextArg("[DIMENSIONS]", std::string("[? x ?]"));
+		}
+		if (gAgent.isGodlike())
+		{
+			std::string tstring = "Pick: ";
+			std::string image_id_string = mTexturep->getID().asString();
+			tstring = tstring + image_id_string.replace(24, 35, 12, '*'); // hide last segment to discourage theft
+			setTitle(tstring);
 		}
 	}
 }
@@ -483,9 +486,9 @@ void LLFloaterTexturePicker::draw()
 		LLRect local_rect = getLocalRect();
 		if (gFocusMgr.childHasKeyboardFocus(this) && mOwner->isInVisibleChain() && mContextConeOpacity > 0.001f)
 		{
-			LLGLSNoTexture no_texture;
+			gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 			LLGLEnable(GL_CULL_FACE);
-			gGL.begin(LLVertexBuffer::QUADS);
+			gGL.begin(LLRender::QUADS);
 			{
 				gGL.color4f(0.f, 0.f, 0.f, CONTEXT_CONE_IN_ALPHA * mContextConeOpacity);
 				gGL.vertex2i(owner_rect.mLeft, owner_rect.mTop);

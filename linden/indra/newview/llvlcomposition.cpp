@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -79,8 +79,13 @@ LLVLComposition::LLVLComposition(LLSurface *surfacep, const U32 width, const F32
 	// Initialize the texture matrix to defaults.
 	for (S32 i = 0; i < CORNER_COUNT; ++i)
 	{
-		mStartHeight[i] = gSavedSettings.getF32("TerrainColorStartHeight");
-		mHeightRange[i] = gSavedSettings.getF32("TerrainColorHeightRange");
+		//Zwag: I'm making these static values because they are a LARGE performance problem
+		// right now, and I've never heard of anyone changing them, they are not referenced
+		// elsewhere, and have not changed in defaults since the original source code release.
+		// We can move these back to signal connected statics if they really become important
+		// variables in the future.
+		mStartHeight[i] = 20.f;//gSavedSettings.getF32("TerrainColorStartHeight");
+		mHeightRange[i] = 60.f;//gSavedSettings.getF32("TerrainColorHeightRange");
 	}
 	mTexScaleX = 16.f;
 	mTexScaleY = 16.f;

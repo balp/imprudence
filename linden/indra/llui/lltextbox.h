@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -88,8 +88,7 @@ public:
 	void			setVPad(S32 pixels)						{ mVPad = pixels; }
 	void			setRightAlign()							{ mHAlign = LLFontGL::RIGHT; }
 	void			setHAlign( LLFontGL::HAlign align )		{ mHAlign = align; }
-	void			setClickedCallback( void (*cb)(void *data) ){ mClickedCallback = cb; }		// mouse down and up within button
-	void			setCallbackUserData( void* data )		{ mCallbackUserData = data; }
+	void			setClickedCallback( void (*cb)(void *data), void* data = NULL ){ mClickedCallback = cb; mCallbackUserData = data; }		// mouse down and up within button
 
 	const LLFontGL* getFont() const							{ return mFontGL; }
 

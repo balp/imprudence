@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -40,6 +40,13 @@
 #include "llviewercamera.h"
 
 class LLGLSLShader;
+
+class LLWLPresetsObserver
+{
+public:
+	virtual ~LLWLPresetsObserver() { };
+	virtual void changed() = 0;
+};
  
 // color control
 struct WLColorControl {
@@ -135,7 +142,7 @@ public:
 	void savePresets(const std::string & fileName);
 
 	/// load an individual preset into the sky
-	void loadPreset(const std::string & name);
+	void loadPreset(const std::string & name,bool propogate=true);
 
 	/// save the parameter presets to file
 	void savePreset(const std::string & name);
@@ -195,6 +202,10 @@ public:
 	// singleton pattern implementation
 	static LLWLParamManager * instance();
 
+	// manage observers
+	static void addObserver(LLWLPresetsObserver* observer);
+	static void removeObserver(LLWLPresetsObserver* observer);
+	static void notifyObservers();
 
 public:
 
@@ -250,12 +261,13 @@ public:
 	F32 mDomeRadius;
 	
 	// list of all the parameters, listed by name
-	std::map<std::string, LLWLParamSet> mParamList;
-	
+	std::map<std::string, LLWLParamSet> mParamList;	
 	
 private:
 	// our parameter manager singleton instance
 	static LLWLParamManager * sInstance;
+	
+	static std::vector<LLWLPresetsObserver*> sObservers;
 
 };
 

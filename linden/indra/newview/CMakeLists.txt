@@ -5,9 +5,11 @@ project(viewer)
 include(00-Common)
 include(Boost)
 include(BuildVersion)
+include(DBusGlib)
 include(DirectX)
 include(ELFIO)
 include(FMOD)
+include(OPENAL)
 include(FindOpenGL)
 include(LLAudio)
 include(LLCharacter)
@@ -31,7 +33,6 @@ include(NDOF)
 include(TemplateCheck)
 include(UI)
 include(UnixInstall)
-include(LLKDU)
 include(ViewerMiscLibs)
 
 if (WINDOWS)
@@ -56,9 +57,15 @@ include_directories(
     ${LLXML_INCLUDE_DIRS}
     ${LSCRIPT_INCLUDE_DIRS}
     ${LSCRIPT_INCLUDE_DIRS}/lscript_compile
+    ${GSTREAMER_INCLUDE_DIRS}
     )
 
 set(viewer_SOURCE_FILES
+    floaterlogin.cpp
+    hippoGridManager.cpp
+    hippoLimits.cpp
+    hippoRestRequest.cpp
+    jcfloater_animation_list.cpp
     llagent.cpp
     llagentdata.cpp
     llagentlanguage.cpp
@@ -119,10 +126,12 @@ set(viewer_SOURCE_FILES
     llfloaterabout.cpp
     llfloateractivespeakers.cpp
     llfloateranimpreview.cpp
+    llfloaterassetbrowser.cpp
     llfloaterauction.cpp
     llfloateravatarinfo.cpp
     llfloateravatarpicker.cpp
     llfloateravatartextures.cpp
+    llfloaterbeacons.cpp
     llfloaterbuildoptions.cpp
     llfloaterbulkpermission.cpp
     llfloaterbump.cpp
@@ -149,7 +158,6 @@ set(viewer_SOURCE_FILES
     llfloatergroupinvite.cpp
     llfloatergroups.cpp
     llfloaterhardwaresettings.cpp
-    llfloaterhtml.cpp
     llfloaterhtmlhelp.cpp
     llfloaterhud.cpp
     llfloaterimagepreview.cpp
@@ -164,6 +172,7 @@ set(viewer_SOURCE_FILES
     llfloatermute.cpp
     llfloaternamedesc.cpp
     llfloaternewim.cpp
+    llfloaterobjectiminfo.cpp
     llfloateropenobject.cpp
     llfloaterparcel.cpp
     llfloaterpermissionsmgr.cpp
@@ -199,6 +208,7 @@ set(viewer_SOURCE_FILES
     llglsandbox.cpp
     llgroupmgr.cpp
     llgroupnotify.cpp
+    llhomelocationresponder.cpp
     llhoverview.cpp
     llhudeffectbeam.cpp
     llhudeffect.cpp
@@ -417,6 +427,7 @@ set(viewer_SOURCE_FILES
     llwearablelist.cpp
     llweb.cpp
     llwebbrowserctrl.cpp
+    llwindlightremotectrl.cpp
     llwind.cpp
     llwlanimator.cpp
     llwldaycycle.cpp
@@ -428,7 +439,16 @@ set(viewer_SOURCE_FILES
     llxmlrpctransaction.cpp
     noise.cpp
     pipeline.cpp
+    primbackup.cpp
+    rlvhandler.cpp
+    rlvhelper.cpp
+    rlvmultistringsearch.cpp
+    rlvextensions.cpp
+    rlvfloaterbehaviour.cpp
     )
+
+set(VIEWER_BINARY_NAME "imprudence-bin" CACHE STRING
+    "The name of the viewer executable to create.")
 
 if (LINUX)
   # We can't set these flags for Darwin, because they get passed to
@@ -447,7 +467,11 @@ endif (LINUX)
 set(viewer_HEADER_FILES
     CMakeLists.txt
     ViewerInstall.cmake
-
+    floaterlogin.h
+    hippoGridManager.h
+    hippoLimits.h
+    hippoRestRequest.h
+    jcfloater_animation_list.h
     llagent.h
     llagentdata.h
     llagentlanguage.h
@@ -510,10 +534,12 @@ set(viewer_HEADER_FILES
     llfloaterabout.h
     llfloateractivespeakers.h
     llfloateranimpreview.h
+    llfloaterassetbrowser.h
     llfloaterauction.h
     llfloateravatarinfo.h
     llfloateravatarpicker.h
     llfloateravatartextures.h
+    llfloaterbeacons.h
     llfloaterbuildoptions.h
     llfloaterbulkpermission.h
     llfloaterbump.h
@@ -540,7 +566,6 @@ set(viewer_HEADER_FILES
     llfloatergroupinvite.h
     llfloatergroups.h
     llfloaterhardwaresettings.h
-    llfloaterhtml.h
     llfloaterhtmlhelp.h
     llfloaterhud.h
     llfloaterimagepreview.h
@@ -555,6 +580,7 @@ set(viewer_HEADER_FILES
     llfloatermute.h
     llfloaternamedesc.h
     llfloaternewim.h
+    llfloaterobjectiminfo.h
     llfloateropenobject.h
     llfloaterparcel.h
     llfloaterpermissionsmgr.h
@@ -589,6 +615,7 @@ set(viewer_HEADER_FILES
     llgivemoney.h
     llgroupmgr.h
     llgroupnotify.h
+    llhomelocationresponder.h
     llhoverview.h
     llhudeffect.h
     llhudeffectbeam.h
@@ -813,6 +840,7 @@ set(viewer_HEADER_FILES
     llwebbrowserctrl.h
     llwind.h
     llwindebug.h
+    llwindlightremotectrl.h
     llwlanimator.h
     llwldaycycle.h
     llwlparammanager.h
@@ -824,9 +852,17 @@ set(viewer_HEADER_FILES
     macmain.h
     noise.h
     pipeline.h
+    primbackup.h
     randgauss.h
     VertexCache.h
     VorbisFramework.h
+    rlvdefines.h
+    rlvevent.h
+    rlvhandler.h
+    rlvhelper.h
+    rlvmultistringsearch.h
+    rlvextensions.h
+    rlvfloaterbehaviour.h
     )
 
 source_group("CMake Rules" FILES ViewerInstall.cmake)
@@ -847,11 +883,11 @@ if (DARWIN)
 
   # Add resource files to the project.
   set(viewer_RESOURCE_FILES
-    secondlife.icns
+    viewer.icns
     macview.r
     gpu_table.txt
-    Info-SecondLife.plist
-    SecondLife.nib/
+    Info-Imprudence.plist
+    Imprudence.nib/
     # CMake doesn't seem to support Xcode language variants well just yet
     English.lproj/InfoPlist.strings
     English.lproj/language.txt
@@ -871,6 +907,7 @@ endif (DARWIN)
 
 if (LINUX)
     LIST(APPEND viewer_SOURCE_FILES llappviewerlinux.cpp)
+    LIST(APPEND viewer_SOURCE_FILES llappviewerlinux_api_dbus.cpp)
     LIST(APPEND CMAKE_EXE_LINKER_FLAGS -Wl,--as-needed)
 
     set(viewer_LIBRARIES
@@ -1015,11 +1052,14 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_about_land.xml
     skins/default/xui/en-us/floater_about.xml
     skins/default/xui/en-us/floater_active_speakers.xml
+    skins/default/xui/en-us/floater_animation_list.xml
     skins/default/xui/en-us/floater_animation_preview.xml
+    skins/default/xui/en-us/floater_asset_browser.xml
     skins/default/xui/en-us/floater_auction.xml
     skins/default/xui/en-us/floater_audio_volume.xml
     skins/default/xui/en-us/floater_avatar_picker.xml
     skins/default/xui/en-us/floater_avatar_textures.xml
+    skins/default/xui/en-us/floater_beacons.xml
     skins/default/xui/en-us/floater_build_options.xml
     skins/default/xui/en-us/floater_bulk_perms.xml
     skins/default/xui/en-us/floater_bumps.xml
@@ -1043,7 +1083,6 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_god_tools.xml
     skins/default/xui/en-us/floater_group_info.xml
     skins/default/xui/en-us/floater_hardware_settings.xml
-    skins/default/xui/en-us/floater_html.xml
     skins/default/xui/en-us/floater_hud.xml
     skins/default/xui/en-us/floater_image_preview.xml
     skins/default/xui/en-us/floater_import.xml
@@ -1062,6 +1101,7 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_live_lsleditor.xml
     skins/default/xui/en-us/floater_lsl_guide.xml
     skins/default/xui/en-us/floater_media_browser.xml
+    skins/default/xui/en-us/floater_mini_map.xml
     skins/default/xui/en-us/floater_moveview.xml
     skins/default/xui/en-us/floater_mute_object.xml
     skins/default/xui/en-us/floater_mute.xml
@@ -1069,6 +1109,7 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_name_description.xml
     skins/default/xui/en-us/floater_new_im.xml
     skins/default/xui/en-us/floater_new_outfit_dialog.xml
+    skins/default/xui/en-us/floater_object_im_info.xml
     skins/default/xui/en-us/floater_openobject.xml
     skins/default/xui/en-us/floater_pay_object.xml
     skins/default/xui/en-us/floater_pay.xml
@@ -1117,8 +1158,10 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_world_map.xml
     skins/default/xui/en-us/menu_inventory.xml
     skins/default/xui/en-us/menu_login.xml
+    skins/default/xui/en-us/menu_mini_map.xml
     skins/default/xui/en-us/menu_pie_attachment.xml
     skins/default/xui/en-us/menu_pie_avatar.xml
+    skins/default/xui/en-us/menu_pie_hud.xml
     skins/default/xui/en-us/menu_pie_land.xml
     skins/default/xui/en-us/menu_pie_object.xml
     skins/default/xui/en-us/menu_pie_self.xml
@@ -1153,6 +1196,7 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/panel_media_controls.xml
     skins/default/xui/en-us/panel_media_remote_expanded.xml
     skins/default/xui/en-us/panel_media_remote.xml
+    skins/default/xui/en-us/panel_mini_map.xml
     skins/default/xui/en-us/panel_overlaybar.xml
     skins/default/xui/en-us/panel_place_small.xml
     skins/default/xui/en-us/panel_place.xml
@@ -1182,6 +1226,9 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/panel_voice_options.xml
     skins/default/xui/en-us/panel_voice_remote_expanded.xml
     skins/default/xui/en-us/panel_voice_remote.xml
+    skins/default/xui/en-us/panel_windlight_controls.xml
+    skins/default/xui/en-us/panel_windlight_remote.xml
+    skins/default/xui/en-us/panel_windlight_remote_expanded.xml
     skins/default/xui/en-us/role_actions.xml
     skins/default/xui/en-us/strings.xml
     skins/default/xui/en-us/teleport_strings.xml
@@ -1239,8 +1286,23 @@ set_source_files_properties(${viewer_CHARACTER_FILES}
 
 list(APPEND viewer_SOURCE_FILES ${viewer_CHARACTER_FILES})
 
+if (WINDOWS)
+  file(GLOB viewer_INSTALLER_FILES installers/windows/*.nsi)
+
+  source_group("Installer Files" FILES ${viewer_INSTALLER_FILES})
+
+  set_source_files_properties(${viewer_INSTALLER_FILES}
+                              PROPERTIES HEADER_FILE_ONLY TRUE)
+
+  list(APPEND viewer_SOURCE_FILES ${viewer_INSTALLER_FILES})
+endif (WINDOWS)
+
+if (OPENAL)
+  set(LLSTARTUP_COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS} -DLL_OPENAL")
+endif (OPENAL)
+
 if (FMOD)
-  set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_FLAGS -DLL_FMOD)
+  set(LLSTARTUP_COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS} -DLL_FMOD")
 
   if (NOT WINDOWS)
     set(fmodwrapper_SOURCE_FILES fmodwrapper.cpp)
@@ -1253,6 +1315,7 @@ if (FMOD)
         PROPERTIES
         BUILD_WITH_INSTALL_RPATH 1
         INSTALL_NAME_DIR "@executable_path/../Resources"
+        LINK_FLAGS "-unexported_symbols_list ../newview/fmod_hidden_symbols.exp"
         )
     endif (DARWIN)
     set(FMODWRAPPER_LIBRARY fmodwrapper)
@@ -1260,33 +1323,31 @@ if (FMOD)
   endif (NOT WINDOWS)
 endif (FMOD)
 
+set_source_files_properties(llstartup.cpp PROPERTIES COMPILE_FLAGS "${LLSTARTUP_COMPILE_FLAGS}")
+
 list(APPEND viewer_SOURCE_FILES ${viewer_HEADER_FILES})
 
 set_source_files_properties(${viewer_HEADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 
-add_executable(imprudence-bin
+add_executable(${VIEWER_BINARY_NAME}
     WIN32
     MACOSX_BUNDLE
     ${viewer_SOURCE_FILES}
     )
-check_message_template(imprudence-bin)
-
-if (LLKDU_LIBRARY)
-  add_dependencies(imprudence-bin ${LLKDU_LIBRARY})
-endif (LLKDU_LIBRARY)
+check_message_template(${VIEWER_BINARY_NAME})
 
 set(PACKAGE OFF CACHE BOOL
     "Add a package target that builds an installer package.")
 
 if (WINDOWS)
     if(MSVC71)
-        set(release_flags "/MAP:Release/imprudence-bin.map /MAPINFO:LINES")
+        set(release_flags "/MAP:Release/${VIEWER_BINARY_NAME}.map /MAPINFO:LINES")
     else(MSVC71)
-        set(release_flags "/MAP:Release/imprudence-bin.map")
+        set(release_flags "/MAP:Release/${VIEWER_BINARY_NAME}.map")
     endif(MSVC71)
     
-    set_target_properties(imprudence-bin
+    set_target_properties(${VIEWER_BINARY_NAME}
         PROPERTIES
         LINK_FLAGS "/debug /NODEFAULTLIB:MSVCRT /SUBSYSTEM:WINDOWS"
         LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:MSVCRTD"
@@ -1296,20 +1357,20 @@ if (WINDOWS)
     # sets the 'working directory' for debugging from visual studio.
     if (NOT UNATTENDED)
         add_custom_command(
-            TARGET imprudence-bin PRE_BUILD
+            TARGET ${VIEWER_BINARY_NAME} PRE_BUILD
             COMMAND ${CMAKE_SOURCE_DIR}/tools/vstool/vstool.exe
             ARGS
               --solution 
               ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.sln
               --workingdir
-              imprudence-bin
+              ${VIEWER_BINARY_NAME}
               ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Setting the imprudence-bin working directory for debugging."
+            COMMENT "Setting the ${VIEWER_BINARY_NAME} working directory for debugging."
             )
     endif (NOT UNATTENDED)
 
     add_custom_command(
-        TARGET imprudence-bin PRE_BUILD
+        TARGET ${VIEWER_BINARY_NAME} PRE_BUILD
         COMMAND ${CMAKE_COMMAND}
         ARGS
           -E
@@ -1320,7 +1381,7 @@ if (WINDOWS)
         )
 
     add_custom_command(
-        TARGET imprudence-bin PRE_BUILD
+        TARGET ${VIEWER_BINARY_NAME} PRE_BUILD
         COMMAND ${CMAKE_COMMAND}
         ARGS
           -E
@@ -1330,10 +1391,10 @@ if (WINDOWS)
         COMMENT "Copying message.xml to the runtime folder."
         )
        
-    add_dependencies(imprudence-bin copy_win_libs)
+    add_dependencies(${VIEWER_BINARY_NAME} copy_win_libs)
 
     if (EXISTS ${CMAKE_SOURCE_DIR}/copy_win_scripts)
-      add_dependencies(imprudence-bin copy_win_scripts)
+      add_dependencies(${VIEWER_BINARY_NAME} copy_win_scripts)
     endif (EXISTS ${CMAKE_SOURCE_DIR}/copy_win_scripts)
         
     add_custom_command(
@@ -1343,14 +1404,14 @@ if (WINDOWS)
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
           --configuration=${CMAKE_CFG_INTDIR}
           --channel=${VIEWER_CHANNEL}
-          --login_channel=${VIEWER_CHANNEL}
+          --login_channel=${VIEWER_LOGIN_CHANNEL}
           --grid=${GRID}
           --source=${CMAKE_CURRENT_SOURCE_DIR}
               --artwork=${ARTWORK_DIR}
               --build=${CMAKE_CURRENT_BINARY_DIR}
               --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
               --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/touched.bat
-        DEPENDS imprudence-bin ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
+        DEPENDS ${VIEWER_BINARY_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
         )
     if (PACKAGE)
       add_custom_target(package ALL DEPENDS ${CMAKE_CFG_INTDIR}/touched.bat)
@@ -1358,7 +1419,8 @@ if (WINDOWS)
     endif (PACKAGE)
 endif (WINDOWS)
 
-target_link_libraries(imprudence-bin
+target_link_libraries(${VIEWER_BINARY_NAME}
+    ${NDOF_LIBRARY}
     ${LLAUDIO_LIBRARIES}
     ${LLCHARACTER_LIBRARIES}
     ${LLIMAGE_LIBRARIES}
@@ -1380,6 +1442,7 @@ target_link_libraries(imprudence-bin
     ${BOOST_PROGRAM_OPTIONS_LIBRARY}
     ${BOOST_REGEX_LIBRARY}
     ${BOOST_SIGNALS_LIBRARY}
+    ${DBUSGLIB_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${FMODWRAPPER_LIBRARY}
     ${OPENGL_LIBRARIES}
@@ -1387,11 +1450,8 @@ target_link_libraries(imprudence-bin
     ${SDL_LIBRARY}
     ${SMARTHEAP_LIBRARY}
     ${UI_LIBRARIES}
-    ${NDOF_LIBRARY}
-    ${QUICKTIME_LIBRARY}
     ${WINDOWS_LIBRARIES}
     ${XMLRPCEPI_LIBRARIES}
-    ${ZLIB_LIBRARIES}
     ${ELFIO_LIBRARIES}
     )
 
@@ -1405,7 +1465,7 @@ if (LINUX)
   add_custom_command(
       OUTPUT imprudence-stripped
       COMMAND strip
-      ARGS --strip-debug -o imprudence-stripped imprudence-bin
+      ARGS --strip-debug -o imprudence-stripped ${VIEWER_BINARY_NAME}
       DEPENDS imprudence-bin
       )
 
@@ -1418,7 +1478,7 @@ if (LINUX)
         ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
         --grid=${GRID}
         --channel=${VIEWER_CHANNEL}
-        --login_channel=${VIEWER_CHANNEL}
+        --login_channel=${VIEWER_LOGIN_CHANNEL}
         --installer_name=${product}
         --arch=${ARCH}
         --source=${CMAKE_CURRENT_SOURCE_DIR}
@@ -1438,11 +1498,11 @@ endif (LINUX)
 if (DARWIN)
   set(product "Imprudence")
   set_target_properties(
-    imprudence-bin
+    ${VIEWER_BINARY_NAME}
     PROPERTIES
     OUTPUT_NAME "${product}"
     MACOSX_BUNDLE_INFO_STRING "info string - localize me"
-    MACOSX_BUNDLE_ICON_FILE "secondlife.icns"
+    MACOSX_BUNDLE_ICON_FILE "viewer.icns"
     MACOSX_BUNDLE_GUI_IDENTIFIER "Imprudence"
     MACOSX_BUNDLE_LONG_VERSION_STRING "ververver"
     MACOSX_BUNDLE_BUNDLE_NAME "Imprudence"
@@ -1452,7 +1512,7 @@ if (DARWIN)
     )
 
   add_custom_command(
-    TARGET imprudence-bin POST_BUILD
+    TARGET ${VIEWER_BINARY_NAME} POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE}
     ARGS
       ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
@@ -1463,28 +1523,31 @@ if (DARWIN)
       --artwork=${ARTWORK_DIR}
       --build=${CMAKE_CURRENT_BINARY_DIR}
       --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
-    DEPENDS imprudence-bin ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
+    DEPENDS ${VIEWER_BINARY_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
     )
 
   if (PACKAGE)
-    add_custom_target(package
-      COMMAND
-        ${PYTHON_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
-        --grid=${GRID}
-        --configuration=${CMAKE_CFG_INTDIR}
-        --channel=${VIEWER_CHANNEL}
-        --login_channel=${VIEWER_CHANNEL}
-        --source=${CMAKE_CURRENT_SOURCE_DIR}
-        --artwork=${ARTWORK_DIR}
-        --build=${CMAKE_CURRENT_BINARY_DIR}
-        --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
-        --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
-      DEPENDS
-        imprudence-bin
-        ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
-      )
+      add_custom_target(package ALL DEPENDS ${VIEWER_BINARY_NAME}) 
       add_dependencies(package mac-updater mac-crash-logger)
+
+      add_custom_command(
+        TARGET package POST_BUILD
+        COMMAND ${PYTHON_EXECUTABLE}
+        ARGS
+          ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
+          --grid=${GRID}
+          --configuration=${CMAKE_CFG_INTDIR}
+          --channel=${VIEWER_CHANNEL}
+          --login_channel=${VIEWER_LOGIN_CHANNEL}
+          --source=${CMAKE_CURRENT_SOURCE_DIR}
+          --artwork=${ARTWORK_DIR}
+          --build=${CMAKE_CURRENT_BINARY_DIR}
+          --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
+          --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
+        DEPENDS
+          ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
+      )
+
   endif (PACKAGE)
 endif (DARWIN)
 

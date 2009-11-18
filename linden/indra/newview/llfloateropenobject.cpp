@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -207,7 +207,18 @@ void LLFloaterOpenObject::onClickMoveToInventory(void* data)
 void LLFloaterOpenObject::onClickMoveAndWear(void* data)
 {
 	LLFloaterOpenObject* self = (LLFloaterOpenObject*)data;
-	self->moveToInventory(true);
+// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c) | Deprecated: RLVa-0.2.2a
+	if ( (rlv_handler_t::isEnabled()) && (gRlvHandler.hasLockedAttachment()) )
+	{
+		// TODO-RLVa: once we have "Add to Outfit" and "Replace Outfit" working we don't need this anymore
+		self->moveToInventory(false);
+	}
+	else
+	{
+		self->moveToInventory(true);
+	}
+// [/RLVa:KB]
+//	self->moveToInventory(true);
 	self->close();
 }
 

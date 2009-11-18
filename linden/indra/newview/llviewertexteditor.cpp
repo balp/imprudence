@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -95,6 +95,13 @@ public:
 		}
 		else
 		{
+// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
+			if ( (rlv_handler_t::isEnabled()) && (gRlvHandler.hasBehaviour("viewnote")) )
+			{
+				return;
+			}
+// [/RLVa:KB]
+
 			// See if we can bring an existing preview to the front
 			if(!LLPreview::show(item->getUUID(), true))
 			{
@@ -616,7 +623,10 @@ BOOL LLViewerTextEditor::handleToolTip(S32 x, S32 y, std::string& msg, LLRect* s
 		LLView *viewp = *child_iter;
 		S32 local_x = x - viewp->getRect().mLeft;
 		S32 local_y = y - viewp->getRect().mBottom;
-		if( viewp->handleToolTip(local_x, local_y, msg, sticky_rect_screen ) )
+		if( viewp->pointInView(local_x, local_y) 
+			&& viewp->getVisible() 
+			&& viewp->getEnabled()
+			&& viewp->handleToolTip(local_x, local_y, msg, sticky_rect_screen ) )
 		{
 			return TRUE;
 		}
@@ -890,51 +900,9 @@ BOOL LLViewerTextEditor::handleHover(S32 x, S32 y, MASK mask)
 
 BOOL LLViewerTextEditor::handleMouseUp(S32 x, S32 y, MASK mask)
 {
-	BOOL	handled = FALSE;
+	BOOL handled = FALSE;
 
-	// let scrollbar have first dibs
-	handled = LLView::childrenHandleMouseUp(x, y, mask) != NULL;
-
-	// Used to enable I Agree checkbox if the user scrolled through entire text
-	BOOL was_scrolled_to_bottom = (mScrollbar->getDocPos() == mScrollbar->getDocPosMax());
-	if (mOnScrollEndCallback && was_scrolled_to_bottom)
-	{
-		mOnScrollEndCallback(mOnScrollEndData);
-	}
-
-	if( !handled && mTakesNonScrollClicks)
-	{
-		if( mIsSelecting )
-		{
-			// Finish selection
-			if( y > getTextRect().mTop )
-			{
-				mScrollbar->setDocPos( mScrollbar->getDocPos() - 1 );
-			}
-			else
-			if( y < getTextRect().mBottom )
-			{
-				mScrollbar->setDocPos( mScrollbar->getDocPos() + 1 );
-			}
-			
-			setCursorAtLocalPos( x, y, TRUE );
-			endSelection();
-
-			updateScrollFromCursor();
-		}
-		
-		if( !hasSelection() )
-		{
-			handleMouseUpOverSegment( x, y, mask );
-		}
-
-		handled = TRUE;
-	}
-
-	// Delay cursor flashing
-	resetKeystrokeTimer();
-
-	if( hasMouseCapture()  )
+	if( hasMouseCapture() )
 	{
 		if (mDragItem)
 		{
@@ -953,8 +921,15 @@ BOOL LLViewerTextEditor::handleMouseUp(S32 x, S32 y, MASK mask)
 			}
 		}
 		mDragItem = NULL;
-		gFocusMgr.setMouseCapture( NULL );
-		handled = TRUE;
+	}
+
+	handled = LLTextEditor::handleMouseUp(x,y,mask);
+
+	// Used to enable I Agree checkbox if the user scrolled through entire text
+	BOOL was_scrolled_to_bottom = (mScrollbar->getDocPos() == mScrollbar->getDocPosMax());
+	if (mOnScrollEndCallback && was_scrolled_to_bottom)
+	{
+		mOnScrollEndCallback(mOnScrollEndData);
 	}
 
 	return handled;
@@ -996,6 +971,24 @@ BOOL LLViewerTextEditor::handleRightMouseDown(S32 x, S32 y, MASK mask)
 	return handled;
 }
 
+BOOL LLViewerTextEditor::handleMiddleMouseDown(S32 x, S32 y, MASK mask)
+{
+	BOOL	handled = FALSE;
+	handled = childrenHandleMiddleMouseDown(x, y, mask) != NULL;
+	if (!handled)
+	{
+		handled = LLTextEditor::handleMiddleMouseDown(x, y, mask);
+	}
+	return handled;
+}
+
+BOOL LLViewerTextEditor::handleMiddleMouseUp(S32 x, S32 y, MASK mask)
+{
+	BOOL handled = childrenHandleMiddleMouseUp(x, y, mask) != NULL;
+
+	return handled;
+}
+
 BOOL LLViewerTextEditor::handleDoubleClick(S32 x, S32 y, MASK mask)
 {
 	BOOL	handled = FALSE;
@@ -1018,7 +1011,6 @@ BOOL LLViewerTextEditor::handleDoubleClick(S32 x, S32 y, MASK mask)
 				}
 			}
 		}
-
 	
 		setCursorAtLocalPos( x, y, FALSE );
 		deselect();
@@ -1055,6 +1047,9 @@ BOOL LLViewerTextEditor::handleDoubleClick(S32 x, S32 y, MASK mask)
 
 		// delay cursor flashing
 		resetKeystrokeTimer();
+
+		// take selection to 'primary' clipboard
+		updatePrimary();
 
 		handled = TRUE;
 	}
@@ -1402,8 +1397,7 @@ void LLViewerTextEditor::openEmbeddedSound( LLInventoryItem* item )
 	const F32 SOUND_GAIN = 1.0f;
 	if(gAudiop)
 	{
-		F32 volume = gSavedSettings.getBOOL("MuteSounds") ? 0.f : (SOUND_GAIN * gSavedSettings.getF32("AudioLevelSFX"));
-		gAudiop->triggerSound(item->getAssetUUID(), gAgentID, volume, lpos_global);
+		gAudiop->triggerSound(item->getAssetUUID(), gAgentID, SOUND_GAIN, LLAudioEngine::AUDIO_TYPE_UI, lpos_global);
 	}
 	showCopyToInvDialog( item );
 }

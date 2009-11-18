@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -123,11 +123,18 @@ public:
 	void setOnHUDAttachment(BOOL on_hud) { mOnHUDAttachment = on_hud; }
 	void shift(const LLVector3& offset);
 
+	BOOL lineSegmentIntersect(const LLVector3& start, const LLVector3& end, LLVector3& intersection, BOOL debug_render = FALSE);
+
 	static void shiftAll(const LLVector3& offset);
 	static void renderAllHUD();
 	static void addPickable(std::set<LLViewerObject*> &pick_list);
 	static void reshape();
 	static void setDisplayText(BOOL flag) { sDisplayText = flag ; }
+// [RLVa:KB] - Checked: 2009-07-09 (RLVa-1.0.0f) | Added: RLVa-1.0.0f
+	const std::string& getObjectText() const						{ return mObjText; }
+	void               setObjectText(const std::string &utf8string)	{ mObjText = utf8string; }
+	static void        refreshAllObjectText();
+// [/RLVa:KB]
 protected:
 	LLHUDText(const U8 type);
 
@@ -173,6 +180,9 @@ private:
 	EVertAlignment	mVertAlignment;
 	S32				mLOD;
 	BOOL			mHidden;
+// [RLVa:KB] - Checked: 2009-07-09 (RLVa-1.0.0f) | Added: RLVa-1.0.0f
+	std::string     mObjText;
+// [/RLVa:KB]
 
 	static BOOL    sDisplayText ;
 	static std::set<LLPointer<LLHUDText> > sTextObjects;

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -32,84 +32,158 @@
 #ifndef LL_LLNETMAP_H
 #define LL_LLNETMAP_H
 
-#include "llmath.h"
-#include "lluictrl.h"
+#include "llpanel.h"
+#include "llmemberlistener.h"
 #include "v3math.h"
 #include "v3dmath.h"
 #include "v4color.h"
 #include "llimage.h"
 #include "llimagegl.h"
 
-class LLColor4U;
-class LLCoordGL;
 class LLTextBox;
-class LLMenuGL;
 
-class LLNetMap : public LLUICtrl
+typedef enum e_minimap_center
+{
+	MAP_CENTER_NONE = 0,
+	MAP_CENTER_CAMERA = 1
+} EMiniMapCenter;
+
+class LLNetMap : public LLPanel
 {
 public:
-	LLNetMap(const std::string& name, const LLRect& rect, const LLColor4& bg_color );
+	LLNetMap(const std::string& name);
+
+	virtual	BOOL postBuild();
 	virtual ~LLNetMap();
 
 	virtual void	draw();
+	virtual void	reshape(S32 width, S32 height, BOOL called_from_parent = TRUE);
+	virtual BOOL	handleMouseDown(S32 x, S32 y, MASK mask);
+	virtual BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
+	virtual BOOL	handleHover( S32 x, S32 y, MASK mask );
 	virtual BOOL	handleDoubleClick( S32 x, S32 y, MASK mask );
 	virtual BOOL	handleRightMouseDown( S32 x, S32 y, MASK mask );
 	virtual BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks);
 	virtual BOOL	handleToolTip( S32 x, S32 y, std::string& msg, LLRect* sticky_rect_screen );
 
+	void			renderScaledPointGlobal( const LLVector3d& pos, const LLColor4U &color, F32 radius );
+
+private:
+
 	void			setScale( F32 scale );
+
+	// Not used at present
 	void			translatePan( F32 delta_x, F32 delta_y );
 	void			setPan( F32 x, F32 y )			{ mTargetPanX = x; mTargetPanY = y; }
 
-	const LLVector3d& getObjectImageCenterGlobal()	{ return mObjectImageCenterGlobal; }
 	void renderPoint(const LLVector3 &pos, const LLColor4U &color, 
 					 S32 diameter, S32 relative_height = 0);
-	void			renderScaledPointGlobal( const LLVector3d& pos, const LLColor4U &color, F32 radius );
+	LLVector3		globalPosToView(const LLVector3d& global_pos, BOOL rotated);
+	LLVector3d		viewPosToGlobal(S32 x,S32 y, BOOL rotated);
 
-	LLVector3		globalPosToView(const LLVector3d& global_pos);
-	LLVector3d		viewPosToGlobal(S32 x,S32 y);
+	void			drawTracking( const LLVector3d& pos_global,
+							BOOL rotated,
+							const LLColor4& color,
+							BOOL draw_arrow = TRUE);
 
-	static void		setRotateMap( BOOL b ) { LLNetMap::sRotateMap = b; }
-	static void		handleZoomLevel(void* which);
-
-	void			drawTracking( const LLVector3d& pos_global, 
-								  const LLColor4& color,
-								  BOOL draw_arrow = TRUE);
-
-protected:
 	void			setDirectionPos( LLTextBox* text_box, F32 rotation );
+	void			updateMinorDirections();
 	void			createObjectImage();
-	static void		teleport( const LLVector3d& destination );
-	static void		fly( const LLVector3d& destination );
 
-public:
 	LLHandle<LLView>	mPopupMenuHandle;
-	LLColor4		mBackgroundColor;
 
 	F32				mScale;					// Size of a region in pixels
 	F32				mPixelsPerMeter;		// world meters to map pixels
 	F32				mObjectMapTPM;			// texels per meter on map
-	F32				mObjectMapPixels;		// Width of object map in pixels;
+	F32				mObjectMapPixels;		// Width of object map in pixels
+	F32				mDotRadius;				// Size of avatar markers
 	F32				mTargetPanX;
 	F32				mTargetPanY;
 	F32				mCurPanX;
 	F32				mCurPanY;
+
+	BOOL			mPanning;			// map has been dragged
+	S32				mMouseDownPanX;		// value at start of drag
+	S32				mMouseDownPanY;		// value at start of drag
+	S32				mMouseDownX;
+	S32				mMouseDownY;
+
 	BOOL			mUpdateNow;
 	LLVector3d		mObjectImageCenterGlobal;
 	LLPointer<LLImageRaw> mObjectRawImagep;
 	LLPointer<LLImageGL>	mObjectImagep;
-	LLTextBox*		mTextBoxEast;
-	LLTextBox*		mTextBoxNorth;
-	LLTextBox*		mTextBoxWest;
-	LLTextBox*		mTextBoxSouth;
 
-	LLTextBox*		mTextBoxSouthEast;
-	LLTextBox*		mTextBoxNorthEast;
-	LLTextBox*		mTextBoxNorthWest;
-	LLTextBox*		mTextBoxSouthWest;
+private:
+	LLUUID				mClosestAgentToCursor;
+	LLUUID				mClosestAgentAtLastRightClick;
 
 	static BOOL		sRotateMap;
 	static LLNetMap*	sInstance;
+	static BOOL isAgentUnderCursor(void*) { return sInstance && sInstance->mClosestAgentToCursor.notNull(); }
+	static BOOL outsideSlop(S32 x, S32 y, S32 start_x, S32 start_y);
+
+	static void showAgentProfile(void*);
+	BOOL isAgentUnderCursor() { return mClosestAgentToCursor.notNull(); }
+
+	class LLScaleMap : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLCenterMap : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLCheckCenterMap : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLRotateMap : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLCheckRotateMap : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLShowWorldMap : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLStopTracking : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLEnableTracking : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLShowAgentProfile : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
+
+	class LLEnableProfile : public LLMemberListener<LLNetMap>
+	{
+	public:
+		/*virtual*/ bool handleEvent(LLPointer<LLEvent> event, const LLSD& userdata);
+	};
 };
 
 

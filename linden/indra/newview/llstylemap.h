@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -47,7 +47,8 @@ public:
 	LLStyleMap();
 	~LLStyleMap();
 	// Just like the [] accessor but it will add the entry in if it doesn't exist.
-	const LLStyleSP &lookup(const LLUUID &source); 
+	const LLStyleSP &lookupAgent(const LLUUID &source);
+	const LLStyleSP &lookup(const LLUUID &source, const std::string& link);
 	static LLStyleMap &instance();
 
 	// Forces refresh of the entries, call when something changes (e.g. link color).

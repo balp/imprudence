@@ -6,7 +6,7 @@
  *
  * $LicenseInfo:firstyear=2005&license=viewergpl$
  * 
- * Copyright (c) 2005-2008, Linden Research, Inc.
+ * Copyright (c) 2005-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -355,8 +355,11 @@ LLIOPipe::EStatus LLIOSocketReader::process_impl(
 	}
 	else if(APR_STATUS_IS_EAGAIN(status))
 	{
+/*Commented out by Aura 9-9-8 for DEV-19961.
 		// everything is fine, but we can terminate this process pump.
+	
 		rv = STATUS_BREAK;
+*/
 	}
 	else
 	{

@@ -3,7 +3,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -517,6 +517,7 @@ public:
 	LLScrollListItem*	getFirstSelected() const;
 	virtual S32			getFirstSelectedIndex() const;
 	std::vector<LLScrollListItem*> getAllSelected() const;
+	LLDynamicArray<LLUUID> 	getSelectedIDs();
 	LLScrollListItem*	getLastSelectedItem() const { return mLastSelected; }
 
 	// iterate over all items

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2003&license=viewergpl$
  * 
- * Copyright (c) 2003-2008, Linden Research, Inc.
+ * Copyright (c) 2003-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -598,6 +598,7 @@ char* _PREHASH_FromAgentId = LLMessageStringTable::getInstance()->getString("Fro
 char* _PREHASH_Type = LLMessageStringTable::getInstance()->getString("Type");
 char* _PREHASH_ChatType = LLMessageStringTable::getInstance()->getString("ChatType");
 char* _PREHASH_ReportData = LLMessageStringTable::getInstance()->getString("ReportData");
+char* _PREHASH_MonoScore = LLMessageStringTable::getInstance()->getString("MonoScore");
 char* _PREHASH_RequestBlock = LLMessageStringTable::getInstance()->getString("RequestBlock");
 char* _PREHASH_GrantData = LLMessageStringTable::getInstance()->getString("GrantData");
 char* _PREHASH_DetachAttachmentIntoInv = LLMessageStringTable::getInstance()->getString("DetachAttachmentIntoInv");

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -59,6 +59,7 @@
 #include "llpostprocess.h"
 
 #undef max
+
 
 LLFloaterWindLight* LLFloaterWindLight::sWindLight = NULL;
 
@@ -227,6 +228,10 @@ void LLFloaterWindLight::initCallbacks(void) {
 	// Dome
 	childSetCommitCallback("WLGamma", onFloatControlMoved, &param_mgr->mWLGamma);
 	childSetCommitCallback("WLStarAlpha", onStarAlphaMoved, NULL);
+
+	// next/prev buttons
+	childSetAction("next", onClickNext, this);
+	childSetAction("prev", onClickPrev, this);
 }
 
 void LLFloaterWindLight::onClickHelp(void* data)
@@ -316,6 +321,15 @@ void LLFloaterWindLight::syncMenu()
 
 	LLWLParamSet& currentParams = param_mgr->mCurParams;
 	//std::map<std::string, LLVector4> & currentParams = param_mgr->mCurParams.mParamValues;
+
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g)
+	// Fixes LL "bug" (preset name isn't kept synchronized)
+	LLComboBox* comboBox = getChild<LLComboBox>("WLPresetsCombo");
+	if (comboBox->getSelectedItemLabel() != currentParams.mName)
+	{
+		comboBox->setSimple(currentParams.mName);
+	}
+// [/RLVa:KB]
 
 	// blue horizon
 	param_mgr->mBlueHorizon = currentParams.getVector(param_mgr->mBlueHorizon.mName, err);
@@ -454,14 +468,26 @@ LLFloaterWindLight* LLFloaterWindLight::instance()
 }
 void LLFloaterWindLight::show()
 {
-	LLFloaterWindLight* windLight = instance();
-	windLight->syncMenu();
+	if (!sWindLight)
+	{
+		LLFloaterWindLight* windLight = instance();
+		windLight->syncMenu();
 
-	// comment in if you want the menu to rebuild each time
-	//LLUICtrlFactory::getInstance()->buildFloater(windLight, "floater_windlight_options.xml");
-	//windLight->initCallbacks();
-
-	windLight->open();
+		// comment in if you want the menu to rebuild each time
+		//LLUICtrlFactory::getInstance()->buildFloater(windLight, "floater_windlight_options.xml");
+		//windLight->initCallbacks();
+	}
+	else
+	{
+		if (sWindLight->getVisible())
+		{
+			sWindLight->close();
+		}
+		else
+		{
+			sWindLight->open();
+		}
+	}
 }
 
 bool LLFloaterWindLight::isOpen()
@@ -991,4 +1017,52 @@ void LLFloaterWindLight::deactivateAnimator()
 {
 	LLWLParamManager::instance()->mAnimator.mIsRunning = false;
 	LLWLParamManager::instance()->mAnimator.mUseLindenTime = false;
+}
+
+void LLFloaterWindLight::onClickNext(void* user_data)
+{
+	LLWLParamManager * param_mgr = LLWLParamManager::instance();
+	LLWLParamSet& currentParams = param_mgr->mCurParams;
+
+	// find place of current param
+	std::map<std::string, LLWLParamSet>::iterator mIt = 
+		param_mgr->mParamList.find(currentParams.mName);
+
+	// if at the end, loop
+	std::map<std::string, LLWLParamSet>::iterator last = param_mgr->mParamList.end(); --last;
+	if(mIt == last) 
+	{
+		mIt = param_mgr->mParamList.begin();
+	}
+	else
+	{
+		mIt++;
+	}
+	param_mgr->mAnimator.mIsRunning = false;
+	param_mgr->mAnimator.mUseLindenTime = false;
+	param_mgr->loadPreset(mIt->first, true);
+}
+
+void LLFloaterWindLight::onClickPrev(void* user_data)
+{
+	LLWLParamManager * param_mgr = LLWLParamManager::instance();
+	LLWLParamSet& currentParams = param_mgr->mCurParams;
+
+	// find place of current param
+	std::map<std::string, LLWLParamSet>::iterator mIt = 
+		param_mgr->mParamList.find(currentParams.mName);
+
+	// if at the beginning, loop
+	if(mIt == param_mgr->mParamList.begin()) 
+	{
+		std::map<std::string, LLWLParamSet>::iterator last = param_mgr->mParamList.end(); --last;
+		mIt = last;
+	}
+	else
+	{
+		mIt--;
+	}
+	param_mgr->mAnimator.mIsRunning = false;
+	param_mgr->mAnimator.mUseLindenTime = false;
+	param_mgr->loadPreset(mIt->first, true);
 }

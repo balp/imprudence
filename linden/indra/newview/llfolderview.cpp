@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -281,7 +281,28 @@ void LLFolderViewItem::refreshFromListener()
 {
 	if(mListener)
 	{
+		//Super crazy hack to build the creator search label - RK
+		LLInventoryItem* item = gInventory.getItem(mListener->getUUID());
+		std::string creator_name;
+		if(item)
+		{
+			if(item->getCreatorUUID().notNull())
+			{
+				gCacheName->getFullName(item->getCreatorUUID(), creator_name);
+			}
+		}
+		mLabelCreator = creator_name;
+		/*if(creator_name == "(Loading...)")
+			mLabelCreator = "";
+		else
+			mLabelCreator = creator_name;*/
+		
+		//Label for name search
 		mLabel = mListener->getDisplayName();
+
+		//Build label for combined search - RK
+		mLabelAll = mLabel + " " + mLabelCreator;
+
 		setIcon(mListener->getIcon());
 		time_t creation_date = mListener->getCreationDate();
 		if (mCreationDate != creation_date)
@@ -299,12 +320,26 @@ void LLFolderViewItem::refresh()
 	refreshFromListener();
 	
 	std::string searchable_label(mLabel);
-	searchable_label.append(mLabelSuffix);
-	LLStringUtil::toUpper(searchable_label);
+	std::string searchable_label_creator(mLabelCreator);
+	std::string searchable_label_all(mLabelAll);
 
-	if (mSearchableLabel.compare(searchable_label))
+	//add the (no modify), (no transfer) etc stuff to each label.
+	searchable_label.append(mLabelSuffix);
+	searchable_label_creator.append(mLabelSuffix);
+	searchable_label_all.append(mLabelSuffix);
+
+	//all labels need to be uppercase.
+	LLStringUtil::toUpper(searchable_label);
+	LLStringUtil::toUpper(searchable_label_creator);
+	LLStringUtil::toUpper(searchable_label_all);
+
+	if (mSearchableLabel.compare(searchable_label) || 
+		mSearchableLabelCreator.compare(searchable_label_creator))
 	{
 		mSearchableLabel.assign(searchable_label);
+		mSearchableLabelCreator.assign(searchable_label_creator);
+		mSearchableLabelAll.assign(searchable_label_all);
+
 		dirtyFilter();
 		// some part of label has changed, so overall width has potentially changed
 		if (mParentFolder)
@@ -588,7 +623,13 @@ void LLFolderViewItem::rename(const std::string& new_name)
 
 const std::string& LLFolderViewItem::getSearchableLabel() const
 {
-	return mSearchableLabel;
+	U32 search_type = gSavedSettings.getU32("InventorySearchType");
+	if(search_type == 4)
+		return mSearchableLabelAll;
+	else if(search_type == 1)
+		return mSearchableLabelCreator;
+	else
+		return mSearchableLabel;
 }
 
 const std::string& LLFolderViewItem::getName( void ) const
@@ -821,7 +862,7 @@ void LLFolderViewItem::draw()
 	// mShowSingleSelection is FALSE
 	if( mIsSelected )
 	{
-		LLGLSNoTexture gls_no_texture;
+		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		LLColor4 bg_color = sHighlightBgColor;
 		//const S32 TRAILING_PAD = 5;  // It just looks better with this.
 		if (!mIsCurSelection)
@@ -876,7 +917,7 @@ void LLFolderViewItem::draw()
 	}
 	if (mDragAndDropTarget)
 	{
-		LLGLSNoTexture gls_no_texture;
+		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		gl_rect_2d(
 			0, 
 			getRect().getHeight(), 
@@ -4479,7 +4520,7 @@ LLInventoryFilter::LLInventoryFilter(const std::string& name) :
 	mModified(FALSE),
 	mNeedTextRebuild(TRUE)
 {
-	mFilterOps.mFilterTypes = 0xffffffff;
+	mFilterOps.mFilterTypes = LLInventoryType::NIT_ALL;
 	mFilterOps.mMinDate = time_min();
 	mFilterOps.mMaxDate = time_max();
 	mFilterOps.mHoursAgo = 0;
@@ -4490,6 +4531,7 @@ LLInventoryFilter::LLInventoryFilter(const std::string& name) :
 
 	mSubStringMatchOffset = 0;
 	mFilterSubString.clear();
+	mFilterWorn = false;
 	mFilterGeneration = 0;
 	mMustPassGeneration = S32_MAX;
 	mMinRequiredGeneration = 0;
@@ -4521,9 +4563,12 @@ BOOL LLInventoryFilter::check(LLFolderViewItem* item)
 		earliest = 0;
 	}
 	LLFolderViewEventListener* listener = item->getListener();
+	const LLUUID& item_id = listener->getUUID();
 	mSubStringMatchOffset = mFilterSubString.size() ? item->getSearchableLabel().find(mFilterSubString) : std::string::npos;
-	BOOL passed = (0x1 << listener->getInventoryType() & mFilterOps.mFilterTypes || listener->getInventoryType() == LLInventoryType::IT_NONE)
+	BOOL passed = (listener->getNInventoryType() & mFilterOps.mFilterTypes || listener->getNInventoryType() == LLInventoryType::NIT_NONE)
 					&& (mFilterSubString.size() == 0 || mSubStringMatchOffset != std::string::npos)
+					&& (mFilterWorn == false || gAgent.isWearingItem(item_id) ||
+						gAgent.getAvatarObject() && gAgent.getAvatarObject()->isWearingAttachment(item_id))
 					&& ((listener->getPermissionMask() & mFilterOps.mPermissions) == mFilterOps.mPermissions)
 					&& (listener->getCreationDate() >= earliest && listener->getCreationDate() <= mFilterOps.mMaxDate);
 	return passed;
@@ -4544,6 +4589,7 @@ BOOL LLInventoryFilter::isNotDefault()
 {
 	return mFilterOps.mFilterTypes != mDefaultFilterOps.mFilterTypes 
 		|| mFilterSubString.size() 
+		|| mFilterWorn
 		|| mFilterOps.mPermissions != mDefaultFilterOps.mPermissions
 		|| mFilterOps.mMinDate != mDefaultFilterOps.mMinDate 
 		|| mFilterOps.mMaxDate != mDefaultFilterOps.mMaxDate
@@ -4552,8 +4598,9 @@ BOOL LLInventoryFilter::isNotDefault()
 
 BOOL LLInventoryFilter::isActive()
 {
-	return mFilterOps.mFilterTypes != 0xffffffff 
+	return mFilterOps.mFilterTypes != LLInventoryType::NIT_ALL
 		|| mFilterSubString.size() 
+		|| mFilterWorn
 		|| mFilterOps.mPermissions != PERM_NONE 
 		|| mFilterOps.mMinDate != time_min()
 		|| mFilterOps.mMaxDate != time_max()
@@ -4800,9 +4847,9 @@ void LLInventoryFilter::setModified(EFilterBehavior behavior)
 	}
 }
 
-BOOL LLInventoryFilter::isFilterWith(LLInventoryType::EType t)
+BOOL LLInventoryFilter::isFilterWith(LLInventoryType::NType t)
 {
-	return mFilterOps.mFilterTypes & (0x01 << t);
+	return mFilterOps.mFilterTypes & t;
 }
 
 std::string LLInventoryFilter::getFilterText()
@@ -4812,6 +4859,11 @@ std::string LLInventoryFilter::getFilterText()
 		return mFilterText;
 	}
 
+  return rebuildFilterText();
+}
+
+std::string LLInventoryFilter::rebuildFilterText()
+{
 	mNeedTextRebuild = FALSE;
 	std::string filtered_types;
 	std::string not_filtered_types;
@@ -4820,7 +4872,7 @@ std::string LLInventoryFilter::getFilterText()
 	S32 num_filter_types = 0;
 	mFilterText.clear();
 
-	if (isFilterWith(LLInventoryType::IT_ANIMATION))
+	if (isFilterWith(LLInventoryType::NIT_ANIMATION))
 	{
 		filtered_types += " Animations,";
 		filtered_by_type = TRUE;
@@ -4832,7 +4884,19 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_CALLINGCARD))
+	if (isFilterWith(LLInventoryType::NIT_BODYPART))
+	{
+		filtered_types += " Body Parts,";
+		filtered_by_type = TRUE;
+		num_filter_types++;
+	}
+	else
+	{
+		not_filtered_types += " Body Parts,";
+		filtered_by_all_types = FALSE;
+	}
+
+	if (isFilterWith(LLInventoryType::NIT_CALLCARD))
 	{
 		filtered_types += " Calling Cards,";
 		filtered_by_type = TRUE;
@@ -4844,7 +4908,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_WEARABLE))
+	if (isFilterWith(LLInventoryType::NIT_CLOTHING))
 	{
 		filtered_types += " Clothing,";
 		filtered_by_type = TRUE;
@@ -4856,7 +4920,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_GESTURE))
+	if (isFilterWith(LLInventoryType::NIT_GESTURE))
 	{
 		filtered_types += " Gestures,";
 		filtered_by_type = TRUE;
@@ -4868,7 +4932,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_LANDMARK))
+	if (isFilterWith(LLInventoryType::NIT_LANDMARK))
 	{
 		filtered_types += " Landmarks,";
 		filtered_by_type = TRUE;
@@ -4880,7 +4944,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_NOTECARD))
+	if (isFilterWith(LLInventoryType::NIT_NOTECARD))
 	{
 		filtered_types += " Notecards,";
 		filtered_by_type = TRUE;
@@ -4892,7 +4956,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 	
-	if (isFilterWith(LLInventoryType::IT_OBJECT) && isFilterWith(LLInventoryType::IT_ATTACHMENT))
+	if (isFilterWith(LLInventoryType::NIT_OBJECT))
 	{
 		filtered_types += " Objects,";
 		filtered_by_type = TRUE;
@@ -4904,7 +4968,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 	
-	if (isFilterWith(LLInventoryType::IT_LSL))
+	if (isFilterWith(LLInventoryType::NIT_SCRIPT_LSL2))
 	{
 		filtered_types += " Scripts,";
 		filtered_by_type = TRUE;
@@ -4916,7 +4980,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 	
-	if (isFilterWith(LLInventoryType::IT_SOUND))
+	if (isFilterWith(LLInventoryType::NIT_SOUND))
 	{
 		filtered_types += " Sounds,";
 		filtered_by_type = TRUE;
@@ -4928,7 +4992,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_TEXTURE))
+	if (isFilterWith(LLInventoryType::NIT_TEXTURE))
 	{
 		filtered_types += " Textures,";
 		filtered_by_type = TRUE;
@@ -4940,7 +5004,7 @@ std::string LLInventoryFilter::getFilterText()
 		filtered_by_all_types = FALSE;
 	}
 
-	if (isFilterWith(LLInventoryType::IT_SNAPSHOT))
+	if (isFilterWith(LLInventoryType::NIT_SNAPSHOT))
 	{
 		filtered_types += " Snapshots,";
 		filtered_by_type = TRUE;
@@ -4972,6 +5036,12 @@ std::string LLInventoryFilter::getFilterText()
 	{
 		mFilterText += " - Since Logoff";
 	}
+	
+	if (getFilterWorn())
+	{
+		mFilterText += " - Worn";
+	}
+	
 	return mFilterText;
 }
 

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -105,7 +105,7 @@ public:
 									F32 y_pixels, 
 									const LLColor4& color,
 									F32 relative_z = 0.f,
-									F32 dot_radius = 3.f);
+									F32 dot_radius = 5.f);
 
 	static void		drawTrackingCircle( const LLRect& rect, S32 x, S32 y, 
 										const LLColor4& color, 
@@ -136,11 +136,13 @@ protected:
 public:
 	LLColor4		mBackgroundColor;
 
-	static LLUIImagePtr	sAvatarYouSmallImage;
 	static LLUIImagePtr	sAvatarSmallImage;
-	static LLUIImagePtr	sAvatarLargeImage;
+	static LLUIImagePtr	sAvatarYouImage;
+	static LLUIImagePtr	sAvatarYouLargeImage;
+	static LLUIImagePtr	sAvatarLevelImage;
 	static LLUIImagePtr	sAvatarAboveImage;
 	static LLUIImagePtr	sAvatarBelowImage;
+
 	static LLUIImagePtr	sTelehubImage;
 	static LLUIImagePtr	sInfohubImage;
 	static LLUIImagePtr	sHomeImage;
@@ -189,6 +191,8 @@ public:
 	handle_list_t mVisibleRegions; // set every frame
 
 	static std::map<std::string,std::string> sStringsMap;
+
+	LLColor4		glyph_color_avatar;
 };
 
 #endif

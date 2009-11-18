@@ -5,7 +5,7 @@
 
 $LicenseInfo:firstyear=2006&license=mit$
 
-Copyright (c) 2006-2008, Linden Research, Inc.
+Copyright (c) 2006-2009, Linden Research, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,10 @@ def get_version(version_type):
     m = re.search('const S32 IMP_VERSION_MINOR = (\d+);', file_str)
     VER_MINOR = m.group(1)
     m = re.search('const S32 IMP_VERSION_PATCH = (\d+);', file_str)
-    version = "%(VER_MAJOR)s.%(VER_MINOR)s.%(VER_PATCH)s" % locals()
+    VER_PATCH = m.group(1)
+    m = re.search('const S32 IMP_VERSION_TEST = (\d+);', file_str)
+    VER_BUILD = m.group(1)
+    version = "%(VER_MAJOR)s.%(VER_MINOR)s.%(VER_PATCH)s.%(VER_TEST)s" % locals()
     return version
 
 def get_channel(version_type):

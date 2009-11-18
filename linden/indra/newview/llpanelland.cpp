@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -230,6 +230,12 @@ void LLPanelLandInfo::refresh()
 //static
 void LLPanelLandInfo::onClickClaim(void*)
 {
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC))
+	{
+		return;
+	}
+// [/RLVa:KB]
 	LLViewerParcelMgr::getInstance()->startBuyLand();
 }
 

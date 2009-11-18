@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -73,6 +73,8 @@
 #include "object_flags.h"
 
 #include "llappviewer.h"
+
+#include "primbackup.h"
 
 extern F32 gMinObjectDistance;
 extern BOOL gAnimateTextures;
@@ -163,15 +165,19 @@ U64 LLViewerObjectList::getIndex(const U32 local_id,
 
 BOOL LLViewerObjectList::removeFromLocalIDTable(const LLViewerObject &object)
 {
-	U32 local_id = object.mLocalID;
-	LLHost region_host = object.getRegion()->getHost();
-	U32 ip = region_host.getAddress();
-	U32 port = region_host.getPort();
-	U64 ipport = (((U64)ip) << 32) | (U64)port;
-	U32 index = sIPAndPortToIndex[ipport];
+	if (object.mRegionp)
+	{
+		U32 local_id = object.mLocalID;
+		LLHost region_host = object.getRegion()->getHost();
+		U32 ip = region_host.getAddress();
+		U32 port = region_host.getPort();
+		U64 ipport = (((U64)ip) << 32) | (U64)port;
+		U32 index = sIPAndPortToIndex[ipport];
 
-	U64	indexid = (((U64)index) << 32) | (U64)local_id;
-	return sIndexAndLocalIDToUUID.erase(indexid) > 0 ? TRUE : FALSE;
+		U64	indexid = (((U64)index) << 32) | (U64)local_id;
+		return sIndexAndLocalIDToUUID.erase(indexid) > 0 ? TRUE : FALSE;
+	}
+	return FALSE;
 }
 
 void LLViewerObjectList::setUUIDAndLocal(const LLUUID &id,
@@ -217,6 +223,11 @@ void LLViewerObjectList::processUpdateCore(LLViewerObject* objectp,
 
 	updateActive(objectp);
 
+	if(!just_created)
+		primbackup::getInstance()->prim_update(objectp);
+	
+
+
 	if (just_created) 
 	{
 		gPipeline.addObject(objectp);
@@ -246,6 +257,9 @@ void LLViewerObjectList::processUpdateCore(LLViewerObject* objectp,
 		objectp->mCreateSelected = false;
 		gViewerWindow->getWindow()->decBusyCount();
 		gViewerWindow->getWindow()->setCursor( UI_CURSOR_ARROW );
+
+		primbackup::getInstance()->newprim(objectp);
+
 	}
 }
 
@@ -823,9 +837,9 @@ void LLViewerObjectList::removeDrawable(LLDrawable* drawablep)
 	for (S32 i = 0; i < drawablep->getNumFaces(); i++)
 	{
 		LLViewerObject* objectp = drawablep->getFace(i)->getViewerObject();
-		mSelectPickList.erase(objectp);
-	}
-}
+					   mSelectPickList.erase(objectp);
+			   }
+		}
 
 BOOL LLViewerObjectList::killObject(LLViewerObject *objectp)
 {
@@ -1018,6 +1032,7 @@ void LLViewerObjectList::renderObjectsForMap(LLNetMap &netmap)
 	LLColor4 group_own_below_water_color = 
 						gColors.getColor( "NetMapGroupOwnBelowWater" );
 
+	F32 max_radius = gSavedSettings.getF32("MiniMapPrimMaxRadius");
 
 	for (S32 i = 0; i < mMapObjects.count(); i++)
 	{
@@ -1032,6 +1047,9 @@ void LLViewerObjectList::renderObjectsForMap(LLNetMap &netmap)
 		// LLWorld::getInstance()->getWaterHeight();
 
 		F32 approx_radius = (scale.mV[VX] + scale.mV[VY]) * 0.5f * 0.5f * 1.3f;  // 1.3 is a fudge
+
+		// DEV-17370 - megaprims of size > 4096 cause lag.  (go figger.)
+		approx_radius = llmin(approx_radius, max_radius);
 
 		LLColor4U color = above_water_color;
 		if( objectp->permYouOwner() )
@@ -1103,7 +1121,7 @@ void LLViewerObjectList::generatePickList(LLCamera &camera)
 
 		std::vector<LLDrawable*> pick_drawables;
 
-		for (LLWorld::region_list_t::iterator iter = LLWorld::getInstance()->getRegionList().begin(); 
+		for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin(); 
 			iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 		{
 			LLViewerRegion* region = *iter;

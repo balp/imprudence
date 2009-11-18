@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2000&license=viewergpl$
  * 
- * Copyright (c) 2000-2008, Linden Research, Inc.
+ * Copyright (c) 2000-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -53,7 +53,6 @@
 #include "llfloaterreporter.h"
 #include "llfloaterregioninfo.h"
 #include "llhttpnode.h"
-#include "llnetmap.h"
 #include "llsdutil.h"
 #include "llstartup.h"
 #include "llviewerobjectlist.h"
@@ -215,6 +214,7 @@ LLViewerRegion::LLViewerRegion(const U64 &handle,
 	mObjectPartition.push_back(new LLGrassPartition());		//PARTITION_GRASS
 	mObjectPartition.push_back(new LLVolumePartition());	//PARTITION_VOLUME
 	mObjectPartition.push_back(new LLBridgePartition());	//PARTITION_BRIDGE
+	mObjectPartition.push_back(new LLHUDParticlePartition());//PARTITION_HUD_PARTICLE
 	mObjectPartition.push_back(NULL);						//PARTITION_NONE
 	
 }
@@ -542,6 +542,7 @@ std::string LLViewerRegion::regionFlagsToString(U32 flags)
 const char* SIM_ACCESS_STR[] = { "Free Trial",
 						   "PG",
 						   "Mature",
+						   "Adult",
 						   "Offline",
 						   "Unknown" };
 							
@@ -559,12 +560,15 @@ std::string LLViewerRegion::accessToString(U8 sim_access)
 	case SIM_ACCESS_MATURE:
 		return SIM_ACCESS_STR[2];
 
-	case SIM_ACCESS_DOWN:
+	case SIM_ACCESS_ADULT:
 		return SIM_ACCESS_STR[3];
+
+	case SIM_ACCESS_DOWN:
+		return SIM_ACCESS_STR[4];
 
 	case SIM_ACCESS_MIN:
 	default:
-		return SIM_ACCESS_STR[4];
+		return SIM_ACCESS_STR[5];
 	}
 }
 
@@ -584,6 +588,10 @@ U8 LLViewerRegion::stringToAccess(const std::string& access_str)
 	{
 		sim_access = SIM_ACCESS_MATURE;
 	}
+	else if (access_str == SIM_ACCESS_STR[3])
+	{
+		sim_access = SIM_ACCESS_ADULT;
+	}
 	return sim_access;
 }
 
@@ -600,6 +608,9 @@ std::string LLViewerRegion::accessToShortString(U8 sim_access)
 
 	case SIM_ACCESS_MATURE:
 		return "M";
+
+	case SIM_ACCESS_ADULT:
+		return "A";
 
 	case SIM_ACCESS_MIN:
 	default:
@@ -906,10 +917,12 @@ bool LLViewerRegion::isAlive()
 
 BOOL LLViewerRegion::isOwnedSelf(const LLVector3& pos)
 {
-	if (mParcelOverlay)
+	if (mParcelOverlay && !gDisconnected)
 	{
 		return mParcelOverlay->isOwnedSelf(pos);
-	} else {
+	} 
+	else 
+	{
 		return FALSE;
 	}
 }
@@ -1023,17 +1036,24 @@ void LLViewerRegion::updateCoarseLocations(LLMessageSystem* msg)
 
 	U32 pos = 0x0;
 
+
 	S16 agent_index;
 	S16 target_index;
 	msg->getS16Fast(_PREHASH_Index, _PREHASH_You, agent_index);
 	msg->getS16Fast(_PREHASH_Index, _PREHASH_Prey, target_index);
 
+	BOOL has_agent_data = msg->has(_PREHASH_AgentData);
 	S32 count = msg->getNumberOfBlocksFast(_PREHASH_Location);
 	for(S32 i = 0; i < count; i++)
 	{
 		msg->getU8Fast(_PREHASH_Location, _PREHASH_X, x_pos, i);
 		msg->getU8Fast(_PREHASH_Location, _PREHASH_Y, y_pos, i);
 		msg->getU8Fast(_PREHASH_Location, _PREHASH_Z, z_pos, i);
+		LLUUID agent_id = LLUUID::null;
+		if(has_agent_data)
+		{
+			msg->getUUIDFast(_PREHASH_AgentData, _PREHASH_AgentID, agent_id, i);
+		}
 
 		//llinfos << "  object X: " << (S32)x_pos << " Y: " << (S32)y_pos
 		//		<< " Z: " << (S32)(z_pos * 4)
@@ -1059,6 +1079,10 @@ void LLViewerRegion::updateCoarseLocations(LLMessageSystem* msg)
 			pos <<= 8;
 			pos |= z_pos;
 			mMapAvatars.put(pos);
+			if(has_agent_data)
+			{
+				mMapAvatarIDs.put(agent_id);
+			}
 		}
 	}
 }
@@ -1387,8 +1411,12 @@ void LLViewerRegion::setSeedCapability(const std::string& url)
 	capabilityNames.append("DispatchRegionInfo");
 	capabilityNames.append("EstateChangeInfo");
 	capabilityNames.append("EventQueueGet");
-	capabilityNames.append("FetchInventoryDescendents");
+	capabilityNames.append("FetchInventory");
+	capabilityNames.append("WebFetchInventoryDescendents");
+	capabilityNames.append("FetchLib");
+	capabilityNames.append("FetchLibDescendents");
 	capabilityNames.append("GroupProposalBallot");
+	capabilityNames.append("HomeLocation");
 	capabilityNames.append("MapLayer");
 	capabilityNames.append("MapLayerGod");
 	capabilityNames.append("NewFileAgentInventory");
@@ -1404,6 +1432,7 @@ void LLViewerRegion::setSeedCapability(const std::string& url)
 	capabilityNames.append("SendUserReportWithScreenshot");
 	capabilityNames.append("ServerReleaseNotes");
 	capabilityNames.append("StartGroupProposal");
+	capabilityNames.append("UpdateAgentInformation");
 	capabilityNames.append("UpdateAgentLanguage");
 	capabilityNames.append("UpdateGestureAgentInventory");
 	capabilityNames.append("UpdateNotecardAgentInventory");

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -159,6 +159,7 @@ public:
 
 	virtual const std::string& getPrefix() { return LLStringUtil::null; }
 	virtual void restoreItem() {}
+	virtual void restoreToWorld() {}
 
 	// LLFolderViewEventListener functions
 	virtual const std::string& getName() const;
@@ -192,7 +193,15 @@ public:
 	virtual BOOL dragOrDrop(MASK mask, BOOL drop,
 							EDragAndDropType cargo_type,
 							void* cargo_data) { return FALSE; }
-	virtual LLInventoryType::EType getInventoryType() const { return mInvType; }
+
+	virtual LLInventoryType::EType getInventoryType() const
+	{
+		return mInvType;
+	}
+	virtual LLInventoryType::NType getNInventoryType() const
+	{
+		return mNInvType;
+	}
 
 	// LLInvFVBridge functionality
 	virtual void clearDisplayName() {}
@@ -221,6 +230,7 @@ protected:
 	LLInventoryPanel* mInventoryPanel;
 	LLUUID mUUID;	// item id
 	LLInventoryType::EType mInvType;
+	LLInventoryType::NType mNInvType;
 };
 
 
@@ -234,6 +244,11 @@ public:
 
 	virtual void selectItem();
 	virtual void restoreItem();
+
+	virtual void restoreToWorld();
+	virtual void restoreToWorldConfirm();
+	static  void restoreToWorldCallback(S32 option, void *userdata);
+
 
 	virtual LLUIImagePtr getIcon() const;
 	virtual const std::string& getDisplayName() const;
@@ -273,7 +288,6 @@ public:
 	virtual BOOL isItemRenameable() const;
 	virtual void selectItem();
 	virtual void restoreItem();
-
 
 	virtual LLUIImagePtr getIcon() const;
 	virtual BOOL renameItem(const std::string& new_name);

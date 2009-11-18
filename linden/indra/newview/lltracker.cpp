@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2003&license=viewergpl$
  * 
- * Copyright (c) 2003-2008, Linden Research, Inc.
+ * Copyright (c) 2003-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -180,8 +180,12 @@ void LLTracker::render3D()
 		}
 		else
 		{
-			renderBeacon( instance()->mTrackedPositionGlobal, gTrackColor, 
-					  	instance()->mBeaconText, instance()->mTrackedLocationName );
+			//renderBeacon( instance()->mTrackedPositionGlobal, gTrackColor, 
+			//		  	instance()->mBeaconText, instance()->mTrackedLocationName );
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a) | Added: RLVa-1.0.0a
+			renderBeacon(instance()->mTrackedPositionGlobal, gTrackColor, instance()->mBeaconText, 
+				(!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC)) ? instance()->mTrackedLocationName : rlv_handler_t::cstrHidden);
+// [/RLVa:KB]
 		}
 	}
 
@@ -222,8 +226,12 @@ void LLTracker::render3D()
 					// and back again
 					instance()->mHasReachedLandmark = FALSE;
 				}
-				renderBeacon( instance()->mTrackedPositionGlobal, gTrackColor, 
-							  instance()->mBeaconText, instance()->mTrackedLandmarkName );
+				//renderBeacon( instance()->mTrackedPositionGlobal, gTrackColor, 
+				//			  instance()->mBeaconText, instance()->mTrackedLandmarkName );
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a) | Added: RLVa-1.0.0a
+				renderBeacon( instance()->mTrackedPositionGlobal, gTrackColor, instance()->mBeaconText, 
+					(!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC)) ? instance()->mTrackedLandmarkName : rlv_handler_t::cstrHidden);
+// [/RLVa:KB]
 			}
 		}
 		else
@@ -251,8 +259,12 @@ void LLTracker::render3D()
 			}
 			else
 			{
-				renderBeacon( av_tracker.getGlobalPos(), gTrackColor, 
-						  	instance()->mBeaconText, av_tracker.getName() );
+				//renderBeacon( av_tracker.getGlobalPos(), gTrackColor, 
+				//		  	instance()->mBeaconText, av_tracker.getName() );
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a) | Added: RLVa-1.0.0a
+				renderBeacon( av_tracker.getGlobalPos(), gTrackColor, instance()->mBeaconText, 
+					(!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES)) ? av_tracker.getName() : rlv_handler_t::cstrHidden);
+// [/RLVa:KB]
 			}
 		}
 		else
@@ -445,7 +457,7 @@ void draw_shockwave(F32 center_z, F32 t, S32 steps, LLColor4 color)
 	F32 y = 0.f;
 
 	LLColor4 ccol = LLColor4(1,1,1,(1.f-t)*0.25f);
-	gGL.begin(LLVertexBuffer::TRIANGLE_FAN);
+	gGL.begin(LLRender::TRIANGLE_FAN);
 	gGL.color4fv(ccol.mV);
 	gGL.vertex3f(0.f, 0.f, center_z);
 	// make sure circle is complete
@@ -494,7 +506,8 @@ void LLTracker::renderBeacon(LLVector3d pos_global,
 
 	LLVector3 pos_agent = gAgent.getPosAgentFromGlobal(pos_global);
 
-	LLGLSTracker gls_tracker; // default - TEXTURE + CULL_FACE + LIGHTING + GL_BLEND + GL_ALPHA_TEST
+	LLGLSTracker gls_tracker; // default+ CULL_FACE + LIGHTING + GL_BLEND + GL_ALPHA_TEST
+	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	LLGLDisable cull_face(GL_CULL_FACE);
 	LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE);
 	
@@ -535,7 +548,7 @@ void LLTracker::renderBeacon(LLVector3d pos_global,
 			an *= 2.f;
 			an += 1.0f+dr;
 		
-			gGL.begin(LLVertexBuffer::TRIANGLE_STRIP);
+			gGL.begin(LLRender::TRIANGLE_STRIP);
 			gGL.color4fv(col_edge.mV);
 			gGL.vertex3f(-x*a, -y*a, z);
 			gGL.color4fv(col_edge_next.mV);

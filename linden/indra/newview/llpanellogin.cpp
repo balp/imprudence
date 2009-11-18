@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -33,6 +33,9 @@
 
 #include "llpanellogin.h"
 #include "llpanelgeneral.h"
+
+#include "hippoGridManager.h"
+#include "floaterlogin.h"
 
 #include "indra_constants.h"		// for key and mask constants
 #include "llfontgl.h"
@@ -76,6 +79,10 @@
 #include "llfloatertos.h"
 
 #include "llglheaders.h"
+
+// [RLVa:KB] - Version: 1.22.11 | Checked: 2009-07-08 (RLVa-1.0.0e)
+#include "rlvhandler.h"
+// [/RLVa:KB]
 
 #define USE_VIEWER_AUTH 0
 
@@ -133,21 +140,8 @@ void LLLoginHandler::parse(const LLSD& queryMap)
 	mFirstName = queryMap["first_name"].asString();
 	mLastName = queryMap["last_name"].asString();
 	
-	EGridInfo grid_choice = GRID_INFO_NONE;
-	if (queryMap["grid"].asString() == "sl beta grid")
-	{
-		grid_choice = GRID_INFO_ADITI;
-	}
-	else if (queryMap["grid"].asString() == "sl main grid")
-	{
-		grid_choice = GRID_INFO_AGNI;
-	}
-
-	if(grid_choice != GRID_INFO_NONE)
-	{
-		LLViewerLogin::getInstance()->setGridChoice(grid_choice);
-	}
-
+	const std::string &grid = queryMap["grid"].asString();
+	if (grid != "") gHippoGridManager->setCurrentGrid(grid);
 	std::string startLocation = queryMap["location"].asString();
 
 	if (startLocation == "specify")
@@ -347,23 +341,24 @@ LLPanelLogin::LLPanelLogin(const LLRect &rect,
 		combo->setCurrentByIndex( 0 );
 	}
 
-	combo->setCommitCallback( &LLPanelGeneral::set_start_location );
 
 	LLComboBox* server_choice_combo = sInstance->getChild<LLComboBox>("server_combo");
 	server_choice_combo->setCommitCallback(onSelectServer);
-	server_choice_combo->setFocusLostCallback(onServerComboLostFocus);
+	//server_choice_combo->setFocusLostCallback(onServerComboLostFocus);
 
 	childSetAction("connect_btn", onClickConnect, this);
+	childSetAction("grid_btn", onClickGrid, this);
 
 	setDefaultBtn("connect_btn");
 
 	// childSetAction("quit_btn", onClickQuit, this);
 
 	std::string imp_channel = gSavedSettings.getString("VersionChannelName");
-	std::string imp_version = llformat("%d.%d.%d",
+	std::string imp_version = llformat("%d.%d.%d %s",
 		IMP_VERSION_MAJOR,
 		IMP_VERSION_MINOR,
-		IMP_VERSION_PATCH );
+		IMP_VERSION_PATCH,
+		IMP_VERSION_TEST );
 
 	std::string ll_channel = LL_VIEWER_NAME;
 	std::string ll_version = llformat("%d.%d.%d (%d)",
@@ -539,7 +534,7 @@ BOOL LLPanelLogin::handleKeyHere(KEY key, MASK mask)
 {
 	if (( KEY_RETURN == key ) && (MASK_ALT == mask))
 	{
-		gViewerWindow->toggleFullscreen(FALSE);
+		gViewerWindow->toggleFullscreenConfirm();
 		return TRUE;
 	}
 
@@ -558,7 +553,7 @@ BOOL LLPanelLogin::handleKeyHere(KEY key, MASK mask)
 	if ( KEY_F1 == key )
 	{
 		llinfos << "Spawning HTML help window" << llendl;
-		gViewerHtmlHelp.show();
+		LLFloaterMediaBrowser::helpF1();
 		return TRUE;
 	}
 
@@ -654,6 +649,7 @@ void LLPanelLogin::show(const LLRect &rect,
 
 	// Make sure that focus always goes here (and use the latest sInstance that was just created)
 	gFocusMgr.setDefaultKeyboardFocus(sInstance);
+	LLPanelLogin::addServer(LLViewerLogin::getInstance()->getGridLabel());
 }
 
 // static
@@ -698,7 +694,7 @@ void LLPanelLogin::setFields(const std::string& firstname, const std::string& la
 
 
 // static
-void LLPanelLogin::addServer(const std::string& server, S32 domain_name)
+void LLPanelLogin::addServer(const std::string& server)
 {
 	if (!sInstance)
 	{
@@ -706,9 +702,29 @@ void LLPanelLogin::addServer(const std::string& server, S32 domain_name)
 		return;
 	}
 
-	LLComboBox* combo = sInstance->getChild<LLComboBox>("server_combo");
-	combo->add(server, LLSD(domain_name) );
-	combo->setCurrentByIndex(0);
+	const std::string &defaultGrid = gHippoGridManager->getDefaultGridNick();
+
+	LLComboBox *grids = sInstance->getChild<LLComboBox>("server_combo");
+	S32 selectIndex = -1, i = 0;
+	grids->removeall();
+	if (defaultGrid != "") {
+		grids->add(defaultGrid);
+		selectIndex = i++;
+	}
+	HippoGridManager::GridIterator it, end = gHippoGridManager->endGrid();
+	for (it = gHippoGridManager->beginGrid(); it != end; ++it) {
+		const std::string &grid = it->second->getGridNick();
+		if (grid != defaultGrid) {
+			grids->add(grid);
+			//if (grid == mCurGrid) selectIndex = i;
+			i++;
+		}
+	}
+	grids->setCurrentByIndex(0);
+
+	//LLComboBox* combo = sInstance->getChild<LLComboBox>("server_combo");
+	//combo->add(server, LLSD(domain_name) );
+	//combo->setCurrentByIndex(0);
 }
 
 // static
@@ -786,10 +802,27 @@ void LLPanelLogin::refreshLocation( bool force_visible )
 	if ( ! force_visible )
 		show_start = gSavedSettings.getBOOL("ShowStartLocation");
 
+
+// [RLVa:KB] - Checked: 2009-07-08 (RLVa-1.0.0e)
+// TODO-RLVa: figure out some way to make this work with RLV_EXTENSION_STARTLOCATION
+#ifndef RLV_EXTENSION_STARTLOCATION
+		if (rlv_handler_t::isEnabled())
+		{
+			show_start = FALSE;
+		}
+#endif // RLV_EXTENSION_STARTLOCATION
+// [/RLVa:KB]
+
+
 	sInstance->childSetVisible("start_location_combo", show_start);
 	sInstance->childSetVisible("start_location_text", show_start);
 
+/*#if LL_RELEASE_FOR_DOWNLOAD
+	BOOL show_server = gSavedSettings.getBOOL("ForceShowGrid");
+	sInstance->childSetVisible("server_combo", show_server);
+#else*/
 	sInstance->childSetVisible("server_combo", TRUE);
+//#endif
 
 #endif
 }
@@ -822,18 +855,39 @@ void LLPanelLogin::setAlwaysRefresh(bool refresh)
 }
 
 
+// static
+void LLPanelLogin::refreshLoginPage()
+{
+    if (!sInstance) return;
+
+    sInstance->childSetVisible("create_new_account_text",
+        !gHippoGridManager->getConnectedGrid()->getRegisterUrl().empty());
+    sInstance->childSetVisible("forgot_password_text",
+        !gHippoGridManager->getConnectedGrid()->getPasswordUrl().empty());
+
+    // kick off a request to grab the url manually
+	gResponsePtr = LLIamHereLogin::build(sInstance);
+	std::string login_page = gHippoGridManager->getConnectedGrid()->getLoginPage();
+	if (!login_page.empty()) {
+		LLHTTPClient::head(login_page, gResponsePtr);
+	} else {
+		sInstance->setSiteIsAlive(false);
+	}
+}
+
 
 void LLPanelLogin::loadLoginPage()
 {
 	if (!sInstance) return;
 	
-	std::ostringstream oStr;
 
-	std::string login_page = gSavedSettings.getString("LoginPage");
-	if (login_page.empty())
-	{
-		login_page = sInstance->getString( "real_url" );
+	std::string login_page = gHippoGridManager->getConnectedGrid()->getLoginPage();
+	if (login_page.empty()) {
+		sInstance->setSiteIsAlive(false);
+		return;
 	}
+
+	std::ostringstream oStr;
 	oStr << login_page;
 	
 	// Use the right delimeter depending on how LLURI parses the URL
@@ -845,11 +899,7 @@ void LLPanelLogin::loadLoginPage()
 	}
 
 	// Language
-	std::string language(gSavedSettings.getString("Language"));
-	if(language == "default")
-	{
-		language = gSavedSettings.getString("SystemLanguage");
-	}
+	std::string language = LLUI::getLanguage();
 	oStr << first_query_delimiter<<"lang=" << language;
 	
 	// First Login?
@@ -872,11 +922,12 @@ void LLPanelLogin::loadLoginPage()
 	curl_free(curl_version);
 
 	// Grid
-	char* curl_grid = curl_escape(LLViewerLogin::getInstance()->getGridCodeName().c_str(), 0);
+	char* curl_grid = curl_escape(LLViewerLogin::getInstance()->getGridLabel().c_str(), 0);
 	oStr << "&grid=" << curl_grid;
 	curl_free(curl_grid);
 
 	gViewerWindow->setMenuBackgroundColor(false, !LLViewerLogin::getInstance()->isInProductionGrid());
+	//LLViewerLogin::getInstance()->setMenuColor();
 	gLoginMenuBarView->setBackgroundColor(gMenuBarView->getBackgroundColor());
 
 
@@ -1016,13 +1067,20 @@ void LLPanelLogin::onClickConnect(void *)
 			}
 			else
 			{
-				gViewerWindow->alertXml("MustHaveAccountToLogIn",
-										LLPanelLogin::newAccountAlertCallback);
-			}
+			gViewerWindow->alertXml("MustHaveAccountToLogIn",
+									LLPanelLogin::newAccountAlertCallback);
 		}
 	}
 }
+}
 
+void LLPanelLogin::onClickGrid(void *)
+{
+	if (sInstance && sInstance->mCallback)
+	{
+		LoginFloater::newShow(std::string("Test"), false);
+	}
+}
 
 // static
 void LLPanelLogin::newAccountAlertCallback(S32 option, void*)
@@ -1088,7 +1146,7 @@ void LLPanelLogin::onPassKey(LLLineEditor* caller, void* user_data)
 }
 
 // static
-void LLPanelLogin::onSelectServer(LLUICtrl*, void*)
+void LLPanelLogin::onSelectServer(LLUICtrl* ctrl, void*)
 {
 	// *NOTE: The paramters for this method are ignored. 
 	// LLPanelLogin::onServerComboLostFocus(LLFocusableElement* fe, void*)
@@ -1097,46 +1155,29 @@ void LLPanelLogin::onSelectServer(LLUICtrl*, void*)
 	// The user twiddled with the grid choice ui.
 	// apply the selection to the grid setting.
 	std::string grid_label;
-	S32 grid_index;
+	//S32 grid_index;
 
 	LLComboBox* combo = sInstance->getChild<LLComboBox>("server_combo");
 	LLSD combo_val = combo->getValue();
 
-	if (LLSD::TypeInteger == combo_val.type())
-	{
-		grid_index = combo->getValue().asInteger();
+	std::string mCurGrid = ctrl->getValue().asString();
+	//KOW
+	gHippoGridManager->setCurrentGrid(mCurGrid);
+	// HippoGridInfo *gridInfo = gHippoGridManager->getGrid(mCurGrid);
+	// if (gridInfo) {
+	// 	//childSetText("gridnick", gridInfo->getGridNick());
+	// 	//platform->setCurrentByIndex(gridInfo->getPlatform());
+	// 	//childSetText("gridname", gridInfo->getGridName());
+	// 	LLPanelLogin::setFields( gridInfo->getFirstName(), gridInfo->getLastName(), gridInfo->getAvatarPassword(), 1 );
+	// }
 
-		if ((S32)GRID_INFO_OTHER == grid_index)
-		{
-			// This happens if the user specifies a custom grid
-			// via command line.
-			grid_label = combo->getSimple();
-		}
-	}
-	else
-	{
-		// no valid selection, return other
-		grid_index = (S32)GRID_INFO_OTHER;
-		grid_label = combo_val.asString();
-	}
-
-	// This new seelction will override preset uris
-	// from the command line.
-	LLViewerLogin* vl = LLViewerLogin::getInstance();
-	vl->resetURIs();
-	if(grid_index != GRID_INFO_OTHER)
-	{
-		vl->setGridChoice((EGridInfo)grid_index);
-	}
-	else
-	{
-		vl->setGridChoice(grid_label);
-	}
+	
+	llwarns << "current grid = " << mCurGrid << llendl;
 
 	// grid changed so show new splash screen (possibly)
 	loadLoginPage();
 }
-
+/*
 void LLPanelLogin::onServerComboLostFocus(LLFocusableElement* fe, void*)
 {
 	LLComboBox* combo = sInstance->getChild<LLComboBox>("server_combo");
@@ -1145,3 +1186,4 @@ void LLPanelLogin::onServerComboLostFocus(LLFocusableElement* fe, void*)
 		onSelectServer(combo, NULL);	
 	}
 }
+*/

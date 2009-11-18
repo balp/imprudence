@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -37,20 +37,19 @@
 #include "llmediaimplcommon.h"
 #include "llmediaimplfactory.h"
 
-#if LL_GSTREAMER_ENABLED
+///#if LL_GSTREAMER_ENABLED
 
 extern "C" {
-#include <stdio.h>
 #include <gst/gst.h>
-
-#include "apr_pools.h"
-#include "apr_dso.h"
 }
 
+#include <stdio.h>
+#include "apr_pools.h"
+#include "apr_dso.h"
+
+
 #include "llmediaimplgstreamervidplug.h"
-#ifdef LL_GST_SOUNDSINK
-#include "llmediaimplgstreamersndplug.h"
-#endif // LL_GST_SOUNDSINK
+#include "llgstplaythread.h"
 
 class LLMediaManagerData;
 class LLMediaImplMaker;
@@ -59,6 +58,8 @@ class LLMediaImplMaker;
 class LLMediaImplGStreamer:
 	public LLMediaImplCommon
 {
+	friend class LLGstPlayThread;
+
 	public:
 		LLMediaImplGStreamer ();
 		virtual ~LLMediaImplGStreamer ();
@@ -69,6 +70,26 @@ class LLMediaImplGStreamer:
 		static bool startup( LLMediaManagerData* init_data );
 		static bool closedown();
 
+		// Sets GST_PLUGIN_PATH env var for GStreamer.
+		static void set_gst_plugin_path();
+
+		/* virtual */ bool setDebugLevel( LLMediaBase::EDebugLevel level );
+
+		// Function given to GStreamer for handling debug messages
+		static void gstreamer_log(GstDebugCategory *category,
+		                          GstDebugLevel level,
+		                          const gchar *file,
+		                          const gchar *function,
+		                          gint line,
+		                          GObject *object,
+		                          GstDebugMessage *message,
+		                          gpointer data)
+#if __GNUC__
+		                          // recommended by the gstreamer docs
+		                          G_GNUC_NO_INSTRUMENT
+#endif
+		                          ;
+
 		/* virtual */ std::string getVersion();
 		/* virtual */ bool navigateTo( const std::string url );
 		/* virtual */ bool updateMedia();
@@ -77,42 +98,51 @@ class LLMediaImplGStreamer:
 		/* virtual */ int getTextureFormatType() const;
 		/* virtual */ int getTextureFormatInternal() const;
 		/* virtual */ bool seek( double time );
-	        /* virtual */ bool setVolume( float volume );
+		/* virtual */ bool setVolume( float volume );
 
-	        LLMediaEmitter< LLMediaObserver > getEventEmitter() const {return mEventEmitter;};
+		LLMediaEmitter< LLMediaObserver > getEventEmitter() const {return mEventEmitter;};
+
+	protected:
+
+		void startPlay();
+
 
 	private:
-        	// misc
-	        bool unload();
-	        bool pause();
-	        bool stop();
-	        bool play();
-	        static gboolean bus_callback (GstBus     *bus,
-					      GstMessage *message,
-					      gpointer    data);
+
+		// misc
+		bool unload();
+		bool pause();
+		bool stop();
+		bool play();
+
+		static gboolean bus_callback (GstBus     *bus,
+		                              GstMessage *message,
+		                              gpointer    data);
+
 		unsigned char* mediaData;
-        	int mMediaRowbytes;
+		int mMediaRowbytes;
+		int mTextureFormatPrimary;
+		int mTextureFormatType;
 
-	        int mTextureFormatPrimary;
-	        int mTextureFormatType;
-
-	        // GStreamer-specific
-        	GMainLoop *mPump; // event pump for this media
-	        GstElement *mPlaybin;
+		// GStreamer-specific
+		GMainLoop *mPump; // event pump for this media
+		GstElement *mPlaybin;
 		GstSLVideo *mVideoSink;
-#ifdef LL_GST_SOUNDSINK
-		GstSLSound *mAudioSink;
-#endif // LL_GST_SOUNDSINK
+		std::string mLastTitle;
+		GstState mState;
+		GstState getState() const { return mState; }
+
+		LLGstPlayThread *mPlayThread;
 };
 
 class LLMediaImplGStreamerMaker : public LLMediaImplMaker
 {
-public: 
-	LLMediaImplGStreamerMaker();
-	LLMediaImplGStreamer* create()
-	{
-		return new LLMediaImplGStreamer();
-	}
+	public: 
+		LLMediaImplGStreamerMaker();
+		LLMediaImplGStreamer* create()
+		{
+			return new LLMediaImplGStreamer();
+		}
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -129,6 +159,6 @@ public:
 #define WARNMSG  STDERRMSG
 /////////////////////////////////////////////////////////////////////////
 
-#endif // LL_GSTREAMER_ENABLED
+///#endif // LL_GSTREAMER_ENABLED
 
 #endif // llmediaimplgstreamer_h

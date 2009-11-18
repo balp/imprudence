@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -35,12 +35,14 @@
  
 #include "lllineeditor.h"
 
+#include "lltexteditor.h"
 #include "audioengine.h"
 #include "llmath.h"
 #include "llfontgl.h"
 #include "llgl.h"
 #include "lltimer.h"
 
+#include "llcalc.h"
 //#include "llclipboard.h"
 #include "llcontrol.h"
 #include "llbutton.h"
@@ -129,6 +131,7 @@ LLLineEditor::LLLineEditor(const std::string& name, const LLRect& rect,
 		mDrawAsterixes( FALSE ),
 		mHandleEditKeysDirectly( FALSE ),
 		mSelectAllonFocusReceived( FALSE ),
+		mSelectAllonCommit( TRUE ),
 		mPassDelete(FALSE),
 		mReadOnly(FALSE),
 		mImage( sImage ),
@@ -226,7 +229,10 @@ void LLLineEditor::onCommit()
 	updateHistory();
 
 	LLUICtrl::onCommit();
-	selectAll();
+
+	// Selection on commit needs to be turned off when evaluating maths
+	// expressions, to allow indication of the error position
+	if (mSelectAllonCommit) selectAll();
 }
 
 
@@ -450,19 +456,19 @@ BOOL LLLineEditor::handleDoubleClick(S32 x, S32 y, MASK mask)
 		BOOL doSelectAll = TRUE;
 
 		// Select the word we're on
-		if( isPartOfWord( wtext[mCursorPos] ) )
+		if( LLTextEditor::isPartOfWord( wtext[mCursorPos] ) )
 		{
 			S32 old_selection_start = mLastSelectionStart;
 			S32 old_selection_end = mLastSelectionEnd;
 
 			// Select word the cursor is over
-			while ((mCursorPos > 0) && isPartOfWord( wtext[mCursorPos-1] ))
+			while ((mCursorPos > 0) && LLTextEditor::isPartOfWord( wtext[mCursorPos-1] ))
 			{	// Find the start of the word
 				mCursorPos--;
 			}
 			startSelection();	
 
-			while ((mCursorPos < (S32)wtext.length()) && isPartOfWord( wtext[mCursorPos] ) )
+			while ((mCursorPos < (S32)wtext.length()) && LLTextEditor::isPartOfWord( wtext[mCursorPos] ) )
 			{	// Find the end of the word
 				mCursorPos++;
 			}
@@ -486,6 +492,9 @@ BOOL LLLineEditor::handleDoubleClick(S32 x, S32 y, MASK mask)
 
 	// delay cursor flashing
 	mKeystrokeTimer.reset();
+
+	// take selection to 'primary' clipboard
+	updatePrimary();
 
 	return TRUE;
 }
@@ -569,6 +578,17 @@ BOOL LLLineEditor::handleMouseDown(S32 x, S32 y, MASK mask)
 	return TRUE;
 }
 
+BOOL LLLineEditor::handleMiddleMouseDown(S32 x, S32 y, MASK mask)
+{
+        // llinfos << "MiddleMouseDown" << llendl;
+	setFocus( TRUE );
+	if( canPastePrimary() )
+	{
+		setCursorAtLocalPos(x);
+		pastePrimary();
+	}
+	return TRUE;
+}
 
 BOOL LLLineEditor::handleHover(S32 x, S32 y, MASK mask)
 {
@@ -663,6 +683,9 @@ BOOL LLLineEditor::handleMouseUp(S32 x, S32 y, MASK mask)
 	{
 		// delay cursor flashing
 		mKeystrokeTimer.reset();
+
+		// take selection to 'primary' clipboard
+		updatePrimary();
 	}
 
 	return handled;
@@ -764,7 +787,7 @@ S32 LLLineEditor::prevWordPos(S32 cursorPos) const
 	{
 		cursorPos--;
 	}
-	while( (cursorPos > 0) && isPartOfWord( wtext[cursorPos-1] ) )
+	while( (cursorPos > 0) && LLTextEditor::isPartOfWord( wtext[cursorPos-1] ) )
 	{
 		cursorPos--;
 	}
@@ -774,7 +797,7 @@ S32 LLLineEditor::prevWordPos(S32 cursorPos) const
 S32 LLLineEditor::nextWordPos(S32 cursorPos) const
 {
 	const LLWString& wtext = mText.getWString();
-	while( (cursorPos < getLength()) && isPartOfWord( wtext[cursorPos] ) )
+	while( (cursorPos < getLength()) && LLTextEditor::isPartOfWord( wtext[cursorPos] ) )
 	{
 		cursorPos++;
 	} 
@@ -866,7 +889,12 @@ BOOL LLLineEditor::handleSelectionKey(KEY key, MASK mask)
 		}
 	}
 
-
+	if(handled)
+	{
+		// take selection to 'primary' clipboard
+		updatePrimary();
+	}
+ 
 	return handled;
 }
 
@@ -939,20 +967,42 @@ BOOL LLLineEditor::canPaste() const
 	return !mReadOnly && gClipboard.canPasteString(); 
 }
 
-
-// paste from clipboard
 void LLLineEditor::paste()
 {
-	if (canPaste())
+	bool is_primary = false;
+	pasteHelper(is_primary);
+}
+
+void LLLineEditor::pastePrimary()
+{
+	bool is_primary = true;
+	pasteHelper(is_primary);
+}
+
+// paste from primary (is_primary==true) or clipboard (is_primary==false)
+void LLLineEditor::pasteHelper(bool is_primary)
+{
+	bool can_paste_it;
+	if (is_primary)
+		can_paste_it = canPastePrimary();
+	else
+		can_paste_it = canPaste();
+
+	if (can_paste_it)
 	{
-		LLWString paste = gClipboard.getPasteWString();
+		LLWString paste;
+		if (is_primary)
+			paste = gClipboard.getPastePrimaryWString();
+		else 
+			paste = gClipboard.getPasteWString();
+
 		if (!paste.empty())
 		{
 			// Prepare for possible rollback
 			LLLineEditorRollback rollback(this);
 			
 			// Delete any selected characters
-			if (hasSelection())
+			if ((!is_primary) && hasSelection())
 			{
 				deleteSelection();
 			}
@@ -988,7 +1038,7 @@ void LLLineEditor::paste()
 				clean_string = clean_string.substr(0, wchars_that_fit);
 				reportBadKeystroke();
 			}
-
+ 
 			mText.insert(getCursor(), clean_string);
 			setCursor( getCursor() + (S32)clean_string.length() );
 			deselect();
@@ -1009,7 +1059,30 @@ void LLLineEditor::paste()
 	}
 }
 
-	
+// copy selection to primary
+void LLLineEditor::copyPrimary()
+{
+	if( canCopy() )
+	{
+		S32 left_pos = llmin( mSelectionStart, mSelectionEnd );
+		S32 length = abs( mSelectionStart - mSelectionEnd );
+		gClipboard.copyFromPrimarySubstring( mText.getWString(), left_pos, length );
+	}
+}
+
+BOOL LLLineEditor::canPastePrimary() const
+{
+	return !mReadOnly && gClipboard.canPastePrimaryString(); 
+}
+
+void LLLineEditor::updatePrimary()
+{
+	if(canCopy() )
+	{
+		copyPrimary();
+	}
+}
+
 BOOL LLLineEditor::handleSpecialKey(KEY key, MASK mask)	
 {
 	BOOL handled = FALSE;
@@ -1422,7 +1495,7 @@ void LLLineEditor::draw()
 #else // the old programmer art.
 	// drawing solids requires texturing be disabled
 	{
-		LLGLSNoTexture no_texture;
+		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		// draw background for text
 		if( !mReadOnly )
 		{
@@ -1817,9 +1890,6 @@ BOOL LLLineEditor::prevalidateFloat(const LLWString &str)
 	return success;
 }
 
-//static
-BOOL LLLineEditor::isPartOfWord(llwchar c) { return (c == '_') || isalnum(c); }
-
 // static
 BOOL LLLineEditor::postvalidateFloat(const std::string &str)
 {
@@ -1993,7 +2063,7 @@ BOOL LLLineEditor::prevalidateAlphaNum(const LLWString &str)
 	if(len == 0) return rv;
 	while(len--)
 	{
-		if( !isalnum(str[len]) )
+		if( !LLStringOps::isAlnum((char)str[len]) )
 		{
 			rv = FALSE;
 			break;
@@ -2012,7 +2082,7 @@ BOOL LLLineEditor::prevalidateAlphaNumSpace(const LLWString &str)
 	if(len == 0) return rv;
 	while(len--)
 	{
-		if(!(isalnum(str[len]) || (' ' == str[len])))
+		if(!(LLStringOps::isAlnum((char)str[len]) || (' ' == str[len])))
 		{
 			rv = FALSE;
 			break;
@@ -2034,7 +2104,7 @@ BOOL LLLineEditor::prevalidatePrintableNotPipe(const LLWString &str)
 			rv = FALSE;
 			break;
 		}
-		if(!((' ' == str[len]) || isalnum(str[len]) || ispunct(str[len])))
+		if(!((' ' == str[len]) || LLStringOps::isAlnum((char)str[len]) || LLStringOps::isPunct((char)str[len])))
 		{
 			rv = FALSE;
 			break;
@@ -2052,12 +2122,13 @@ BOOL LLLineEditor::prevalidatePrintableNoSpace(const LLWString &str)
 	if(len == 0) return rv;
 	while(len--)
 	{
-		if(iswspace(str[len]))
+		if(LLStringOps::isSpace(str[len]))
 		{
 			rv = FALSE;
 			break;
 		}
-		if( !(isalnum(str[len]) || ispunct(str[len]) ) )
+		if( !(LLStringOps::isAlnum((char)str[len]) ||
+		      LLStringOps::isPunct((char)str[len]) ) )
 		{
 			rv = FALSE;
 			break;
@@ -2080,6 +2151,32 @@ BOOL LLLineEditor::prevalidateASCII(const LLWString &str)
 		}
 	}
 	return rv;
+}
+
+BOOL LLLineEditor::evaluateFloat()
+{
+	bool success;
+	F32 result = 0.f;
+	std::string expr = getText();
+
+	success = LLCalc::getInstance()->evalString(expr, result);
+
+	if (!success)
+	{
+		// Move the cursor to near the error on failure
+		setCursor(LLCalc::getInstance()->getLastErrorPos());
+		// *TODO: Translated error message indicating the type of error? Select error text?
+	}
+	else
+	{
+		// Replace the expression with the result
+		std::ostringstream result_str;
+		result_str << result;
+		setText(result_str.str());
+		selectAll();
+	}
+
+	return success;
 }
 
 void LLLineEditor::onMouseCaptureLost()
@@ -2282,7 +2379,7 @@ LLView* LLLineEditor::fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory
 }
 
 //static
-void LLLineEditor::cleanupClass()
+void LLLineEditor::cleanupLineEditor()
 {
 	sImage = NULL;
 }

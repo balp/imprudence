@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -982,12 +982,12 @@ void LLPanel::childSetAction(const std::string& id, void(*function)(void*), void
 	}
 }
 
-void LLPanel::childSetActionTextbox(const std::string& id, void(*function)(void*))
+void LLPanel::childSetActionTextbox(const std::string& id, void(*function)(void*), void* value)
 {
 	LLTextBox* textbox = getChild<LLTextBox>(id);
 	if (textbox)
 	{
-		textbox->setClickedCallback(function);
+		textbox->setClickedCallback(function, value);
 	}
 }
 

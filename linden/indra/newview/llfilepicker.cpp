@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -899,12 +899,41 @@ BOOL LLFilePicker::getSaveFile(ESaveFilter filter, const std::string& filename)
 // static
 void LLFilePicker::add_to_selectedfiles(gpointer data, gpointer user_data)
 {
-	LLFilePicker* picker = (LLFilePicker*) user_data;
+	// We need to run g_filename_to_utf8 in the user's locale
+	std::string old_locale(setlocale(LC_ALL, NULL));
+	setlocale(LC_ALL, "");
+
+ 	LLFilePicker* picker = (LLFilePicker*) user_data;
+	GError *error = NULL;
 	gchar* filename_utf8 = g_filename_to_utf8((gchar*)data,
-						  -1, NULL, NULL, NULL);
-	picker->mFiles.push_back(std::string(filename_utf8));
-	lldebugs << "ADDED FILE " << filename_utf8 << llendl;
-	g_free(filename_utf8);
+						  -1, NULL, NULL, &error);
+	if (error)
+	{
+		// This condition should really be notified to the user, e.g.,
+		// through a message box.  Just logging it is inapropriate.
+		// FIXME.
+		
+		// Ghhhh.  g_filename_display_name is new to glib 2.6, and it
+		// is too new for SL! (Note that the latest glib as of this
+		// writing is 2.22. *sigh*) LL supplied *makeASCII family are
+		// also unsuitable since they allow control characters...
+
+		std::string display_name;
+		for (const gchar *str = (const gchar *)data; *str; str++)
+		{
+			display_name += (char)((*str >= 0x20 && *str <= 0x7E) ? *str : '?');
+		}
+		llwarns << "g_filename_to_utf8 failed on \"" << display_name << "\": " << error->message << llendl;
+	}
+
+	if (filename_utf8)
+	{
+		picker->mFiles.push_back(std::string(filename_utf8));
+		lldebugs << "ADDED FILE " << filename_utf8 << llendl;
+		g_free(filename_utf8);
+	}
+
+	setlocale(LC_ALL, old_locale.c_str());
 }
 
 // static
@@ -933,7 +962,7 @@ void LLFilePicker::chooser_responder(GtkWidget *widget, gint response, gpointer 
 
 GtkWindow* LLFilePicker::buildFilePicker(bool is_save, bool is_folder, std::string context)
 {
-	if (ll_try_gtk_init() &&
+	if (LLWindowSDL::ll_try_gtk_init() &&
 	    ! gViewerWindow->getWindow()->getFullscreen())
 	{
 		GtkWidget *win = NULL;
@@ -969,12 +998,18 @@ GtkWindow* LLFilePicker::buildFilePicker(bool is_save, bool is_folder, std::stri
 				(GTK_FILE_CHOOSER(win),
 				 this_path->second.c_str());
 		}
+		else if (getenv("HOME"))
+		{
+			gtk_file_chooser_set_current_folder
+				(GTK_FILE_CHOOSER(win),
+				 getenv("HOME"));
+		}
 
 #  if LL_X11
 		// Make GTK tell the window manager to associate this
 		// dialog with our non-GTK raw X11 window, which should try
 		// to keep it on top etc.
-		Window XWindowID = get_SDL_XWindowID();
+		Window XWindowID = LLWindowSDL::get_SDL_XWindowID();
 		if (None != XWindowID)
 		{
 			gtk_widget_realize(GTK_WIDGET(win)); // so we can get its gdkwin

@@ -4,7 +4,7 @@
  
 $LicenseInfo:firstyear=2006&license=mit$
 
-Copyright (c) 2006-2008, Linden Research, Inc.
+Copyright (c) 2006-2009, Linden Research, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,8 @@ request_ = suite.request_
 # import every httpc error exception into our namespace for convenience
 for x in httpc.status_to_error_map.itervalues():
     globals()[x.__name__] = x
+ConnectionError = httpc.ConnectionError
+Retriable = httpc.Retriable
 
 for x in (httpc.ConnectionError,):
     globals()[x.__name__] = x

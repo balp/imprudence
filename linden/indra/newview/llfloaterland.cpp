@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -604,6 +604,25 @@ void LLPanelLandGeneral::refresh()
 		mBtnSellLand->setVisible(FALSE);
 		mBtnStopSellLand->setVisible(FALSE);
 		
+		// show pricing information
+		S32 area;
+		S32 claim_price;
+		S32 rent_price;
+		F32 dwell;
+		LLViewerParcelMgr::getInstance()->getDisplayInfo(&area,
+								 &claim_price,
+								 &rent_price,
+								 &for_sale,
+								 &dwell);
+
+		// Area
+		LLUIString price = getString("area_size_text");
+		price.setArg("[AREA]", llformat("%d",area));    
+		mTextPriceLabel->setText(getString("area_text"));
+		mTextPrice->setText(price.getString());
+
+		mTextDwell->setText(llformat("%.0f", dwell));
+
 		if (for_sale)
 		{
 			mSaleInfoForSale1->setVisible(TRUE);
@@ -619,7 +638,15 @@ void LLPanelLandGeneral::refresh()
 				mSaleInfoForSaleNoObjects->setVisible(TRUE);
 			}
 			mSaleInfoNotForSale->setVisible(FALSE);
+
+			F32 cost_per_sqm = 0.0f;
+			if (area > 0)
+			{
+				cost_per_sqm = (F32)parcel->getSalePrice() / (F32)area;
+			}
+
 			mSaleInfoForSale1->setTextArg("[PRICE]", llformat("%d", parcel->getSalePrice()));
+			mSaleInfoForSale1->setTextArg("[PRICE_PER_SQM]", llformat("%.1f", cost_per_sqm));
 			if (can_be_sold)
 			{
 				mBtnStopSellLand->setVisible(TRUE);
@@ -644,25 +671,6 @@ void LLPanelLandGeneral::refresh()
 			LLViewerParcelMgr::getInstance()->canAgentBuyParcel(parcel, false));
 		mBtnBuyGroupLand->setEnabled(
 			LLViewerParcelMgr::getInstance()->canAgentBuyParcel(parcel, true));
-
-		// show pricing information
-		S32 area;
-		S32 claim_price;
-		S32 rent_price;
-		F32 dwell;
-		LLViewerParcelMgr::getInstance()->getDisplayInfo(&area,
-								   &claim_price,
-								   &rent_price,
-								   &for_sale,
-								   &dwell);
-
-		// Area
-		LLUIString price = getString("area_size_text");
-		price.setArg("[AREA]", llformat("%d",area));	
-		mTextPriceLabel->setText(getString("area_text"));
-		mTextPrice->setText(price.getString());
-		
-		mTextDwell->setText(llformat("%.0f", dwell));
 
 		if(region_owner)
 		{
@@ -805,6 +813,12 @@ void LLPanelLandGeneral::setGroup(const LLUUID& group_id)
 // static
 void LLPanelLandGeneral::onClickBuyLand(void* data)
 {
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
+	if ( (rlv_handler_t::isEnabled()) && (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC)) )
+	{
+		return;
+	}
+// [/RLVa:KB]
 	BOOL* for_group = (BOOL*)data;
 	LLViewerParcelMgr::getInstance()->startBuyLand(*for_group);
 }
@@ -1448,7 +1462,7 @@ void LLPanelLandObjects::processParcelObjectOwnersReply(LLMessageSystem *msg, vo
 		msg->getBOOLFast(_PREHASH_Data, _PREHASH_IsGroupOwned,	is_group_owned,	i);
 		msg->getS32Fast (_PREHASH_Data, _PREHASH_Count,			object_count,	i);
 		msg->getBOOLFast(_PREHASH_Data, _PREHASH_OnlineStatus,	is_online,		i);
-		if(msg->getNumberOfBlocks("DataExtended"))
+		if(msg->has("DataExtended"))
 		{
 			msg->getU32("DataExtended", "TimeStamp", most_recent_time, i);
 		}
@@ -2771,3 +2785,41 @@ void LLPanelLandCovenant::updateEstateOwnerName(const std::string& name)
 		if (editor) editor->setText(name);
 	}
 }
+
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
+void LLFloaterLand::open()
+{
+	// We'll allow "About Land" as long as you have the ability to return prims (through ownership or through group powers)
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC))
+	{
+		LLParcelSelection* pParcelSel = LLViewerParcelMgr::getInstance()->getFloatingParcelSelection();
+		if ( (!pParcelSel) || (pParcelSel->hasOthersSelected()) )
+			return;
+		LLParcel* pParcel = pParcelSel->getParcel();
+		if (!pParcel)
+			return;
+
+		// Ideally we could just use LLViewerParcelMgr::isParcelOwnedByAgent(), but that has that sneaky exemption
+		// for fake god like (aka View Admin Options)
+		const LLUUID& idOwner = pParcel->getOwnerID();
+		if ( (idOwner != gAgent.getID()) )
+		{
+			// *sighs* LLAgent::hasPowerInGroup() has it too so copy/paste from there
+			S32 count = gAgent.mGroups.count(); bool fShow = false;
+			for (S32 i = 0; i < count; ++i)
+			{
+				if (gAgent.mGroups.get(i).mID == idOwner)
+				{
+					fShow |= ((gAgent.mGroups.get(i).mPowers & GP_LAND_RETURN) > 0);
+					break;
+				}
+			}
+
+			if (!fShow)
+				return;
+		}
+	}
+
+	LLFloater::open();
+}
+// [/RLVa:KB]

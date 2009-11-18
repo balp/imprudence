@@ -3,7 +3,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -84,7 +84,7 @@ void *APR_THREAD_FUNC LLThread::staticRun(apr_thread_t *apr_threadp, void *datap
 
 
 LLThread::LLThread(const std::string& name, apr_pool_t *poolp) :
-	mPaused(FALSE),
+	mPaused(false),
 	mName(name),
 	mAPRThreadp(NULL),
 	mStatus(STOPPED)
@@ -92,12 +92,12 @@ LLThread::LLThread(const std::string& name, apr_pool_t *poolp) :
 	// Thread creation probably CAN be paranoid about APR being initialized, if necessary
 	if (poolp)
 	{
-		mIsLocalPool = FALSE;
+		mIsLocalPool = false;
 		mAPRPoolp = poolp;
 	}
 	else
 	{
-		mIsLocalPool = TRUE;
+		mIsLocalPool = true;
 		apr_pool_create(&mAPRPoolp, NULL); // Create a subpool for this thread
 	}
 	mRunCondition = new LLCondition(mAPRPoolp);
@@ -268,12 +268,12 @@ LLMutex::LLMutex(apr_pool_t *poolp) :
 {
 	//if (poolp)
 	//{
-	//	mIsLocalPool = FALSE;
+	//	mIsLocalPool = false;
 	//	mAPRPoolp = poolp;
 	//}
 	//else
 	{
-		mIsLocalPool = TRUE;
+		mIsLocalPool = true;
 		apr_pool_create(&mAPRPoolp, NULL); // Create a subpool for this thread
 	}
 	apr_thread_mutex_create(&mAPRMutexp, APR_THREAD_MUTEX_UNNESTED, mAPRPoolp);
@@ -359,7 +359,7 @@ void LLCondition::broadcast()
 LLMutex* LLThreadSafeRefCount::sMutex = 0;
 
 //static
-void LLThreadSafeRefCount::initClass()
+void LLThreadSafeRefCount::initThreadSafeRefCount()
 {
 	if (!sMutex)
 	{
@@ -368,7 +368,7 @@ void LLThreadSafeRefCount::initClass()
 }
 
 //static
-void LLThreadSafeRefCount::cleanupClass()
+void LLThreadSafeRefCount::cleanupThreadSafeRefCount()
 {
 	delete sMutex;
 	sMutex = NULL;

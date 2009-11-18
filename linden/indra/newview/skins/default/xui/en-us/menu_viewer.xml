@@ -29,6 +29,16 @@
       <on_click function="File.UploadBulk" userdata="" />
     </menu_item_call>
     <menu_item_separator />
+	  <menu_item_call name="Import" label="Import" enabled="false">
+      <on_click function="Object.Import" />
+      <on_enable function="Object.EnableImport" />
+    </menu_item_call>
+    <menu_item_call name="Upload + Import" label="Upload + Import"
+                    enabled="false">
+      <on_click function="Object.ImportUpload" />
+      <on_enable function="Object.EnableImport" />
+    </menu_item_call>
+    <menu_item_separator />
     <menu_item_call name="Close Window"
                     label="Close Window"
                     shortcut="control|W">
@@ -64,6 +74,10 @@
                 userdata="" />
     </menu_item_call>
     <menu_item_separator />
+    <menu_item_call name="Logout" label="Logout"
+                    shortcut="control|alt|Q">
+          <on_click function="File.Logout" userdata="" />
+    </menu_item_call>
     <menu_item_call name="Quit" label="Quit"
                     shortcut="control|Q">
       <on_click function="File.Quit" userdata="" />
@@ -124,13 +138,6 @@
                     shortcut="control|E">
       <on_click function="Edit.Deselect" userdata="" />
       <on_enable function="Edit.EnableDeselect" />
-    </menu_item_call>
-    <menu_item_separator />
-    <menu_item_call name="Duplicate" enabled="false"
-                    label="Duplicate"
-                    shortcut="control|D">
-      <on_click function="Edit.Duplicate" userdata="" />
-      <on_enable function="Edit.EnableDuplicate" />
     </menu_item_call>
     <menu_item_separator />
 
@@ -205,6 +212,12 @@
                   userdata="all" />
       </menu_item_call>
     </menu>
+      <menu_item_call name="Refresh Appearance"
+                      label="Refresh Appearance"
+                      shortcut="control|alt|R">
+        <on_click function="Advanced.RebakeTextures"
+                  userdata="" />
+      </menu_item_call>
     <menu_item_separator />
     <menu_item_call name="Gestures..." label="Gestures..."
                     shortcut="control|G">
@@ -271,6 +284,11 @@
       <on_enable function="View.EnableLastChatter" />
     </menu_item_call>
     <menu_item_separator />
+    <menu_item_call name="Web Browser" label="Web Browser"
+                    shortcut="control|B">
+      <on_click function="ShowFloater" userdata="inworld browser" />
+    </menu_item_call>
+    <menu_item_separator />
     <menu_item_check name="Toolbar" label="Toolbar">
       <on_click function="ShowFloater" userdata="toolbar" />
       <on_check function="FloaterVisible" userdata="toolbar" />
@@ -282,12 +300,13 @@
     </menu_item_check>
     <menu_item_check name="Instant Message" label="Communicate"
                      shortcut="control|T">
-      <on_click function="ShowFloater" userdata="im" />
-      <on_check function="FloaterVisible" userdata="im" />
+      <on_click function="View.Communicate"/>
+      <on_check function="FloaterVisible" userdata="communicate" />
     </menu_item_check>
     <menu_item_call name="Inventory" label="Inventory"
                     shortcut="control|I">
       <on_click function="ShowFloater" userdata="inventory" />
+      <on_check function="FloaterVisible" userdata="inventory" />
     </menu_item_call>
     <menu_item_check name="Active Speakers" label="Active Speakers">
       <on_click function="ShowFloater" userdata="active speakers" />
@@ -360,108 +379,48 @@
       <on_click function="View.HighlightTransparent" userdata="" />
       <on_check function="View.CheckHighlightTransparent" />
     </menu_item_check>
-    <menu_item_check name="Beacons Always On" label="Beacons Always On">
-      <on_click function="ToggleControl" userdata="BeaconAlwaysOn" />
-      <on_check control="BeaconAlwaysOn" />
+    <menu_item_check name="beacons" label="Beacons"
+                     shortcut="control|alt|shift|N">
+      <on_click function="ShowFloater" userdata="beacons" />
+      <on_check function="FloaterVisible" userdata="beacons" />
     </menu_item_check>
-    <menu name="Beacons" create_jump_keys="true" label="Beacons"
-          opaque="true" tear_off="true">
-      <menu_item_check name="Scripted Objects With Touch Only"
-                       label="Scripted Objects with Touch Only">
-        <on_click function="View.ToggleBeacon"
-                  userdata="scripttouchbeacon" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="scripttouchbeacon" />
-      </menu_item_check>
-      <menu_item_check name="Scripted Objects" label="Scripted Objects">
-        <on_click function="View.ToggleBeacon"
-                  userdata="scriptsbeacon" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="scriptsbeacon" />
-      </menu_item_check>
-      <menu_item_check name="Physical Objects" label="Physical Objects">
-        <on_click function="View.ToggleBeacon"
-                  userdata="physicalbeacon" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="physicalbeacon" />
-      </menu_item_check>
-      <menu_item_check name="Sound Sources" label="Sound Sources">
-        <on_click function="View.ToggleBeacon"
-                  userdata="soundsbeacon" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="soundsbeacon" />
-      </menu_item_check>
-      <menu_item_check name="Particle Sources" label="Particle Sources">
-        <on_click function="View.ToggleBeacon"
-                  userdata="particlesbeacon" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="particlesbeacon" />
-      </menu_item_check>
-      <menu_item_separator />
-      <menu_item_check name="Render Highlights" label="Render Highlights">
-        <on_click function="View.ToggleBeacon"
-                  userdata="renderhighlights" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="renderhighlights" />
-      </menu_item_check>
-      <menu_item_check name="Render Beacons" label="Render Beacons">
-        <on_click function="View.ToggleBeacon"
-                  userdata="renderbeacons" />
-        <on_check function="View.CheckBeaconEnabled"
-                  userdata="renderbeacons" />
-      </menu_item_check>
-      <menu_item_separator />
-      <menu_item_check name="Hide Particles" label="Hide Particles">
-        <on_click function="View.ToggleRenderType"
-                  userdata="hideparticles" />
-        <on_check function="View.CheckRenderType"
-                  userdata="hideparticles" />
-      </menu_item_check>
-      <menu_item_separator />
-      <menu name="Beacon Width" color="0 0 0 1" create_jump_keys="true"
-            label="Beacon Width" opaque="true" tear_off="true">
-        <menu_item_call name="Beacon Width 1" label="1">
-          <on_click function="View.BeaconWidth" userdata="1" />
-        </menu_item_call>
-        <menu_item_call name="Beacon Width 4" label="4">
-          <on_click function="View.BeaconWidth" userdata="4" />
-        </menu_item_call>
-        <menu_item_call name="Beacon Width 16" label="16">
-          <on_click function="View.BeaconWidth" userdata="16" />
-        </menu_item_call>
-        <menu_item_call name="Beacon Width 32" label="32">
-          <on_click function="View.BeaconWidth" userdata="32" />
-        </menu_item_call>
-      </menu>
-    </menu>
-    <menu_item_check name="Show HUD Attachments"
-                     label="Show HUD Attachments"
+    <menu_item_check name="Hide Particles" label="Hide Particles"
+                     shortcut="control|alt|shift|=">
+      <on_click function="View.ToggleRenderType" userdata="hideparticles" />
+      <on_check function="View.CheckRenderType" userdata="hideparticles" />
+    </menu_item_check>
+    <menu_item_check name="Show HUD Attachments" label="Show HUD Attachments"
                      shortcut="alt|shift|H">
       <on_click function="View.ShowHUDAttachments" userdata="" />
       <on_check function="View.CheckHUDAttachments" />
     </menu_item_check>
     <menu_item_separator />
-    <menu_item_call name="Zoom In" label="Zoom In"
-                    shortcut="control|0">
-      <on_click function="View.ZoomIn" userdata="" />
-    </menu_item_call>
-    <menu_item_call name="Zoom Default" label="Zoom Default"
-                    shortcut="control|9">
-      <on_click function="View.ZoomDefault" userdata="" />
-    </menu_item_call>
-    <menu_item_call name="Zoom Out" label="Zoom Out"
-                    shortcut="control|8">
-      <on_click function="View.ZoomOut" userdata="" />
-    </menu_item_call>
-    <menu_item_separator />
+    <menu name="Zoom Level" create_jump_keys="true"
+            label="Zoom Level" opaque="true" tear_off="true">
+      <menu_item_call name="Zoom In" label="Zoom In"
+                      shortcut="control|0">
+        <on_click function="View.ZoomIn" userdata="" />
+      </menu_item_call>
+      <menu_item_call name="Zoom Default" label="Zoom Default"
+                      shortcut="control|9">
+        <on_click function="View.ZoomDefault" userdata="" />
+      </menu_item_call>
+      <menu_item_call name="Zoom Out" label="Zoom Out"
+                      shortcut="control|8">
+        <on_click function="View.ZoomOut" userdata="" />
+      </menu_item_call>
+    </menu>
     <menu_item_call name="Toggle Fullscreen" label="Toggle Fullscreen"
                     shortcut="alt|Enter">
       <on_click function="View.Fullscreen" userdata="" />
     </menu_item_call>
-    <menu_item_call name="Set UI Size to Default"
-                    label="Set UI Size to Default">
-      <on_click function="View.DefaultUISize" userdata="" />
-    </menu_item_call>
+    <menu_item_separator />
+    <menu_item_check name="Toggle Advanced Menu" 
+                    label="Advanced Menu"
+                    shortcut="control|alt|D">
+      <on_click function="View.ToggleAdvanced" userdata="" />
+      <on_check function="View.CheckAdvanced" />
+    </menu_item_check>
   </menu>
 
 
@@ -484,8 +443,7 @@
       <on_check control="FlyBtnState" />
     </menu_item_check>
     <menu_item_separator />
-    <menu_item_call name="Create Landmark Here"
-                    label="Create Landmark Here">
+    <menu_item_call name="Create Landmark Here" label="Create Landmark Here">
       <on_click function="World.CreateLandmark" userdata="" />
       <on_enable function="World.EnableCreateLandmark" userdata="" />
     </menu_item_call>
@@ -506,8 +464,8 @@
     <menu_item_call name="Set Busy" label="Set Busy">
       <on_click function="World.SetBusy" userdata="" />
     </menu_item_call>
-    <menu_item_call name="Stop All Animations" enabled="false"
-                    label="Stop All Animations">
+    <menu_item_call name="Stop Animating My Avatar" enabled="false"
+                    label="Stop Animating My Avatar">
       <on_click function="Tools.StopAllAnimations" userdata="" />
     </menu_item_call>
     <menu_item_call name="Release Keys" enabled="false" label="Release Keys">
@@ -517,12 +475,12 @@
     <menu_item_separator />
     <menu_item_call name="Account History..."
                     label="Account History...">
-      <on_click function="PromptShowURL"
+      <on_click function="PromptShowURL" name="AccountHistory_url"
                 userdata="WebLaunchAccountHistory,http://secondlife.com/account/transactions.php" />
     </menu_item_call>
     <menu_item_call name="Manage My Account..."
                     label="Manage My Account...">
-      <on_click function="PromptShowURL"
+      <on_click function="PromptShowURL" name="ManageMyAccount_url"
                 userdata="WebLaunchJoinNow,http://secondlife.com/account/" />
     </menu_item_call>
     <menu_item_call name="Buy and Sell L$..." label="Buy L$...">
@@ -577,7 +535,7 @@
 
   <menu name="Tools" create_jump_keys="true" label="Tools"
         opaque="true" tear_off="true" visible="false">
-    <menu name="Select Tool" create_jump_keys="true" label="Select Tool"
+    <menu name="Select Tool" create_jump_keys="true" label="Choose Tool"
           opaque="true" tear_off="true">
       <menu_item_call name="Focus" label="Focus" shortcut="control|1">
         <on_click function="Tools.SelectTool" userdata="focus" />
@@ -596,42 +554,67 @@
       </menu_item_call>
     </menu>
     <menu_item_separator />
-    <menu_item_check name="Select Only My Objects"
-                     label="Select Only My Objects">
-      <on_click function="Tools.SelectOnlyMyObjects"
-                userdata="agents" />
-      <on_check control="SelectOwnedOnly" />
-    </menu_item_check>
-    <menu_item_check name="Select Only Movable Objects"
-                     label="Select Only Movable Objects">
-      <on_click function="Tools.SelectOnlyMovableObjects"
-                userdata="movable" />
-      <on_check control="SelectMovableOnly" />
-    </menu_item_check>
-    <menu_item_check name="Select By Surrounding"
-                     label="Select By Surrounding">
-      <on_click function="Tools.SelectBySurrounding"
-                userdata="" />
-      <on_check control="RectangleSelectInclusive" />
-    </menu_item_check>
-    <menu_item_check name="Show Hidden Selection"
-                     label="Show Hidden Selection">
-      <on_click function="Tools.ShowHiddenSelection"
-                userdata="" />
-      <on_check control="RenderHiddenSelections" />
-    </menu_item_check>
-    <menu_item_check name="Show Light Radius for Selection"
-                     label="Show Light Radius for Selection">
-      <on_click function="Tools.ShowSelectionLightRadius"
-                userdata="" />
-      <on_check control="RenderLightRadius" />
-    </menu_item_check>
-    <menu_item_check name="Show Selection Beam"
-                     label="Show Selection Beam">
-      <on_click function="ToggleControl"
-                userdata="ShowSelectionBeam" />
-      <on_check control="ShowSelectionBeam" />
-    </menu_item_check>
+    <menu_item_call name="Focus on Selection" enabled="false"
+                    label="Focus on Selection" shortcut="H">
+      <on_click function="Tools.LookAtSelection" userdata="focus" />
+      <on_enable function="Tools.SomethingSelectedNoHUD" />
+    </menu_item_call>
+    <menu_item_call name="Zoom to Selection" enabled="false"
+                    label="Zoom to Selection" shortcut="shift|H">
+      <on_click function="Tools.LookAtSelection" userdata="zoom" />
+      <on_enable function="Tools.SomethingSelectedNoHUD" />
+    </menu_item_call>
+    <menu name="Selection Options" label="Selection Options"
+          create_jump_keys="true" opaque="true" tear_off="true">
+      <menu_item_check name="Select Only My Objects"
+                       label="Select Only My Objects">
+        <on_click function="Tools.SelectOnlyMyObjects"
+                  userdata="agents" />
+        <on_check control="SelectOwnedOnly" />
+      </menu_item_check>
+      <menu_item_check name="Select Only Movable Objects"
+                       label="Select Only Movable Objects">
+        <on_click function="Tools.SelectOnlyMovableObjects"
+                  userdata="movable" />
+        <on_check control="SelectMovableOnly" />
+      </menu_item_check>
+      <menu_item_check name="Select Only Copyable Objects"
+                       label="Select Only Copyable Objects">
+        <on_click function="Tools.SelectOnlyCopyableObjects"
+                  userdata="copyable" />
+        <on_check control="SelectCopyableOnly" />
+      </menu_item_check>
+      <menu_item_check name="Select By Surrounding"
+                       label="Select By Surrounding">
+        <on_click function="Tools.SelectBySurrounding"
+                  userdata="" />
+        <on_check control="RectangleSelectInclusive" />
+      </menu_item_check>
+      <menu_item_separator />
+      <menu_item_check name="Show Hidden Selection"
+                       label="Show Hidden Selection">
+        <on_click function="Tools.ShowHiddenSelection"
+                  userdata="" />
+        <on_check control="RenderHiddenSelections" />
+      </menu_item_check>
+      <menu_item_check name="Show Light Radius for Selection"
+                       label="Show Light Radius for Selection">
+        <on_click function="Tools.ShowSelectionLightRadius"
+                  userdata="" />
+        <on_check control="RenderLightRadius" />
+      </menu_item_check>
+      <menu_item_check label="Show Selection Outlines"
+                       name="Show Selection Outlines">
+        <on_click function="Tools.ShowSelectionHighlights" userdata="" />
+        <on_check control="RenderHighlightSelections" />
+      </menu_item_check>
+      <menu_item_check name="Show Selection Beam"
+                       label="Show Selection Beam">
+        <on_click function="ToggleControl"
+                  userdata="ShowSelectionBeam" />
+        <on_check control="ShowSelectionBeam" />
+      </menu_item_check>
+    </menu>
     <menu_item_separator />
     <menu_item_check name="Snap to Grid" enabled="false"
                      label="Snap to Grid" shortcut="G">
@@ -674,26 +657,22 @@
       <on_enable function="Tools.EnableUnlink" />
     </menu_item_call>
     <menu_item_separator />
-    <menu_item_call name="Focus on Selection" enabled="false"
-                    label="Focus on Selection" shortcut="H">
-      <on_click function="Tools.LookAtSelection" userdata="focus" />
-      <on_enable function="Tools.SomethingSelectedNoHUD" />
-    </menu_item_call>
-    <menu_item_call name="Zoom to Selection" enabled="false"
-                    label="Zoom to Selection" shortcut="shift|H">
-      <on_click function="Tools.LookAtSelection" userdata="zoom" />
-      <on_enable function="Tools.SomethingSelectedNoHUD" />
+    <menu_item_call name="Duplicate" enabled="false"
+                    label="Duplicate" shortcut="control|D">
+      <on_click function="Edit.Duplicate" userdata="" />
+      <on_enable function="Edit.EnableDuplicate" />
     </menu_item_call>
     <menu_item_call name="Menu Object Take" enabled="false"
-                    label="Buy Object" visible="false">
-      <on_click function="Tools.BuyOrTake" userdata="" />
-      <on_enable function="Tools.EnableBuyOrTake" userdata="Buy,Take" />
+                    label="Take" visible="false">
+      <on_click function="Tools.Take" userdata="" />
+      <on_enable function="Tools.EnableTake" />
     </menu_item_call>
     <menu_item_call name="Take Copy" enabled="false"
                     label="Take Copy">
       <on_click function="Tools.TakeCopy" userdata="" />
       <on_enable function="Tools.EnableTakeCopy" />
     </menu_item_call>
+    <menu_item_separator />
     <menu_item_call name="Return..." enabled="false"
                     label="Return Object">
       <on_click function="Object.Return" />
@@ -750,9 +729,10 @@
                 userdata="stop" />
       <on_enable function="EditableSelected" />
     </menu_item_call>
+    <menu_item_separator />
     <menu_item_call name="Set permissions on selected task inventory"
                     enabled="false"
-                    label="Set permissions on selected task inventory">
+                    label="Bulk Set Permissions">
       <on_click function="Tools.SetBulkPerms" userdata="" />
       <on_enable function="EditableSelected" />
     </menu_item_call>
@@ -783,14 +763,9 @@
                 userdata="WebLaunchImprudenceForums,http://www.imprudenceviewer.org/forums/" />
     </menu_item_call>
     <menu_item_separator />
-    <menu_item_call name="Scripting Guide..."
-                    label="Scripting Guide...">
-      <on_click function="PromptShowFile"
-                userdata="WebLaunchLSLGuide,lsl_guide.html" />
-    </menu_item_call>
     <menu_item_call name="Scripting Portal..."
                     label="Scripting Portal...">
-      <on_click function="PromptShowURL"
+      <on_click function="PromptShowURL" name="ScriptingPortal_url"
                 userdata="WebLaunchLSLWiki,http://wiki.secondlife.com/wiki/LSL_Portal" />
     </menu_item_call>
     <menu_item_separator />
@@ -921,23 +896,31 @@
 
     <menu_item_separator />
 
-    <menu_item_check name="High-res Snapshot"
-                     label="High-res Snapshot">
-      <on_click function="ToggleControl"
-                userdata="HighResSnapshot" />
-      <on_check control="HighResSnapshot" />
-    </menu_item_check>
+
     <menu_item_check name="Quiet Snapshots to Disk"
                      label="Quiet Snapshots to Disk">
       <on_click function="ToggleControl"
                 userdata="QuietSnapshotsToDisk" />
       <on_check control="QuietSnapshotsToDisk" />
     </menu_item_check>
-    <menu_item_check name="Compress Snapshots to Disk"
-                     label="Compress Snapshots to Disk">
-      <on_click function="ToggleControl"
-                userdata="CompressSnapshotsToDisk" />
-      <on_check control="CompressSnapshotsToDisk" />
+    <menu_item_call label="Ground Sit" name="Ground Sit" 
+                    shortcut="control|alt|s">
+      <on_click function="Advanced.ToggleSit" userdata="" />
+      <on_Check function="Advanced.CheckSit" userdata="" />
+    </menu_item_call>
+    <menu_item_check label="Phantom Avatar" name="Phantom" 
+                     shortcut="control|alt|p">
+      <on_click function="Advanced.TogglePhantom" userdata="" />
+      <on_check function="Advanced.CheckPhantom" userdata="" />
+    </menu_item_check>
+    <menu_item_check label="Animation List" name="Animation List">
+      <on_click function="ShowFloater" userdata="animation list" />
+      <on_check function="FloaterVisible" userdata="animation list" />
+    </menu_item_check>
+    <menu_item_check label="Asset Browser" name="asset browser" 
+                     shortcut="alt|shift|a">
+      <on_click function="Advanced.ToggleAssetBrowser" userdata="" />
+      <on_check function="Advanced.CheckAssetBrowser" userdata="" />
     </menu_item_check>
     <menu_item_check name="Show Mouselook Crosshairs"
                      label="Show Mouselook Crosshairs">
@@ -1066,57 +1049,49 @@
       <menu name="Features" drop_shadow="true"
             opaque="true" tear_off="true">
         <menu_item_check name="UI" label="UI"
-                         shortcut="control|alt|F1">
+                         shortcut="alt|shift|F1">
           <on_click function="Advanced.ToggleFeature"
                     userdata="ui" />
           <on_check function="Advanced.CheckFeature"
                     userdata="ui" />
         </menu_item_check>
         <menu_item_check name="Selected" label="Selected"
-                         shortcut="control|alt|F2">
+                         shortcut="alt|shift|F2">
           <on_click function="Advanced.ToggleFeature"
                     userdata="selected" />
           <on_check function="Advanced.CheckFeature"
                     userdata="selected" />
         </menu_item_check>
         <menu_item_check name="Highlighted" label="Highlighted"
-                         shortcut="control|alt|F3">
+                         shortcut="alt|shift|F3">
           <on_click function="Advanced.ToggleFeature"
                     userdata="highlighted" />
           <on_check function="Advanced.CheckFeature"
                     userdata="highlighted" />
         </menu_item_check>
         <menu_item_check name="Dynamic Textures" label="Dynamic Textures"
-                         shortcut="control|alt|F4">
+                         shortcut="alt|shift|F4">
           <on_click function="Advanced.ToggleFeature"
                     userdata="dynamic textures" />
           <on_check function="Advanced.CheckFeature"
                     userdata="dynamic textures" />
         </menu_item_check>
         <menu_item_check name="Foot Shadows" label="Foot Shadows"
-                         shortcut="control|alt|F5">
+                         shortcut="alt|shift|F5">
           <on_click function="Advanced.ToggleFeature"
                     userdata="foot shadows" />
           <on_check function="Advanced.CheckFeature"
                     userdata="foot shadows" />
         </menu_item_check>
         <menu_item_check name="Fog" label="Fog"
-                         shortcut="control|alt|F6">
+                         shortcut="alt|shift|F6">
           <on_click function="Advanced.ToggleFeature"
                     userdata="fog" />
           <on_check function="Advanced.CheckFeature"
                     userdata="fog" />
-        </menu_item_check>
-        <menu_item_check name="Palletized Textures"
-                         label="Palletized Textures"
-                         shortcut="control|alt|F7">
-          <on_click function="Advanced.ToggleFeature"
-                    userdata="palette" />
-          <on_check function="Advanced.CheckFeature"
-                    userdata="palette" />
         </menu_item_check>
         <menu_item_check name="Test FRInfo" label="Test FRInfo"
-                         shortcut="control|alt|F8">
+                         shortcut="alt|shift|F8">
           <on_click function="Advanced.ToggleFeature"
                     userdata="fr info" />
           <on_check function="Advanced.CheckFeature"
@@ -1124,7 +1099,7 @@
         </menu_item_check>
         <menu_item_check name="Flexible Objects"
                          label="Flexible Objects"
-                         shortcut="control|alt|F9">
+                         shortcut="alt|shift|F9">
           <on_click function="Advanced.ToggleFeature"
                     userdata="flexible" />
           <on_check function="Advanced.CheckFeature"
@@ -1238,19 +1213,6 @@
                     userdata="glow" />
           <on_check function="Advanced.CheckInfoDisplay"
                     userdata="glow" />
-        </menu_item_check>
-        <menu_item_check name="Show Depth Buffer"
-                         label="Show Depth Buffer">
-          <on_click function="ToggleControl"
-                    userdata="ShowDepthBuffer" />
-          <on_check control="ShowDepthBuffer" />
-        </menu_item_check>
-        <menu_item_check name="Show Select Buffer"
-                         label="Show Select Buffer">
-          <on_click function="Advanced.ToggleSelectBuffer"
-                    userdata="" />
-          <on_check function="Advanced.CheckSelectBuffer"
-                    userdata="" />
         </menu_item_check>
         <menu_item_check name="Vectorize Perf Test"
                          label="Vectorize Perf Test">
@@ -1436,6 +1398,80 @@
     </menu>
 
 
+    <!-- RLVa -->
+
+    <menu name="RLVa" drop_shadow="true" opaque="true" tear_off="true">
+
+      <menu name="Debug" drop_shadow="true" opaque="true" tear_off="true">
+
+        <menu_item_check name="Show Debug Messages"
+                         label="Show Debug Messages">
+          <on_click function="ToggleControl" userdata="RestrainedLifeDebug" />
+          <on_check control="RestrainedLifeDebug" />
+        </menu_item_check>
+
+        <menu_item_separator />
+
+        <menu_item_check name="Enable Legacy Naming"
+                         label="Enable Legacy Naming">
+          <on_click function="ToggleControl" userdata="RLVaEnableLegacyNaming" />
+          <on_check control="RLVaEnableLegacyNaming" />
+        </menu_item_check>
+
+      </menu>
+
+      <menu_item_separator />
+
+      <menu_item_check name="Enable Wear" label="Enable Wear">
+        <on_click function="ToggleControl" userdata="RLVaEnableWear" />
+        <on_check control="RLVaEnableWear" />
+      </menu_item_check>
+
+      <menu_item_separator />
+
+      <menu_item_check name="Hide locked layers" label="Hide locked layers">
+        <on_click function="ToggleControl" userdata="RLVaHideLockedLayers" />
+        <on_check control="RLVaHideLockedLayers" />
+      </menu_item_check>
+      
+      <menu_item_check name="Hide locked attachments"
+                       label="Hide locked attachments">
+        <on_click function="ToggleControl"
+                  userdata="RLVaHideLockedAttachments" />
+        <on_check control="RLVaHideLockedAttachments" />
+      </menu_item_check>
+      
+      <!--
+      <menu_item_check name="Hide locked inventory"
+                       label="Hide locked inventory">
+        <on_click function="ToggleControl"
+                  userdata="RLVaHideLockedInventory" />
+        <on_check control="RLVaHideLockedInventory" />
+      </menu_item_check>
+      -->
+
+      <menu_item_separator />
+
+      <menu_item_check name="Forbid Give to #RLV" label="Forbid Give to #RLV">
+        <on_click function="ToggleControl"
+                  userdata="RestrainedLifeForbidGiveToRLV" />
+        <on_check control="RestrainedLifeForbidGiveToRLV" />
+      </menu_item_check>
+
+      <menu_item_check name="Show Name Tags" label="Show Name Tags">
+        <on_click function="ToggleControl"
+                  userdata="RLVaShowNameTags" />
+        <on_check control="RLVaShowNameTags" />
+      </menu_item_check>
+
+      <menu_item_separator />
+
+      <menu_item_call name="Restrictions..." label="Restrictions...">
+        <on_click function="RLVa.Behaviors.Show" userdata="" />
+      </menu_item_call>
+
+    </menu>
+
 
     <!-- UI -->
 
@@ -1459,13 +1495,6 @@
         -->
       </menu_item_call>
 
-      <menu_item_check name="Async Keystrokes"
-                       label="Async Keystrokes">
-        <on_click function="Advanced.ToggleAsyncKeystrokes"
-                  userdata="" />
-        <on_check function="Advanced.CheckAsyncKeystrokes"
-                  userdata="" />
-      </menu_item_check>
       <menu_item_call name="Dump SelectMgr" label="Dump SelectMgr">
         <on_click function="Advanced.DumpSelectMgr" userdata="" />
       </menu_item_call>
@@ -1608,7 +1637,8 @@
                   userdata="" />
       </menu_item_call>
       <menu_item_check name="Show XUI Names"
-                       label="Show XUI Names">
+                       label="Show XUI Names"
+                       shortcut="">
         <on_click function="Advanced.ToggleXUINames"
                   userdata="" />
         <on_check function="Advanced.CheckXUINames"
@@ -1824,12 +1854,6 @@
         <on_click function="Advanced.DumpAttachments"
                   userdata="" />
       </menu_item_call>
-      <menu_item_call name="Rebake Textures"
-                      label="Rebake Textures"
-                      shortcut="control|alt|R">
-        <on_click function="Advanced.RebakeTextures"
-                  userdata="" />
-      </menu_item_call>
     </menu>
 
 
@@ -1952,12 +1976,6 @@
                 userdata="LimitSelectDistance" />
       <on_check control="LimitSelectDistance" />
     </menu_item_check>
-    <menu_item_check name="Disable Camera Constraints"
-                     label="Disable Camera Constraints">
-      <on_click function="ToggleControl"
-                userdata="DisableCameraConstraints" />
-      <on_check control="DisableCameraConstraints" />
-    </menu_item_check>
     <menu_item_check name="Mouse Smoothing"
                      label="Mouse Smoothing">
       <on_click function="ToggleControl"
@@ -1973,11 +1991,18 @@
                 userdata="ShowConsoleWindow" />
       <on_check control="ShowConsoleWindow" />
     </menu_item_check>
+
+    <menu_item_check name="Restrained Life Support"
+                     label="Restrained Life Support">
+      <on_click function="RLVa.Main.Toggle" />
+      <on_check function="RLVa.Main.Enabled" />
+    </menu_item_check>
+
     <menu_item_check name="Output Debug Minidump"
                      label="Output Debug Minidump">
       <on_click function="ToggleControl"
-                userdata="SaveMiniDump" />
-      <on_check control="SaveMiniDump" />
+                userdata="SaveMinidump" />
+      <on_check control="SaveMinidump" />
     </menu_item_check>
     <menu_item_check name="Clothing..."
                      label="Clothing...">

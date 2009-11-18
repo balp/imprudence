@@ -34,157 +34,19 @@
 
 #include "llviewernetwork.h"
 #include "llviewercontrol.h"
+#include "llstartup.h"
 
-struct LLGridData
-{
-	const char* mLabel;
-  const char* mCodeName;
-	const char* mName;
-	const char* mLoginURI;
-	const char* mHelperURI;
-};
-
-static LLGridData gGridInfo[GRID_INFO_COUNT] = 
-{
-	{ "None", "", "", "", "" },
-	{ "SL Main Grid",
-	  "Agni",
-	  "util.agni.lindenlab.com", 
-	  "https://login.agni.lindenlab.com/cgi-bin/login.cgi",
-	  "https://secondlife.com/helpers/" },
-	{ "SL Beta Grid",
-	  "Aditi",
-	  "util.aditi.lindenlab.com",
-	  "https://login.aditi.lindenlab.com/cgi-bin/login.cgi",
-	  "http://aditi-secondlife.webdev.lindenlab.com/helpers/" },
-	{ "Local OpenSim",
-	  "",
-	  "localhost",
-	  "http://127.0.0.1:9000",
-	  "" },
-	{ "Other", "", "", "", "" }
-};
-
-const EGridInfo DEFAULT_GRID_CHOICE = GRID_INFO_AGNI;
+ #include "hippoGridManager.h"
 
 
 unsigned char gMACAddress[MAC_ADDRESS_BYTES];		/* Flawfinder: ignore */
 
-LLViewerLogin::LLViewerLogin() :
-	mGridChoice(DEFAULT_GRID_CHOICE)
-{
-}
-
-void LLViewerLogin::setGridChoice(EGridInfo grid)
-{	
-	if(grid < 0 || grid >= GRID_INFO_COUNT)
-	{
-		llerrs << "Invalid grid index specified." << llendl;
-	}
-
-	if(mGridChoice != grid || gSavedSettings.getS32("ServerChoice") != grid)
-	{
-		mGridChoice = grid;
-		if(GRID_INFO_LOCAL == mGridChoice)
-		{
-			mGridName = LOOPBACK_ADDRESS_STRING;
-		}
-		else if(GRID_INFO_OTHER == mGridChoice)
-		{
-			// *FIX:Mani - could this possibly be valid?
-			mGridName = "other"; 
-		}
-		else
-		{
-			mGridName = gGridInfo[mGridChoice].mLabel;
-		}
-
-		gSavedSettings.setS32("ServerChoice", mGridChoice);
-		gSavedSettings.setString("CustomServer", "");
-	}
-}
-
-void LLViewerLogin::setGridChoice(const std::string& grid_name)
-{
-	// Set the grid choice based on a string.
-	// The string can be:
-	// - a grid label from the gGridInfo table 
-	// - an ip address
-    if(!grid_name.empty())
-    {
-        // find the grid choice from the user setting.
-        int grid_index = GRID_INFO_NONE; 
-        for(;grid_index < GRID_INFO_OTHER; ++grid_index)
-        {
-            if(0 == LLStringUtil::compareInsensitive(gGridInfo[grid_index].mLabel, grid_name))
-            {
-				// Founding a matching label in the list...
-				setGridChoice((EGridInfo)grid_index);
-				break;
-            }
-        }
-
-        if(GRID_INFO_OTHER == grid_index)
-        {
-            // *FIX:MEP Can and should we validate that this is an IP address?
-            mGridChoice = GRID_INFO_OTHER;
-            mGridName = grid_name;
-			gSavedSettings.setS32("ServerChoice", mGridChoice);
-			gSavedSettings.setString("CustomServer", mGridName);
-        }
-    }
-}
-
-void LLViewerLogin::resetURIs()
-{
-    // Clear URIs when picking a new server
-	gSavedSettings.setValue("CmdLineLoginURI", LLSD::emptyArray());
-	gSavedSettings.setString("CmdLineHelperURI", "");
-}
-
-EGridInfo LLViewerLogin::getGridChoice() const
-{
-	return mGridChoice;
-}
-
-std::string LLViewerLogin::getGridLabel() const
-{
-	if(mGridChoice == GRID_INFO_NONE)
-	{
-		return "None";
-	}
-	else if(mGridChoice < GRID_INFO_OTHER)
-	{
-		return gGridInfo[mGridChoice].mLabel;
-	}
-
-	return mGridName;
-}
-
-std::string LLViewerLogin::getGridCodeName() const
-{
-	if( gGridInfo[mGridChoice].mCodeName == "" )
-	{
-		return getGridLabel();
-	}
-
-	return gGridInfo[mGridChoice].mCodeName;
-}
-
-std::string LLViewerLogin::getKnownGridLabel(EGridInfo grid_index) const
-{
-	if(grid_index > GRID_INFO_NONE && grid_index < GRID_INFO_OTHER)
-	{
-		return gGridInfo[grid_index].mLabel;
-	}
-	return gGridInfo[GRID_INFO_NONE].mLabel;
-}
 
 void LLViewerLogin::getLoginURIs(std::vector<std::string>& uris) const
 {
 	// return the login uri set on the command line.
 	LLControlVariable* c = gSavedSettings.getControl("CmdLineLoginURI");
-	if(c)
+	if(c && !LLStartUp::shouldAutoLogin())
 	{
 		LLSD v = c->getValue();
 		if(v.isArray())
@@ -208,10 +70,12 @@ void LLViewerLogin::getLoginURIs(std::vector<std::string>& uris) const
 			}
 		}
 	}
-
+	
 	// If there was no command line uri...
 	if(uris.empty())
 	{
+		uris.push_back(gHippoGridManager->getConnectedGrid()->getLoginUri());
+		/*
 		// If its a known grid choice, get the uri from the table,
 		// else try the grid name.
 		if(mGridChoice > GRID_INFO_NONE && mGridChoice < GRID_INFO_OTHER)
@@ -221,41 +85,36 @@ void LLViewerLogin::getLoginURIs(std::vector<std::string>& uris) const
 		else
 		{
 			uris.push_back(mGridName);
-		}
+		} */
 	}
 }
 
-std::string LLViewerLogin::getHelperURI() const
+const std::string &LLViewerLogin::getGridLabel() const
 {
-	std::string helper_uri = gSavedSettings.getString("CmdLineHelperURI");
-	if (helper_uri.empty())
-	{
-		// grab URI from selected grid
-		if(mGridChoice > GRID_INFO_NONE && mGridChoice < GRID_INFO_OTHER)
-		{
-			helper_uri = gGridInfo[mGridChoice].mHelperURI;
-		}
+	return gHippoGridManager->getConnectedGrid()->getGridNick();
+}
 
-		if (helper_uri.empty())
-		{
-			// what do we do with unnamed/miscellaneous grids?
-			// for now, operations that rely on the helper URI (currency/land purchasing) will fail
-		}
-	}
-	return helper_uri;
+const std::string &LLViewerLogin::getLoginPage() const
+{
+	return gHippoGridManager->getConnectedGrid()->getLoginPage();
+}
+
+const std::string &LLViewerLogin::getHelperURI() const
+{
+	return gHippoGridManager->getConnectedGrid()->getHelperUri();
+}
+  
+bool LLViewerLogin::isOpenSimulator()
+{
+	return gHippoGridManager->getConnectedGrid()->isOpenSimulator();
+}
+
+bool LLViewerLogin::isSecondLife()
+{
+	return gHippoGridManager->getConnectedGrid()->isSecondLife();
 }
 
 bool LLViewerLogin::isInProductionGrid()
 {
-	// *NOTE:Mani This used to compare GRID_INFO_AGNI to gGridChoice,
-	// but it seems that loginURI trumps that.
-	std::vector<std::string> uris;
-	getLoginURIs(uris);
-	LLStringUtil::toLower(uris[0]);
-	if((uris[0].find("agni") != std::string::npos))
-	{
-		return true;
-	}
-
-	return false;
+	return true;
 }

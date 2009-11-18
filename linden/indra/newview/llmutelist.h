@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2003&license=viewergpl$
  * 
- * Copyright (c) 2003-2008, Linden Research, Inc.
+ * Copyright (c) 2003-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -60,8 +60,7 @@ public:
 		flagAll				= 0x0000000F		// Mask of all currently defined flags
 	};
 	
-	LLMute(const LLUUID& id, const std::string& name = std::string(), EType type = BY_NAME, U32 flags = 0) 
-	: mID(id), mName(name), mType(type),mFlags(flags) { }
+	LLMute(const LLUUID& id, const std::string& name = std::string(), EType type = BY_NAME, U32 flags = 0);
 
 	// Returns name + suffix based on type
 	// For example:  "James Tester (resident)"
@@ -101,6 +100,11 @@ public:
 
 	void addObserver(LLMuteListObserver* observer);
 	void removeObserver(LLMuteListObserver* observer);
+
+
+  void        addMuteAgentConfirm( const LLMute &mute );
+  void        addMuteObjectConfirm( const LLMute &mute );
+  static void addMuteCallback(S32 option, void *userdata);
 
 	// Add either a normal or a BY_NAME mute, for any or all properties.
 	BOOL add(const LLMute& mute, U32 flags = 0);

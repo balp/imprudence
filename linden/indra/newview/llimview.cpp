@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -267,7 +267,8 @@ public:
 		EInstantMessage type,
 		EInvitationType inv_type,
 		const std::string& session_handle,
-		const std::string& notify_box) : 
+		const std::string& notify_box,
+		const std::string& session_uri) : 
 		mSessionID(session_id),
 		mSessionName(session_name),
 		mCallerID(caller_id),
@@ -275,7 +276,8 @@ public:
 		mType(type),
 		mInvType(inv_type),
 		mSessionHandle(session_handle),
-		mNotifyBox(notify_box)
+		mNotifyBox(notify_box),
+		mSessionURI(session_uri)
 	{};
 
 	LLUUID		mSessionID;
@@ -286,6 +288,7 @@ public:
 	EInvitationType mInvType;
 	std::string	mSessionHandle;
 	std::string	mNotifyBox;
+	std::string	mSessionURI;
 };
 
 
@@ -363,7 +366,8 @@ void LLIMMgr::toggle(void*)
 
 LLIMMgr::LLIMMgr() :
 	mFriendObserver(NULL),
-	mIMReceived(FALSE)
+	mIMReceived(FALSE),
+	mIMUnreadCount(0)
 {
 	mFriendObserver = new LLIMViewFriendObserver(this);
 	LLAvatarTracker::instance().addObserver(mFriendObserver);
@@ -507,6 +511,7 @@ void LLIMMgr::addMessage(
 
 		//notify of a new IM
 		notifyNewIM();
+		mIMUnreadCount++;
 	}
 }
 
@@ -550,11 +555,17 @@ void LLIMMgr::notifyNewIM()
 void LLIMMgr::clearNewIMNotification()
 {
 	mIMReceived = FALSE;
+	mIMUnreadCount = 0;
 }
 
 BOOL LLIMMgr::getIMReceived() const
 {
 	return mIMReceived;
+}
+
+int LLIMMgr::getIMUnreadCount()
+{
+	return mIMUnreadCount;
 }
 
 // This method returns TRUE if the local viewer has a session
@@ -568,7 +579,8 @@ BOOL LLIMMgr::isIMSessionOpen(const LLUUID& uuid)
 
 LLUUID LLIMMgr::addP2PSession(const std::string& name,
 							const LLUUID& other_participant_id,
-							const std::string& voice_session_handle)
+							const std::string& voice_session_handle,
+							const std::string& caller_uri)
 {
 	LLUUID session_id = addSession(name, IM_NOTHING_SPECIAL, other_participant_id);
 
@@ -576,7 +588,7 @@ LLUUID LLIMMgr::addP2PSession(const std::string& name,
 	if(floater)
 	{
 		LLVoiceChannelP2P* voice_channelp = (LLVoiceChannelP2P*)floater->getVoiceChannel();
-		voice_channelp->setSessionHandle(voice_session_handle);
+		voice_channelp->setSessionHandle(voice_session_handle, caller_uri);		
 	}
 
 	return session_id;
@@ -699,7 +711,8 @@ void LLIMMgr::inviteToSession(
 	const std::string& caller_name,
 	EInstantMessage type,
 	EInvitationType inv_type,
-	const std::string& session_handle)
+	const std::string& session_handle,
+	const std::string& session_uri)
 {
 	//ignore invites from muted residents
 	if (LLMuteList::getInstance()->isMuted(caller_id))
@@ -741,7 +754,8 @@ void LLIMMgr::inviteToSession(
 		type,
 		inv_type,
 		session_handle,
-		notify_box_type);
+		notify_box_type,
+		session_uri);
 	
 	LLVoiceChannel* channelp = LLVoiceChannel::getChannelByID(session_id);
 	if (channelp && channelp->callStarted())
@@ -916,7 +930,8 @@ void LLIMMgr::inviteUserResponse(S32 option, void* user_data)
 				invitep->mSessionID = gIMMgr->addP2PSession(
 					invitep->mSessionName,
 					invitep->mCallerID,
-					invitep->mSessionHandle);
+					invitep->mSessionHandle, 
+					invitep->mSessionURI );
 
 				LLFloaterIMPanel* im_floater =
 					gIMMgr->findFloaterBySession(
@@ -1535,6 +1550,19 @@ public:
 			{
 				return;
 			}
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g)
+			// TODO-RLVa: duplicate from process_improved_im()?
+			if (gRlvHandler.hasBehaviour(RLV_BHVR_RECVIM))
+			{
+				if (gAgent.isInGroup(session_id))
+				{
+					if (!gRlvHandler.isException(RLV_BHVR_RECVIM, session_id))
+						return;
+				}
+				else if (!gRlvHandler.isException(RLV_BHVR_RECVIM, from_id))
+					message = message.substr(0, message_offset) + rlv_handler_t::cstrBlockedRecvIM;
+			}
+// [/RLVa:KB]
 
 			// standard message, not from system
 			std::string saved;

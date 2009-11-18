@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -51,6 +51,7 @@
 #include "llxmlnode.h"
 #include "stdenums.h"
 #include "lluistring.h"
+#include "llcursortypes.h"
 
 const U32	FOLLOWS_NONE	= 0x00;
 const U32	FOLLOWS_LEFT	= 0x01;
@@ -463,6 +464,8 @@ public:
 	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask);
+	/*virtual*/ BOOL	handleMiddleMouseUp(S32 x, S32 y, MASK mask);
+	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleDoubleClick(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleScrollWheel(S32 x, S32 y, S32 clicks);
 	/*virtual*/ BOOL	handleRightMouseDown(S32 x, S32 y, MASK mask);
@@ -596,6 +599,8 @@ protected:
 	LLView*	childrenHandleHover(S32 x, S32 y, MASK mask);
 	LLView* childrenHandleMouseUp(S32 x, S32 y, MASK mask);
 	LLView* childrenHandleMouseDown(S32 x, S32 y, MASK mask);
+	LLView* childrenHandleMiddleMouseUp(S32 x, S32 y, MASK mask);
+	LLView* childrenHandleMiddleMouseDown(S32 x, S32 y, MASK mask);
 	LLView* childrenHandleDoubleClick(S32 x, S32 y, MASK mask);
 	LLView*	childrenHandleScrollWheel(S32 x, S32 y, S32 clicks);
 	LLView* childrenHandleRightMouseDown(S32 x, S32 y, MASK mask);
@@ -649,7 +654,9 @@ private:
 	mutable dummy_widget_map_t mDummyWidgets;
 
 	boost::signals::connection mControlConnection;
-	
+
+	ECursorType mHoverCursor;
+
 public:
 	static BOOL	sDebugRects;	// Draw debug rects behind everything.
 	static BOOL sDebugKeys;

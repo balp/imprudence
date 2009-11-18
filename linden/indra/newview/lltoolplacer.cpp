@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -124,6 +124,14 @@ BOOL LLToolPlacer::raycastForNewObjPos( S32 x, S32 y, LLViewerObject** hit_obj, 
 		return FALSE;
 	}
 
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-0.2.0f
+	// NOTE: don't use surface_pos_global since for prims it will be the center of the prim while we need center + offset
+	if ( (gRlvHandler.hasBehaviour(RLV_BHVR_FARTOUCH)) && (dist_vec_squared(gAgent.getPositionGlobal(), pick.mPosGlobal) > 1.5f * 1.5f) )
+	{
+		return FALSE;
+	}
+// [/RLVa:KB]
+
 	// Find the sim where the surface lives.
 	LLViewerRegion *regionp = LLWorld::getInstance()->getRegionFromPosGlobal(surface_pos_global);
 	if (!regionp)
@@ -153,6 +161,20 @@ BOOL LLToolPlacer::raycastForNewObjPos( S32 x, S32 y, LLViewerObject** hit_obj, 
 	}
 
 	return TRUE;
+}
+
+
+static S32 getTreeGrassSpecies(std::map<std::string, S32> &table, const char *control, S32 max)
+{
+	const std::string &species = gSavedSettings.getString(control);
+	std::map<std::string, S32>::iterator it;
+	it = table.find(species);
+	if (it != table.end()) {
+		return it->second;
+	} else {
+		// if saved species not found, default to "Random"
+		return (rand() % max);
+	}
 }
 
 
@@ -200,13 +222,13 @@ BOOL LLToolPlacer::addObject( LLPCode pcode, S32 x, S32 y, U8 use_physics )
 	case LL_PCODE_LEGACY_GRASS:
 		//  Randomize size of grass patch 
 		scale.setVec(10.f + ll_frand(20.f), 10.f + ll_frand(20.f),  1.f + ll_frand(2.f));
-		state = rand() % LLVOGrass::sMaxGrassSpecies;
+		state = getTreeGrassSpecies(LLVOGrass::sSpeciesNames, "LastGrass", LLVOGrass::sMaxGrassSpecies);
 		break;
 
 
 	case LL_PCODE_LEGACY_TREE:
 	case LL_PCODE_TREE_NEW:
-		state = rand() % LLVOTree::sMaxTreeSpecies;
+		state = getTreeGrassSpecies(LLVOTree::sSpeciesNames, "LastTree", LLVOTree::sMaxTreeSpecies);
 		break;
 
 	case LL_PCODE_SPHERE:
@@ -224,8 +246,8 @@ BOOL LLToolPlacer::addObject( LLPCode pcode, S32 x, S32 y, U8 use_physics )
 	// Play creation sound
 	if (gAudiop)
 	{
-		F32 volume = gSavedSettings.getBOOL("MuteUI") ? 0.f : gSavedSettings.getF32("AudioLevelUI");
-		gAudiop->triggerSound( LLUUID(gSavedSettings.getString("UISndObjectCreate")), gAgent.getID(), volume);
+		gAudiop->triggerSound( LLUUID(gSavedSettings.getString("UISndObjectCreate")),
+							   gAgent.getID(), 1.0f, LLAudioEngine::AUDIO_TYPE_UI);
 	}
 
 	gMessageSystem->newMessageFast(_PREHASH_ObjectAdd);
@@ -241,7 +263,10 @@ BOOL LLToolPlacer::addObject( LLPCode pcode, S32 x, S32 y, U8 use_physics )
 	{
 		flags |= FLAGS_USE_PHYSICS;
 	}
-	if (create_selected)
+	//if (create_selected)
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0b) | Added: RLVa-1.0.0b
+	if ( (create_selected) && (!gRlvHandler.hasBehaviour(RLV_BHVR_EDIT)) )
+// [/RLVa:KB]
 	{
 		flags |= FLAGS_CREATE_SELECTED;
 	}
@@ -499,6 +524,13 @@ BOOL LLToolPlacer::placeObject(S32 x, S32 y, MASK mask)
 {
 	BOOL added = TRUE;
 	
+// [RLVa:KB] - Checked: 2009-07-05 (RLVa-1.0.0b)
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_REZ))
+	{
+		return TRUE; // Callers seem to expect a "did you handle it?" so we return TRUE rather than FALSE
+	}
+// [/RLVa:KB]
+
 	if (gSavedSettings.getBOOL("CreateToolCopySelection"))
 	{
 		added = addDuplicate(x, y);

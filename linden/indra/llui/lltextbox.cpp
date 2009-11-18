@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -33,6 +33,7 @@
 #include "lltextbox.h"
 #include "lluictrlfactory.h"
 #include "llfocusmgr.h"
+#include "llwindow.h"
 
 static LLRegisterWidget<LLTextBox> r("text");
 
@@ -193,12 +194,14 @@ BOOL LLTextBox::handleMouseUp(S32 x, S32 y, MASK mask)
 
 BOOL LLTextBox::handleHover(S32 x, S32 y, MASK mask)
 {
+	BOOL handled = LLView::handleHover(x,y,mask);
 	if(mHoverActive)
 	{
 		mHasHover = TRUE; // This should be set every frame during a hover.
-		return TRUE;
+		getWindow()->setCursor(UI_CURSOR_ARROW);
 	}
-	return LLView::handleHover(x,y,mask);
+
+	return (handled || mHasHover);
 }
 
 void LLTextBox::setText(const LLStringExplicit& text)

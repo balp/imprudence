@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -90,7 +90,17 @@ LLPreviewLandmark::LLPreviewLandmark(const std::string& name,
 {
 	
 	mFactoryMap["place_details_panel"] = LLCallbackMap(LLPreviewLandmark::createPlaceDetail, this);
-	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_preview_existing_landmark.xml", &getFactoryMap());
+	if (show_keep_discard)
+	{
+		// Decided against this, a text notification is a better fix for this -- McCabe
+		//LLUICtrlFactory::getInstance()->buildFloater(this, "floater_preview_new_landmark.xml", &getFactoryMap());
+		//childSetAction("Discard btn",onDiscardBtn,this);
+	}
+	else
+	{
+		LLUICtrlFactory::getInstance()->buildFloater(this, "floater_preview_existing_landmark.xml", &getFactoryMap());
+	}
+
 
 	/*
 	childSetCommitCallback("desc_editor", LLPreview::onText, this);

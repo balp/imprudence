@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -318,6 +318,9 @@ BOOL LLPanelDisplay::postBuild()
 	mLightingText = getChild<LLTextBox>("LightingDetailText");
 	mMeshDetailText = getChild<LLTextBox>("MeshDetailText");
 
+	childSetValue("toggle_windlight_control", gSavedSettings.getBOOL("EnableWindlightRemote"));
+	mWLControl = gSavedSettings.getBOOL("EnableWindlightRemote");
+
 	refresh();
 
 	return TRUE;
@@ -475,7 +478,12 @@ void LLPanelDisplay::refreshEnabledState()
 	}
 
 	// Vertex Shaders
-	mCtrlShaderEnable->setEnabled(LLFeatureManager::getInstance()->isFeatureAvailable("VertexShaderEnable"));
+//	mCtrlShaderEnable->setEnabled(LLFeatureManager::getInstance()->isFeatureAvailable("VertexShaderEnable"));
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-0.2.0a
+	// "Basic Shaders" can't be disabled - but can be enabled - under @setenv=n
+	bool fCtrlShaderEnable = LLFeatureManager::getInstance()->isFeatureAvailable("VertexShaderEnable");
+	mCtrlShaderEnable->setEnabled(fCtrlShaderEnable && (!gRlvHandler.hasBehaviour(RLV_BHVR_SETENV) || !mShaderEnable));
+// [/RLVa:KB]
 
 	BOOL shaders = mCtrlShaderEnable->get();
 	if (shaders)
@@ -490,7 +498,12 @@ void LLPanelDisplay::refreshEnabledState()
 
 	// *HACK just checks to see if we can use shaders... 
 	// maybe some cards that use shaders, but don't support windlight
-	mCtrlWindLight->setEnabled(mCtrlShaderEnable->getEnabled() && shaders);
+//	mCtrlWindLight->setEnabled(mCtrlShaderEnable->getEnabled() && shaders);
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-0.2.0a
+	// "Atmospheric Shaders" can't be disabled - but can be enabled - under @setenv=n
+	bool fCtrlWindLightEnable = fCtrlShaderEnable && shaders;
+	mCtrlWindLight->setEnabled(fCtrlWindLightEnable && (!gRlvHandler.hasBehaviour(RLV_BHVR_SETENV) || !mWindLight));
+// [/RLVa:KB]
 
 	// turn off sky detail if atmostpherics isn't on
 	mCtrlSkyFactor->setEnabled(gSavedSettings.getBOOL("WindLightUseAtmosShaders"));
@@ -690,6 +703,8 @@ void LLPanelDisplay::cancel()
 	gSavedSettings.setU32("WLSkyDetail", mSkyLOD);
 	gSavedSettings.setS32("RenderMaxPartCount", mParticleCount);
 	gSavedSettings.setS32("RenderGlowResolutionPow", mPostProcess);
+
+	gSavedSettings.setBOOL("EnableWindlightRemote", mWLControl);
 }
 
 void LLPanelDisplay::apply()
@@ -701,6 +716,8 @@ void LLPanelDisplay::apply()
 	{
 		applyWindowSize();
 	}
+
+	gSavedSettings.setBOOL("EnableWindlightRemote", childGetValue("toggle_windlight_control").asBoolean());
 }
 
 void LLPanelDisplay::onChangeQuality(LLUICtrl *ctrl, void *data)
@@ -753,6 +770,8 @@ void LLPanelDisplay::onApplyResolution(LLUICtrl* src, void* user_data)
 
 void LLPanelDisplay::applyResolution()
 {
+
+	gGL.flush();
 	char aspect_ratio_text[ASPECT_RATIO_STR_LEN];		/*Flawfinder: ignore*/
 	if (mCtrlAspectRatio->getCurrentIndex() == -1)
 	{
@@ -787,75 +806,23 @@ void LLPanelDisplay::applyResolution()
 	{
 		mAspectRatio = (F32)mCtrlAspectRatio->getValue().asReal();
 	}
-
+	
 	// presumably, user entered a non-numeric value if aspect_ratio == 0.f
 	if (mAspectRatio != 0.f)
 	{
 		mAspectRatio = llclamp(mAspectRatio, 0.2f, 5.f);
 		gSavedSettings.setF32("FullScreenAspectRatio", mAspectRatio);
-		if (gSavedSettings.getBOOL("FullScreenAutoDetectAspectRatio"))
-		{
-			gViewerWindow->getWindow()->setNativeAspectRatio(0.f);
-		}
-		else
-		{
-			gViewerWindow->getWindow()->setNativeAspectRatio(mAspectRatio);
-		}
 	}
-	gViewerWindow->reshape(gViewerWindow->getWindowDisplayWidth(), gViewerWindow->getWindowDisplayHeight());
-
+	
 	// Screen resolution
 	S32 num_resolutions;
-	LLWindow::LLWindowResolution* supported_resolutions = gViewerWindow->getWindow()->getSupportedResolutions(num_resolutions);
+	LLWindow::LLWindowResolution* supported_resolutions = 
+		gViewerWindow->getWindow()->getSupportedResolutions(num_resolutions);
+	U32 resIndex = mCtrlFullScreen->getCurrentIndex();
+	gSavedSettings.setS32("FullScreenWidth", supported_resolutions[resIndex].mWidth);
+	gSavedSettings.setS32("FullScreenHeight", supported_resolutions[resIndex].mHeight);
 
-	// switching to windowed
-	BOOL fullscreen = !mCtrlWindowed->get();
-
-	// check if resolution has changed
-	BOOL targetFullscreen;
-	S32 targetWidth;
-	S32 targetHeight;
-	
-	gViewerWindow->getTargetWindow(targetFullscreen, targetWidth, targetHeight);
-
-	if ((fullscreen != targetFullscreen) ||
-		(fullscreen &&
-		 (supported_resolutions[mCtrlFullScreen->getCurrentIndex()].mWidth != targetWidth ||
-		  supported_resolutions[mCtrlFullScreen->getCurrentIndex()].mHeight != targetHeight)
-		 ))
-	{
-		// change fullscreen resolution or switch in/out of windowed mode
-		BOOL result;
-
-		BOOL logged_in = (LLStartUp::getStartupState() >= STATE_STARTED);
-		if (fullscreen)
-		{
-			result = gViewerWindow->changeDisplaySettings(TRUE, 
-				LLCoordScreen(	supported_resolutions[mCtrlFullScreen->getCurrentIndex()].mWidth, 
-								supported_resolutions[mCtrlFullScreen->getCurrentIndex()].mHeight), 
-				gSavedSettings.getBOOL("DisableVerticalSync"),
-				logged_in);
-		}
-		else
-		{
-			result = gViewerWindow->changeDisplaySettings(FALSE, 
-				LLCoordScreen(gSavedSettings.getS32("WindowWidth"), gSavedSettings.getS32("WindowHeight")), 
-				TRUE,
-				logged_in);
-		}
-		if (!result)
-		{
-
-			// GL is non-existent at this point, so we can't continue.
-			llerrs << "LLPanelDisplay::apply() failed" << llendl;
-		}
-	}
-
-	// force aspect ratio
-	if (fullscreen)
-	{
-		LLViewerCamera::getInstance()->setAspect( gViewerWindow->getDisplayAspectRatio() );
-	}
+	gViewerWindow->requestResolutionUpdate(!mCtrlWindowed->get());
 
 	send_agent_update(TRUE);
 

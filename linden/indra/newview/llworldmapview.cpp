@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -49,6 +49,7 @@
 #include "llfloatermap.h"
 #include "llfloaterworldmap.h"
 #include "llfocusmgr.h"
+//#include "llmutelist.h" info not being sent
 #include "lltextbox.h"
 #include "lltextureview.h"
 #include "lltracker.h"
@@ -70,9 +71,10 @@ const S32 SCROLL_HINT_WIDTH = 65;
 const F32 BIG_DOT_RADIUS = 5.f;
 BOOL LLWorldMapView::sHandledLastClick = FALSE;
 
-LLUIImagePtr LLWorldMapView::sAvatarYouSmallImage = NULL;
 LLUIImagePtr LLWorldMapView::sAvatarSmallImage = NULL;
-LLUIImagePtr LLWorldMapView::sAvatarLargeImage = NULL;
+LLUIImagePtr LLWorldMapView::sAvatarYouImage = NULL;
+LLUIImagePtr LLWorldMapView::sAvatarYouLargeImage = NULL;
+LLUIImagePtr LLWorldMapView::sAvatarLevelImage = NULL;
 LLUIImagePtr LLWorldMapView::sAvatarAboveImage = NULL;
 LLUIImagePtr LLWorldMapView::sAvatarBelowImage = NULL;
 
@@ -112,11 +114,12 @@ std::map<std::string,std::string> LLWorldMapView::sStringsMap;
 
 void LLWorldMapView::initClass()
 {
-	sAvatarYouSmallImage =	LLUI::getUIImage("map_avatar_you_8.tga");
 	sAvatarSmallImage = 	LLUI::getUIImage("map_avatar_8.tga");
-	sAvatarLargeImage = 	LLUI::getUIImage("map_avatar_16.tga");
-	sAvatarAboveImage = 	LLUI::getUIImage("map_avatar_above_8.tga");
-	sAvatarBelowImage = 	LLUI::getUIImage("map_avatar_below_8.tga");
+	sAvatarYouImage =		LLUI::getUIImage("map_avatar_16.tga");
+	sAvatarYouLargeImage =	LLUI::getUIImage("map_avatar_you_32.tga");
+	sAvatarLevelImage = 	LLUI::getUIImage("map_avatar_32.tga");
+	sAvatarAboveImage = 	LLUI::getUIImage("map_avatar_above_32.tga");
+	sAvatarBelowImage = 	LLUI::getUIImage("map_avatar_below_32.tga");
 
 	sHomeImage =			LLUI::getUIImage("map_home.tga");
 	sTelehubImage = 		LLUI::getUIImage("map_telehub.tga");
@@ -136,9 +139,10 @@ void LLWorldMapView::initClass()
 // static
 void LLWorldMapView::cleanupClass()
 {
-	sAvatarYouSmallImage = NULL;
 	sAvatarSmallImage = NULL;
-	sAvatarLargeImage = NULL;
+	sAvatarYouImage = NULL;
+	sAvatarYouLargeImage = NULL;
+	sAvatarLevelImage = NULL;
 	sAvatarAboveImage = NULL;
 	sAvatarBelowImage = NULL;
 
@@ -301,7 +305,7 @@ void LLWorldMapView::draw()
 
 	LLLocalClipRect clip(getLocalRect());
 	{
-		LLGLSNoTexture no_texture;
+		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	
 		glMatrixMode(GL_MODELVIEW);
 
@@ -377,7 +381,7 @@ void LLWorldMapView::draw()
 		
 		// Draw using the texture.  If we don't clamp we get artifact at
 		// the edge.
-		LLViewerImage::bindTexture(current_image);
+		gGL.getTexUnit(0)->bind(current_image);
 
 		// Draw map image into RGB
 		//gGL.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -385,7 +389,7 @@ void LLWorldMapView::draw()
 		gGL.setColorMask(true, false);
 		gGL.color4f(1.f, 1.f, 1.f, layer_alpha);
 
-		gGL.begin(LLVertexBuffer::QUADS);
+		gGL.begin(LLRender::QUADS);
 			gGL.texCoord2f(0.0f, 1.0f);
 			gGL.vertex3f(left, top, -1.0f);
 			gGL.texCoord2f(0.0f, 0.0f);
@@ -401,7 +405,7 @@ void LLWorldMapView::draw()
 		gGL.setColorMask(false, true);
 		gGL.color4f(1.f, 1.f, 1.f, 1.f);
 
-		gGL.begin(LLVertexBuffer::QUADS);
+		gGL.begin(LLRender::QUADS);
 			gGL.texCoord2f(0.0f, 1.0f);
 			gGL.vertex2f(left, top);
 			gGL.texCoord2f(0.0f, 0.0f);
@@ -434,7 +438,7 @@ void LLWorldMapView::draw()
 		if (info->mOverlayImage.isNull() && info->mMapImageID[2].notNull())
 		{
 			info->mOverlayImage = gImageList.getImage(info->mMapImageID[2], MIPMAP_TRUE, FALSE);
-			info->mOverlayImage->bind(0);
+			gGL.getTexUnit(0)->bind(info->mOverlayImage.get());
 			info->mOverlayImage->setClamp(TRUE, TRUE);
 		}
 		
@@ -536,13 +540,13 @@ void LLWorldMapView::draw()
 			// Draw using the texture.  If we don't clamp we get artifact at
 			// the edge.
 			LLGLSUIDefault gls_ui;
-			LLViewerImage::bindTexture(simimage);
+			gGL.getTexUnit(0)->bind(simimage);
 
 			gGL.setSceneBlendType(LLRender::BT_ALPHA);
 			F32 alpha = sim_alpha * info->mAlpha;
 			gGL.color4f(1.f, 1.0f, 1.0f, alpha);
 
-			gGL.begin(LLVertexBuffer::QUADS);
+			gGL.begin(LLRender::QUADS);
 				gGL.texCoord2f(0.f, 1.f);
 				gGL.vertex3f(left, top, 0.f);
 				gGL.texCoord2f(0.f, 0.f);
@@ -555,9 +559,9 @@ void LLWorldMapView::draw()
 
 			if (gSavedSettings.getBOOL("MapShowLandForSale") && overlayimage && overlayimage->getHasGLTexture())
 			{
-				LLViewerImage::bindTexture(overlayimage);
+				gGL.getTexUnit(0)->bind(overlayimage);
 				gGL.color4f(1.f, 1.f, 1.f, alpha);
-				gGL.begin(LLVertexBuffer::QUADS);
+				gGL.begin(LLRender::QUADS);
 					gGL.texCoord2f(0.f, 1.f);
 					gGL.vertex3f(left, top, -0.5f);
 					gGL.texCoord2f(0.f, 0.f);
@@ -577,8 +581,8 @@ void LLWorldMapView::draw()
 				gGL.setColorMask(false, true);
 				gGL.color4f(1.f, 1.f, 1.f, 1.f);
 
-				LLGLSNoTexture gls_no_texture;
-				gGL.begin(LLVertexBuffer::QUADS);
+				gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+				gGL.begin(LLRender::QUADS);
 					gGL.vertex2f(left, top);
 					gGL.vertex2f(left, bottom);
 					gGL.vertex2f(right, bottom);
@@ -596,8 +600,8 @@ void LLWorldMapView::draw()
 			gGL.blendFunc(LLRender::BF_DEST_ALPHA, LLRender::BF_SOURCE_ALPHA);
 			gGL.color4f(0.2f, 0.0f, 0.0f, 0.4f);
 
-			LLGLSNoTexture gls_no_texture;
-			gGL.begin(LLVertexBuffer::QUADS);
+			gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+			gGL.begin(LLRender::QUADS);
 				gGL.vertex2f(left, top);
 				gGL.vertex2f(left, bottom);
 				gGL.vertex2f(right, bottom);
@@ -605,22 +609,27 @@ void LLWorldMapView::draw()
 			gGL.end();
 		}
 
-		// If this is mature, and you are not, draw a line across it
+		// As part of the AO project, we no longer want to draw access indicators;
+		// it's too complicated to get all the rules straight and will only 
+		// cause confusion.
+		/**********************
+		 // If this is mature, and you are not, draw a line across it
 		if (info->mAccess != SIM_ACCESS_DOWN
 			&& info->mAccess > SIM_ACCESS_PG
 			&& gAgent.isTeen())
 		{
 			gGL.blendFunc(LLRender::BF_DEST_ALPHA, LLRender::BF_ZERO);
 			
-			LLGLSNoTexture gls_no_texture;
+			gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 			gGL.color3f(1.f, 0.f, 0.f);
-			gGL.begin(LLVertexBuffer::LINES);
+			gGL.begin(LLRender::LINES);
 				gGL.vertex2f(left, top);
 				gGL.vertex2f(right, bottom);
 				gGL.vertex2f(left, bottom);
 				gGL.vertex2f(right, top);
 			gGL.end();
 		}
+		 **********************/
 
 		// Draw the region name in the lower left corner
 		LLFontGL* font = LLFontGL::sSansSerifSmall;
@@ -639,9 +648,42 @@ void LLWorldMapView::draw()
 			//			info->mAgents,
 			//			info->mName.c_str(),
 			//			LLViewerRegion::accessToShortString(info->mAccess).c_str() );
-			if (info->mAccess == SIM_ACCESS_DOWN)
+// [RLVa:KB] - Alternate: Snowglobe-1.0 | Checked: 2009-07-04 (RLVa-1.0.0a)
+			if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC))
+			{
+				mesg = rlv_handler_t::cstrHidden;
+			}
+			else if (info->mAccess == SIM_ACCESS_DOWN)
+// [/RLVa:KB]
+//			if (info->mAccess == SIM_ACCESS_DOWN)
 			{
 				mesg = llformat( "%s (%s)", info->mName.c_str(), sStringsMap["offline"].c_str());
+			}
+			else if (gSavedSettings.getBOOL("MapShowAgentCount") && gSavedSettings.getBOOL("MapShowPeople"))
+			{
+				// Display the agent count after the region name
+				S32 agent_count = LLWorldMap::getInstance()->mNumAgents[handle];
+				LLViewerRegion *region = gAgent.getRegion();
+
+				if (region && region->getHandle() == info->mHandle)
+				{
+					++agent_count; // Bump by 1 if we're in this region
+				}
+
+				if (agent_count > 0)
+				{
+					//TODO: move this and the tooltip strings into XML
+					std::string count = llformat("%d %s", agent_count, agent_count > 1 ? "avatars" : "avatar");
+					font->renderUTF8(
+						count, 0,
+						llfloor(left + 3), 
+						llfloor(bottom + 20),
+						LLColor4::white,
+						LLFontGL::LEFT,
+						LLFontGL::BASELINE,
+						LLFontGL::DROP_SHADOW);
+				}
+				mesg = info->mName;
 			}
 			else
 			{
@@ -683,7 +725,7 @@ void LLWorldMapView::draw()
 	// Draw background rectangle
 	LLGLSUIDefault gls_ui;
 	{
-		LLGLSNoTexture gls_no_texture;
+		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		gGL.setAlphaRejectSettings(LLRender::CF_GREATER_EQUAL, 0.f);
 		gGL.blendFunc(LLRender::BF_ONE_MINUS_DEST_ALPHA, LLRender::BF_DEST_ALPHA);
 		gGL.color4fv( mBackgroundColor.mV );
@@ -724,7 +766,7 @@ void LLWorldMapView::draw()
 
 	// Now draw your avatar after all that other stuff.
 	LLVector3d pos_global = gAgent.getPositionGlobal();
-	drawImage(pos_global, sAvatarLargeImage);
+	drawImage(pos_global, sAvatarYouImage);
 
 	LLVector3 pos_map = globalPosToView(pos_global);
 	if (!pointInView(llround(pos_map.mV[VX]), llround(pos_map.mV[VY])))
@@ -864,6 +906,11 @@ void LLWorldMapView::drawImageStack(const LLVector3d& global_pos, LLUIImagePtr i
 void LLWorldMapView::drawAgents()
 {
 	F32 agents_scale = (gMapScale * 0.9f) / 256.f;
+	
+	LLColor4 avatar_color = gColors.getColor( "MapAvatar" );
+	/*LLColor4 friend_color = gColors.getColor( "MapFriend" );
+	LLColor4 muted_color = gColors.getColor( "MapMuted" );
+	LLColor4 glyph_color;*/
 
 	for (handle_list_t::iterator iter = mVisibleRegions.begin(); iter != mVisibleRegions.end(); ++iter)
 	{
@@ -886,8 +933,19 @@ void LLWorldMapView::drawAgents()
 				S32 agent_count = info.mExtra;
 				sim_agent_count += info.mExtra;
 				// Here's how we'd choose the color if info.mID were available but it's not being sent:
-				//LLColor4 color = (agent_count == 1 && is_agent_friend(info.mID)) ? gFriendMapColor : gAvatarMapColor;
-				drawImageStack(info.mPosGlobal, sAvatarSmallImage, agent_count, 3.f, gAvatarMapColor);
+				/*if (agent_count == 1 && LLMuteList::getInstance()->isMuted(info.mID))
+				{
+					glyph_color = muted_color;
+				}
+				else if (agent_count == 1 && is_agent_friend(info.mID))
+				{
+					glyph_color = friend_color;
+				}
+				else
+				{
+					glyph_color = avatar_color;
+				}*/
+				drawImageStack(info.mPosGlobal, sAvatarSmallImage, agent_count, 3.f, avatar_color);
 			}
 			LLWorldMap::getInstance()->mNumAgents[handle] = sim_agent_count; // override mNumAgents for this sim
 		}
@@ -902,7 +960,7 @@ void LLWorldMapView::drawAgents()
 				region_center[VY] += REGION_WIDTH_METERS / 2;
 				// Reduce the stack size as you zoom out - always display at lease one agent where there is one or more
 				S32 agent_count = (S32)(((num_agents-1) * agents_scale + (num_agents-1) * 0.1f)+.1f) + 1;
-				drawImageStack(region_center, sAvatarSmallImage, agent_count, 3.f, gAvatarMapColor);
+				drawImageStack(region_center, sAvatarSmallImage, agent_count, 3.f, avatar_color);
 			}
 		}
 	}
@@ -969,7 +1027,7 @@ void LLWorldMapView::drawFrustum()
 	F32 ctr_x = getRect().getWidth() * 0.5f + sPanX;
 	F32 ctr_y = getRect().getHeight() * 0.5f + sPanY;
 
-	LLGLSNoTexture gls_no_texture;
+	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 
 	// Since we don't rotate the map, we have to rotate the frustum.
 	gGL.pushMatrix();
@@ -978,7 +1036,7 @@ void LLWorldMapView::drawFrustum()
 
 		// Draw triangle with more alpha in far pixels to make it 
 		// fade out in distance.
-		gGL.begin( LLVertexBuffer::TRIANGLES  );
+		gGL.begin( LLRender::TRIANGLES  );
 			gGL.color4f(1.f, 1.f, 1.f, 0.25f);
 			gGL.vertex2f( 0, 0 );
 
@@ -1052,7 +1110,10 @@ void LLWorldMapView::drawTracking(const LLVector3d& pos_global, const LLColor4& 
 	text_x = llclamp(text_x, half_text_width + TEXT_PADDING, getRect().getWidth() - half_text_width - TEXT_PADDING);
 	text_y = llclamp(text_y + vert_offset, TEXT_PADDING + vert_offset, getRect().getHeight() - llround(font->getLineHeight()) - TEXT_PADDING - vert_offset);
 
-	if (label != "")
+	//if (label != "")
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a) | Added: RLVa-1.0.0a
+	if ( (label != "") && (!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC)) )
+// [/RLVa:KB]
 	{
 		font->renderUTF8(
 			label, 0,
@@ -1112,7 +1173,10 @@ BOOL LLWorldMapView::handleToolTip( S32 x, S32 y, std::string& msg, LLRect* stic
 
 		std::string message = 
 			llformat("%s (%s)",
-					 info->mName.c_str(),
+					 //info->mName.c_str(),
+// [RLVa:KB] - Alternate: Snowglobe-1.0 | Checked: 2009-07-04 (RLVa-1.0.0a)
+					 (!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC)) ? info->mName.c_str() : rlv_handler_t::cstrHidden.c_str(),
+// [/RLVa:KB]
 					 LLViewerRegion::accessToString(info->mAccess).c_str());
 
 		if (info->mAccess != SIM_ACCESS_DOWN)
@@ -1131,11 +1195,11 @@ BOOL LLWorldMapView::handleToolTip( S32 x, S32 y, std::string& msg, LLRect* stic
 
 				if (agent_count == 1)
 				{
-					message += "person";
+					message += "avatar";
 				}
 				else
 				{
-					message += "people";
+					message += "avatars";
 				}
 			}
 		}
@@ -1178,21 +1242,25 @@ static void drawDot(F32 x_pixels, F32 y_pixels,
 	}
 	else
 	{
+		// Draw V indicator for above or below
+		// *TODO: Replace this vector drawing with icons
+		
 		F32 left =		x_pixels - dot_radius;
 		F32 right =		x_pixels + dot_radius;
 		F32 center = (left + right) * 0.5f;
 		F32 top =		y_pixels + dot_radius;
 		F32 bottom =	y_pixels - dot_radius;
 
-		LLGLSNoTexture gls_no_texture;
+		gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 		gGL.color4fv( color.mV );
-		LLUI::setLineWidth(1.5f);
-		F32 h_bar = relative_z > HEIGHT_THRESHOLD ? top : bottom; // horizontal bar Y
-		gGL.begin( LLVertexBuffer::LINES );
-			gGL.vertex2f(center, top);
-			gGL.vertex2f(left, h_bar);
-			gGL.vertex2f(right, h_bar);
-			gGL.vertex2f(right, bottom);
+		LLUI::setLineWidth(3.0f);
+		F32 point = relative_z > HEIGHT_THRESHOLD ? top : bottom; // Y pos of the point of the V
+		F32 back = relative_z > HEIGHT_THRESHOLD ? bottom : top; // Y pos of the ends of the V
+		gGL.begin( LLRender::LINES );
+			gGL.vertex2f(left, back);
+			gGL.vertex2f(center, point);
+			gGL.vertex2f(center, point);
+			gGL.vertex2f(right, back);
 		gGL.end();
 		LLUI::setLineWidth(1.0f);
 	}
@@ -1207,7 +1275,7 @@ void LLWorldMapView::drawAvatar(F32 x_pixels,
 								F32 dot_radius)
 {
 	const F32 HEIGHT_THRESHOLD = 7.f;
-	LLUIImagePtr dot_image = sAvatarSmallImage;
+	LLUIImagePtr dot_image = sAvatarLevelImage;
 	if(relative_z < -HEIGHT_THRESHOLD) 
 	{
 		dot_image = sAvatarBelowImage; 
@@ -1216,9 +1284,13 @@ void LLWorldMapView::drawAvatar(F32 x_pixels,
 	{ 
 		dot_image = sAvatarAboveImage;
 	}
+
+	S32 dot_width = llround(dot_radius * 2.f);
 	dot_image->draw(
-		llround(x_pixels) - dot_image->getWidth()/2,
-		llround(y_pixels) - dot_image->getHeight()/2, 
+		llround(x_pixels - dot_radius),
+		llround(y_pixels - dot_radius),
+		dot_width,
+		dot_width,
 		color);
 }
 

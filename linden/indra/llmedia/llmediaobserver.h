@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -102,6 +102,7 @@ class LLMediaObserver
 		virtual void onMediaSizeChange( const EventType& event_in ) { }
 		virtual void onMediaContentsChange( const EventType& event_in ) { }
 		virtual void onMediaStatusTextChange( const EventType& event_in ) { }
+		virtual void onMediaTitleChange( const EventType &event_in ) { }
 		virtual void onNavigateBegin( const EventType& event_in ) { }
 		virtual void onNavigateComplete( const EventType& event_in ) { }
 		virtual void onUpdateProgress( const EventType& event_in ) { }

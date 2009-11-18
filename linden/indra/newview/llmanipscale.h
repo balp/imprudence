@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -88,6 +88,8 @@ public:
 	static void		setShowAxes( BOOL b );
 	static BOOL		getShowAxes();
 
+	static F32		getMaxPrimSize();
+
 private:
 	void			renderCorners( const LLBBox& local_bbox );
 	void			renderFaces( const LLBBox& local_bbox );
@@ -165,6 +167,7 @@ private:
 	F32				mScaleSnapValue;
 	BOOL			mInSnapRegime;
 	F32*			mManipulatorScales;
+	F32				mMaxPrimSize;
 };
 
 #endif  // LL_MANIPSCALE_H

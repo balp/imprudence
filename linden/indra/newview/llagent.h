@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2000&license=viewergpl$
  * 
- * Copyright (c) 2000-2008, Linden Research, Inc.
+ * Copyright (c) 2000-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -66,6 +66,10 @@
 // Ventrella
 #include "llfollowcam.h"
 // end Ventrella
+
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d)
+#include "rlvhandler.h"
+// [/RLVa:KB]
 
 const U8 AGENT_STATE_TYPING =	0x04;			//  Typing indication
 const U8 AGENT_STATE_EDITING =  0x10;			//  Set when agent has objects selected
@@ -139,7 +143,7 @@ public:
 
 	// Called whenever the agent moves.  Puts camera back in default position,
 	// deselects items, etc.
-	void			resetView(BOOL reset_camera = TRUE);
+	void			resetView(BOOL reset_camera = TRUE, BOOL change_camera = FALSE);
 
 	// Called on camera movement, to allow the camera to be unlocked from the 
 	// default position behind the avatar.
@@ -251,6 +255,7 @@ public:
 	U8				getGodLevel() const;
 	bool isTeen() const;
 	void setTeen(bool teen);
+	void convertTextToMaturity(char text);// HACK: remove when based on 1.23
 	BOOL			isGroupTitleHidden() const		{ return mHideGroupTitle; }
 	BOOL			isGroupMember() const		{ return !mGroupID.isNull(); }		// This is only used for building titles!
 	const LLUUID	&getGroupID() const			{ return mGroupID; }
@@ -371,14 +376,20 @@ public:
 	// Does this parcel allow you to fly?
 	BOOL canFly();
 
+	//lgg crap
+	static BOOL			getPhantom();// const				{ return emeraldPhantom; }
+	static void			setPhantom(BOOL phantom);
+	static void			togglePhantom();
+
 	// Animation functions
+	void                    stopCurrentAnimations();
 	void			requestStopMotion( LLMotion* motion );
 	void			onAnimStop(const LLUUID& id);
 
 	void			sendAnimationRequests(LLDynamicArray<LLUUID> &anim_ids, EAnimRequest request);
 	void			sendAnimationRequest(const LLUUID &anim_id, EAnimRequest request);
 
-	LLVector3		calcFocusOffset(LLViewerObject *object, S32 x, S32 y);
+	LLVector3		calcFocusOffset(LLViewerObject *object, LLVector3 pos_agent, S32 x, S32 y);
 	BOOL			calcCameraMinDistance(F32 &obj_min_distance);
 
 	void			startCameraAnimation();
@@ -462,7 +473,9 @@ public:
 	void teleportViaLandmark(const LLUUID& landmark_id);
 
 	// go home
-	void teleportHome()	{ teleportViaLandmark(LLUUID::null); }
+	void teleportHome();
+	void teleportHomeConfirm();
+	static void teleportHomeCallback(S32 option, void *userdata);
 
 	// to an invited location
 	void teleportViaLure(const LLUUID& lure_id, BOOL godlike);
@@ -666,8 +679,12 @@ public:
 	static void		stopFidget();
 	static void		processAgentInitialWearablesUpdate(LLMessageSystem* mesgsys, void** user_data);
 	static void		userRemoveWearable( void* userdata );	// userdata is EWearableType
-	static void		userRemoveAllClothes( void* userdata );	// userdata is NULL
-	static void		userRemoveAllClothesStep2(BOOL proceed, void* userdata ); // userdata is NULL
+
+  static void   userRemoveAllClothesConfirm();
+	static void   userRemoveAllClothesCallback(S32 option, void *userdata);
+	static void   userRemoveAllClothes( void* userdata );	// userdata is NULL
+	static void   userRemoveAllClothesStep2(BOOL proceed, void* userdata ); // userdata is NULL
+
 	static void		userRemoveAllAttachments( void* userdata);	// userdata is NULL
 	static BOOL		selfHasWearable( void* userdata );			// userdata is EWearableType
 
@@ -794,6 +811,8 @@ private:
 	LLVector3d      mCameraSmoothingLastPositionGlobal;    
 	LLVector3d      mCameraSmoothingLastPositionAgent;
 	BOOL            mCameraSmoothingStop;
+	
+	static BOOL		sPhantom;
 
 	
 	//Ventrella

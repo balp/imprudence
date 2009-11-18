@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -66,6 +66,9 @@ public:
 
 	/*virtual*/ void onOpen();
 	/*virtual*/ BOOL postBuild();
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
+	/*virtual*/ void open();
+// [/RLVa:KB]
 
 	static void processEstateOwnerRequest(LLMessageSystem* msg, void**);
 

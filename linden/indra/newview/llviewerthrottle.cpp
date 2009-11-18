@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -49,7 +49,7 @@ const F32 MAX_FRACTIONAL = 1.5f;
 const F32 MIN_FRACTIONAL = 0.2f;
 
 const F32 MIN_BANDWIDTH = 50.f;
-const F32 MAX_BANDWIDTH = 1500.f;
+const F32 MAX_BANDWIDTH = 5000.f;
 const F32 STEP_FRACTIONAL = 0.1f;
 const F32 TIGHTEN_THROTTLE_THRESHOLD = 3.0f; // packet loss % per s
 const F32 EASE_THROTTLE_THRESHOLD = 0.5f; // packet loss % per s

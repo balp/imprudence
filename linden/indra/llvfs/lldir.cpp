@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -497,19 +497,46 @@ std::string LLDir::getTempFilename() const
 	return temp_filename;
 }
 
-void LLDir::setLindenUserDir(const std::string &first, const std::string &last)
+// static
+std::string LLDir::getScrubbedFileName(const std::string uncleanFileName)
+{
+	std::string name(uncleanFileName);
+	const std::string illegalChars(getForbiddenFileChars());
+	// replace any illegal file chars with and underscore '_'
+	for( unsigned int i = 0; i < illegalChars.length(); i++ )
+	{
+		int j = -1;
+		while((j = name.find(illegalChars[i])) > -1)
+		{
+			name[j] = '_';
+		}
+	}
+	return name;
+}
+
+// static
+std::string LLDir::getForbiddenFileChars()
+{
+	return "\\/:*?\"<>|";
+}
+
+void LLDir::setLindenUserDir(const std::string &grid, const std::string &first, const std::string &last)
 {
 	// if both first and last aren't set, assume we're grabbing the cached dir
 	if (!first.empty() && !last.empty())
 	{
 		// some platforms have case-sensitive filesystems, so be
 		// utterly consistent with our firstname/lastname case.
+		// std::string gridlower(grid);
+		// LLStringUtil::toLower(gridlower);
 		std::string firstlower(first);
 		LLStringUtil::toLower(firstlower);
 		std::string lastlower(last);
 		LLStringUtil::toLower(lastlower);
 		mLindenUserDir = getOSUserAppDir();
 		mLindenUserDir += mDirDelimiter;
+		// mLindenUserDir += gridlower;
+		// mLindenUserDir += "-";
 		mLindenUserDir += firstlower;
 		mLindenUserDir += "_";
 		mLindenUserDir += lastlower;
@@ -534,19 +561,23 @@ void LLDir::setChatLogsDir(const std::string &path)
 	}
 }
 
-void LLDir::setPerAccountChatLogsDir(const std::string &first, const std::string &last)
+void LLDir::setPerAccountChatLogsDir(const std::string &grid, const std::string &first, const std::string &last)
 {
 	// if both first and last aren't set, assume we're grabbing the cached dir
 	if (!first.empty() && !last.empty())
 	{
 		// some platforms have case-sensitive filesystems, so be
 		// utterly consistent with our firstname/lastname case.
+		// std::string gridlower(grid);
+		// LLStringUtil::toLower(gridlower);
 		std::string firstlower(first);
 		LLStringUtil::toLower(firstlower);
 		std::string lastlower(last);
 		LLStringUtil::toLower(lastlower);
 		mPerAccountChatLogsDir = getChatLogsDir();
 		mPerAccountChatLogsDir += mDirDelimiter;
+		// mPerAccountChatLogsDir += gridlower;
+		// mPerAccountChatLogsDir += "-";
 		mPerAccountChatLogsDir += firstlower;
 		mPerAccountChatLogsDir += "_";
 		mPerAccountChatLogsDir += lastlower;

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2006&license=viewergpl$
  * 
- * Copyright (c) 2006-2008, Linden Research, Inc.
+ * Copyright (c) 2006-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -41,6 +41,10 @@
 #include "llviewercontrol.h"
 #include "llviewerobject.h"
 #include "lluictrlfactory.h"
+
+// [RLVa:KB] - Checked: 2009-07-08 (RLVa-1.0.0e)
+#include "rlvhandler.h"
+// [/RLVa:KB]
 
 LLFloaterInspect* LLFloaterInspect::sInstance = NULL;
 
@@ -145,7 +149,13 @@ void LLFloaterInspect::onClickOwnerProfile(void* ctrl)
 		if(node)
 		{
 			const LLUUID& owner_id = node->mPermissions->getOwner();
-			LLFloaterAvatarInfo::showFromDirectory(owner_id);
+// [RLVa:KB] - Checked: 2009-07-08 (RLVa-1.0.0e)
+			if (!gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES))
+			{
+				LLFloaterAvatarInfo::showFromDirectory(owner_id);
+			}
+// [/RLVa:KB]
+//			LLFloaterAvatarInfo::showFromDirectory(owner_id);
 		}
 	}
 }
@@ -163,7 +173,10 @@ void LLFloaterInspect::onSelectObject(LLUICtrl* ctrl, void* user_data)
 {
 	if(LLFloaterInspect::getSelectedUUID() != LLUUID::null)
 	{
-		sInstance->childSetEnabled("button owner", true);
+		//sInstance->childSetEnabled("button owner", true);
+// [RLVa:KB] - Checked: 2009-07-08 (RLVa-1.0.0e) | Added: RLVa-1.0.0e
+		sInstance->childSetEnabled("button owner", !gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES));
+// [/RLVa:KB]
 		sInstance->childSetEnabled("button creator", true);
 	}
 }
@@ -206,17 +219,30 @@ void LLFloaterInspect::refresh()
 	mObjectList->operateOnAll(LLScrollListCtrl::OP_DELETE);
 	//List all transient objects, then all linked objects
 
-	for (LLObjectSelection::iterator iter = mObjectSelection->begin();
-		 iter != mObjectSelection->end(); iter++)
+	for (LLObjectSelection::valid_iterator iter = mObjectSelection->valid_begin();
+	     iter != mObjectSelection->valid_end(); iter++)
 	{
 		LLSelectNode* obj = *iter;
 		LLSD row;
 		char time[MAX_STRING];
 		std::string owner_name, creator_name;
+
+		if (obj->mCreationDate == 0)
+		{	// Don't have valid information from the server, so skip this one
+			continue;
+		}
+
 		time_t timestamp = (time_t) (obj->mCreationDate/1000000);
 		LLStringUtil::copy(time, ctime(&timestamp), MAX_STRING);
 		time[24] = '\0';
 		gCacheName->getFullName(obj->mPermissions->getOwner(), owner_name);
+// [RLVa:KB] - Checked: 2009-07-08 (RLVa-1.0.0e)
+		if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWNAMES))
+		{
+			// TODO-RLVa: shouldn't filter if this is a group-owned prim (will show "(nobody)")
+			owner_name = gRlvHandler.getAnonym(owner_name);
+		}
+// [/RLVa:KB]
 		gCacheName->getFullName(obj->mPermissions->getCreator(), creator_name);
 		row["id"] = obj->getObject()->getID();
 		row["columns"][0]["column"] = "object_name";

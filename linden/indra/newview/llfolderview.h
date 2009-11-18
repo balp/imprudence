@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -103,6 +103,7 @@ public:
 	virtual BOOL isUpToDate() const = 0;
 	virtual BOOL hasChildren() const = 0;
 	virtual LLInventoryType::EType getInventoryType() const = 0;
+	virtual LLInventoryType::NType getNInventoryType() const = 0;
 	virtual void performAction(LLFolderView* folder, LLInventoryModel* model, std::string action) {}
 
 	// This method should be called when a drag begins. returns TRUE
@@ -193,6 +194,9 @@ public:
 	
 	void setFilterSubString(const std::string& string);
 	const std::string getFilterSubString(BOOL trim = FALSE);
+	
+	void setFilterWorn(bool worn) { mFilterWorn = worn; }
+	bool getFilterWorn() const { return mFilterWorn; }
 
 	void setFilterPermissions(PermissionMask perms);
 	PermissionMask getFilterPermissions() const { return mFilterOps.mPermissions; }
@@ -221,6 +225,7 @@ public:
 	void clearModified() { mModified = FALSE; mFilterBehavior = FILTER_NONE; }
 	const std::string getName() const { return mName; }
 	std::string getFilterText();
+  std::string rebuildFilterText();
 
 	void setFilterCount(S32 count) { mFilterCount = count; }
 	S32 getFilterCount() { return mFilterCount; }
@@ -229,7 +234,7 @@ public:
 	void markDefault();
 	void resetDefault();
 
-	BOOL isFilterWith(LLInventoryType::EType t);
+	BOOL isFilterWith(LLInventoryType::NType t);
 
 	S32 getCurrentGeneration() const { return mFilterGeneration; }
 	S32 getMinRequiredGeneration() const { return mMinRequiredGeneration; }
@@ -255,6 +260,7 @@ protected:
 	filter_ops		mDefaultFilterOps;
 	std::string::size_type	mSubStringMatchOffset;
 	std::string		mFilterSubString;
+	bool			mFilterWorn;
 	U32				mOrder;
 	const std::string	mName;
 	S32				mFilterGeneration;
@@ -332,6 +338,11 @@ protected:
 
 	std::string					mLabel;
 	std::string					mSearchableLabel;
+	std::string					mLabelAll;
+	std::string					mSearchableLabelAll;
+	std::string					mLabelCreator;
+	std::string					mSearchableLabelCreator;
+
 	std::string					mType;
 	S32							mLabelWidth;
 	U32							mCreationDate;
@@ -743,6 +754,7 @@ public:
 
 	LLInventoryFilter* getFilter() { return &mFilter; }
 	const std::string getFilterSubString(BOOL trim = FALSE);
+	bool getFilterWorn() const { return mFilter.getFilterWorn(); }
 	U32 getFilterTypes() const { return mFilter.getFilterTypes(); }
 	PermissionMask getFilterPermissions() const { return mFilter.getFilterPermissions(); }
 	LLInventoryFilter::EFolderShow getShowFolderState() { return mFilter.getShowFolderState(); }

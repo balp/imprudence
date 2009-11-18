@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2006&license=viewergpl$
  * 
- * Copyright (c) 2006-2008, Linden Research, Inc.
+ * Copyright (c) 2006-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -36,16 +36,6 @@
 #include "llfloater.h"
 #include "llwebbrowserctrl.h"
 
-class LLViewerHtmlHelp : public LLHtmlHelp
-{
-public:
-	LLViewerHtmlHelp();
-	virtual ~LLViewerHtmlHelp();
-
-	/*virtual*/ void show();
-	/*virtual*/ void show(std::string start_url);
-};
-
 class LLComboBox;
 class LLWebBrowserCtrl;
 
@@ -65,6 +55,9 @@ public:
 	void buildURLHistory();
 
 	static LLFloaterMediaBrowser* showInstance(const LLSD& id);
+
+	static void	toggle();
+	static void	helpF1();
 	static void onEnterAddress(LLUICtrl* ctrl, void* user_data);
 	static void onClickRefresh(void* user_data);
 	static void onClickBack(void* user_data);
@@ -73,14 +66,17 @@ public:
 	static void onClickClose(void* user_data);
 	static void onClickOpenWebBrowser(void* user_data);
 	static void onClickAssign(void* user_data);
+	static void onClickHome(void* user_data);
+	static void onClickSetHome(void* user_data);
+	static void onClickF1HelpLoadURL(S32 option, void* userdata);
 
 private:
 	LLWebBrowserCtrl* mBrowser;
 	LLComboBox* mAddressCombo;
 	std::string mCurrentURL;
-};
 
-extern LLViewerHtmlHelp gViewerHtmlHelp;
+	static LLFloaterMediaBrowser* sInstance;
+};
 
 #endif  // LL_LLFLOATERHTMLHELP_H
 

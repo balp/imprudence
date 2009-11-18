@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -95,11 +95,14 @@ protected:
 	F32 mStartingZ;
 	S32 mMouseX;
 	S32 mMouseY;
-	S32 mBrushIndex;
+	F32 mBrushSize;
 	BOOL mGotHover;
 	BOOL mBrushSelected;
 	// Order doesn't matter and we do check for existance of regions, so use a set
 	region_list_t mLastAffectedRegions;
+
+private:
+	U8 getBrushIndex();
 };
 
 

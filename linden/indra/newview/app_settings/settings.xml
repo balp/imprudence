@@ -1,7 +1,150 @@
 <?xml version="1.0" ?>
 <llsd>
 <map>
-    <key>AFKTimeout</key>
+  <key>RestrainedLife</key>
+  <map>
+    <key>Comment</key>
+    <string>Toggles the RestrainedLife features (BDSM lockable toys support). Needs a restart of the viewer.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>RestrainedLifeDebug</key>
+  <map>
+    <key>Comment</key>
+    <string>Toggles the RestrainedLife debug mode (displays the commands when in debug mode).</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>RestrainedLifeNoSetEnv</key>
+  <map>
+    <key>Comment</key>
+    <string>When TRUE, forbids to set the environment (time of day and Windlight settings) via RestrainedLife. Needs a restart of the viewer.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>RestrainedLifeForbidGiveToRLV</key>
+  <map>
+    <key>Comment</key>
+    <string>When FALSE, allows to give sub-folders to the #RLV RestrainedLife folder.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
+  <key>RLVaEnableLegacyNaming</key>
+  <map>
+    <key>Comment</key>
+    <string>Enables legacy naming convention for folders</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
+  <key>RLVaEnableWear</key>
+  <map>
+    <key>Comment</key>
+    <string>When TRUE, enables the "Wear" option on the inventory item context menu for attachments.</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>RLVaHideLockedLayers</key>
+  <map>
+    <key>Comment</key>
+    <string>When TRUE, hides worn but "remove outfit" restricted clothing layers from @getoufit</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>RLVaHideLockedAttachments</key>
+  <map>
+    <key>Comment</key>
+    <string>When TRUE, hides worn but "no detach" restricted attachments from @getattach</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>RLVaShowNameTags</key>
+  <map>
+    <key>Comment</key>
+    <string>Display of names above avatars is subject to the general "Show Names" setting when @shownames=n restricted</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>0</integer>
+  </map>
+  <key>WarnFirstRLVDetach</key>
+  <map>
+    <key>Comment</key>
+    <string>Enables FirstRLVDetach warning dialog</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
+  <key>WarnFirstRLVEnableWear</key>
+  <map>
+    <key>Comment</key>
+    <string>Enables RLVEnableWear warning dialog</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
+  <key>WarnFirstRLVFartouch</key>
+  <map>
+    <key>Comment</key>
+    <string>Enables FirstRLVFartouch warning dialog</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
+  <key>WarnFirstRLVGiveToRLV</key>
+  <map>
+    <key>Comment</key>
+    <string>Enables FirstRLVGiveToRLV warning dialog</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
+  <key>AFKTimeout</key>
     <map>
       <key>Comment</key>
       <string>Time before automatically setting AFK (away from keyboard) mode (seconds)</string>
@@ -33,10 +176,10 @@
             <string>Color4</string>
         <key>Value</key>
             <array>
-                <real>0.0196078431372</real>
-                <real>0.6862745098039</real>
-                <real>0.9803921568627</real>
-                <real>1</real>
+                <real>1.0</real>
+                <real>1.0</real>
+                <real>1.0</real>
+                <real>1.0</real>
             </array>
         </map>
     <key>AgentChatColor</key>
@@ -165,17 +308,6 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
-    <key>AsyncKeyboard</key>
-    <map>
-      <key>Comment</key>
-      <string>Improves responsiveness to keyboard input when at low framerates</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <integer>1</integer>
-    </map>
     <key>AuctionShowFence</key>
     <map>
       <key>Comment</key>
@@ -284,7 +416,7 @@
       <key>Type</key>
       <string>F32</string>
       <key>Value</key>
-      <real>1.0</real>
+      <real>0.5</real>
     </map>
     <key>AudioLevelUI</key>
     <map>
@@ -317,7 +449,7 @@
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>0</integer>
+      <integer>1</integer>
     </map>
     <key>AudioStreamingVideo</key>
     <map>
@@ -328,7 +460,7 @@
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>0</integer>
+      <integer>1</integer>
     </map>
     <key>AutoAcceptNewInventory</key>
     <map>
@@ -664,10 +796,21 @@
         <integer>0</integer>
       </array>
     </map>
-    <key>BeaconAlwaysOn</key>
+    <key>BeaconsEnabled</key>
     <map>
       <key>Comment</key>
       <string>Beacons / highlighting always on</string>
+      <key>Persist</key>
+      <integer>0</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
+    <key>BlockClickSit</key>
+    <map>
+      <key>Comment</key>
+      <string>Block click sit</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -675,16 +818,27 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
-    <key>BrowserHomePage</key>
+    <key>BrowserHome</key>
     <map>
       <key>Comment</key>
-      <string>[NOT USED]</string>
+      <string>Inworld browser home page</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
       <string>String</string>
       <key>Value</key>
-      <string>http://www.secondlife.com</string>
+      <string>http://www.imprudenceviewer.org</string>
+    </map>
+    <key>BrowserLastVisited</key>
+    <map>
+      <key>Comment</key>
+      <string>Last visited page</string>
+      <key>Persist</key>
+      <integer>0</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string></string>
     </map>
     <key>BlockAvatarAppearanceMessages</key>
         <map>
@@ -1105,6 +1259,17 @@
       <key>Value</key>
       <real>0.5</real>
     </map>
+    <key>ChatChannelSelect</key>
+    <map>
+      <key>Comment</key>
+      <string>Toggle custom channel controls in the chat bar</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>ChatFontSize</key>
     <map>
       <key>Comment</key>
@@ -1194,7 +1359,7 @@
       <array>
         <integer>0</integer>
         <integer>400</integer>
-        <integer>350</integer>
+        <integer>525</integer>
         <integer>0</integer>
       </array>
     </map>
@@ -1838,17 +2003,6 @@
         <integer>0</integer>
       </array>
     </map>
-    <key>CompressSnapshotsToDisk</key>
-    <map>
-      <key>Comment</key>
-      <string>Compress snapshots saved to disk (Using JPEG 2000)</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Boolean</string>
-      <key>Value</key>
-      <integer>0</integer>
-    </map>
     <key>ConnectAsGod</key>
     <map>
       <key>Comment</key>
@@ -2256,6 +2410,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>DoubleClickTeleport</key>
+    <map>
+      <key>Comment</key>
+      <string>Enable double-click teleport</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>DragAndDropToolTipDelay</key>
     <map>
       <key>Comment</key>
@@ -2375,6 +2540,17 @@
     <map>
       <key>Comment</key>
       <string>Enable talking to other residents with a microphone</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
+    <key>EnableWindlightRemote</key>
+    <map>
+      <key>Comment</key>
+      <string>Enable windlight quick access remote in toolbar</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -2599,7 +2775,7 @@
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>0</integer>
+      <integer>1</integer>
     </map>
     <key>FloaterActiveSpeakersSortColumn</key>
     <map>
@@ -2644,6 +2820,22 @@
         <integer>0</integer>
       </array>
     </map>
+    <key>FloaterAnimationListRect</key>
+    <map>
+      <key>Comment</key>
+      <string>Rectangle for Animation List</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Rect</string>
+      <key>Value</key>
+      <array>
+        <integer>0</integer>
+        <integer>275</integer>
+        <integer>1000</integer>
+        <integer>0</integer>
+      </array>
+    </map>
     <key>FloaterAudioVolumeRect</key>
     <map>
       <key>Comment</key>
@@ -2660,6 +2852,22 @@
         <integer>0</integer>
       </array>
     </map>
+    <key>FloaterBeaconsRect</key>
+    <map>
+        <key>Comment</key>
+        <string>Rectangle for beacon and highlight controls</string>
+        <key>Persist</key>
+        <integer>1</integer>
+        <key>Type</key>
+        <string>Rect</string>
+        <key>Value</key>
+        <array>
+            <integer>200</integer>
+            <integer>250</integer>
+            <integer>250</integer>
+            <integer>200</integer>
+    </array>
+  </map>
     <key>FloaterBuildOptionsRect</key>
     <map>
       <key>Comment</key>
@@ -2903,22 +3111,6 @@
         <integer>0</integer>
       </array>
     </map>
-    <key>FloaterHtmlRect</key>
-    <map>
-      <key>Comment</key>
-      <string>Rectangle for HTML window</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>Rect</string>
-      <key>Value</key>
-      <array>
-        <integer>100</integer>
-        <integer>460</integer>
-        <integer>370</integer>
-        <integer>100</integer>
-      </array>
-    </map>
     <key>FloaterIMRect</key>
     <map>
       <key>Comment</key>
@@ -3095,7 +3287,24 @@
         <integer>0</integer>
       </array>
     </map>
-    <key>FloaterOpenObjectRect</key>
+
+  <key>FloaterObjectIMInfo</key>
+  <map>
+    <key>Comment</key>
+    <string>Rectangle for floater object im info windows</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Rect</string>
+    <key>Value</key>
+    <array>
+      <integer>0</integer>
+      <integer>300</integer>
+      <integer>300</integer>
+      <integer>0</integer>
+    </array>
+  </map>
+  <key>FloaterOpenObjectRect</key>
     <map>
       <key>Comment</key>
       <string>Rectangle for Open Object window</string>
@@ -3125,6 +3334,22 @@
         <integer>150</integer>
         <integer>400</integer>
         <integer>0</integer>
+      </array>
+    </map>
+    <key>FloaterPrimImport</key>
+    <map>
+      <key>Comment</key>
+      <string>Rectangle for import/export</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Rect</string>
+      <key>Value</key>
+      <array>
+         <integer>0</integer>
+         <integer>25</integer>
+         <integer>400</integer>
+         <integer>0</integer>
       </array>
     </map>
     <key>FloaterRegionInfo</key>
@@ -3595,6 +3820,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>ForceMandatoryUpdate</key>
+    <map>
+      <key>Comment</key>
+      <string>For QA: On next startup, forces the auto-updater to run</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>ForwardBtnRect</key>
     <map>
       <key>Comment</key>
@@ -3814,6 +4050,17 @@
       <key>Value</key>
       <string>help/index.html</string>
     </map>
+    <key>HelpSupportURL</key>
+    <map>
+      <key>Comment</key>
+      <string>Main URL of support page</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+    <string>http://support.secondlife.com</string>
+  </map>
     <key>HighResSnapshot</key>
     <map>
       <key>Comment</key>
@@ -3900,6 +4147,17 @@
         <real>1.0</real>
       </array>
     </map>
+    <key>IMInChatConsole</key>
+    <map>
+      <key>Comment</key>
+      <string>Show IMs in main chat</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>IMInChatHistory</key>
     <map>
       <key>Comment</key>
@@ -3955,7 +4213,18 @@
       <key>Value</key>
       <real>0.0</real>
     </map>
-    <key>InventoryAutoOpenDelay</key>
+	<key>InstallLanguage</key>
+	<map>
+		<key>Comment</key>
+		<string>Language passed from installer (for UI)</string>
+		<key>Persist</key>
+		<integer>1</integer>
+		<key>Type</key>
+		<string>String</string>
+		<key>Value</key>
+		<string>default</string>
+	</map>
+	<key>InventoryAutoOpenDelay</key>
     <map>
       <key>Comment</key>
       <string>Seconds before automatically opening inventory when mouse is over inventory button when performing inventory drag and drop</string>
@@ -3965,6 +4234,17 @@
       <string>F32</string>
       <key>Value</key>
       <real>1.0</real>
+    </map>
+    <key>InventorySearchType</key>
+    <map>
+      <key>Comment</key>
+      <string>Controls what type of inventory search we perform.</string>
+      <key>Persist</key>
+      <integer>0</integer>
+      <key>Type</key>
+      <string>U32</string>
+      <key>Value</key>
+      <integer>0</integer>
     </map>
     <key>InventorySortOrder</key>
     <map>
@@ -4178,7 +4458,7 @@
       <key>Type</key>
       <string>String</string>
       <key>Value</key>
-      <string>https://wiki.secondlife.com/wiki/[LSL_STRING]</string>
+      <string>http://wiki.secondlife.com/wiki/[LSL_STRING]</string>
     </map>
     <key>LagMeterShrunk</key>
     <map>
@@ -4205,7 +4485,7 @@
     <key>Language</key>
     <map>
       <key>Comment</key>
-      <string>Language specifier (for XUI)</string>
+      <string>Language specifier (for UI)</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -4214,16 +4494,38 @@
       <string>default</string>
     </map>
     <key>LanguageIsPublic</key>
-        <map>
+    <map>
         <key>Comment</key>
-            <string>Let other residents see our language information</string>
+        <string>Let other residents see our language information</string>
         <key>Persist</key>
-            <integer>1</integer>
+        <integer>1</integer>
         <key>Type</key>
-            <string>Boolean</string>
+        <string>Boolean</string>
         <key>Value</key>
-            <integer>1</integer>
+        <integer>1</integer>
         </map>
+    <key>LastGrass</key>
+    <map>
+    <key>Comment</key>
+        <string>The last grass selected in the create dialog</string>
+	<key>Persist</key>
+        <integer>1</integer>
+	<key>Type</key>
+        <string>String</string>
+	<key>Value</key>
+        <integer>Random</integer>
+    </map>
+    <key>LastTree</key>
+    <map>
+	<key>Comment</key>
+        <string>The last tree selected in the create dialog</string>
+	<key>Persist</key>
+        <integer>1</integer>
+	<key>Type</key>
+        <string>String</string>
+        <key>Value</key>
+        <integer>Random</integer>
+    </map>
     <key>LastFeatureVersion</key>
     <map>
       <key>Comment</key>
@@ -4279,16 +4581,72 @@
       <key>Value</key>
       <string>0.0.0</string>
     </map>
-    <key>LastSnapshotHeight</key>
+  
+    <key>LastSnapshotToEmailHeight</key>
     <map>
       <key>Comment</key>
-      <string>The height of the last snapshot, in px</string>
+      <string>The height of the last email snapshot, in px</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
       <string>S32</string>
       <key>Value</key>
       <integer>768</integer>
+    </map>
+    <key>LastSnapshotToEmailWidth</key>
+    <map>
+      <key>Comment</key>
+      <string>The width of the last email snapshot, in px</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>1024</integer>
+    </map>
+    <key>LastSnapshotToDiskHeight</key>
+    <map>
+      <key>Comment</key>
+      <string>The height of the last disk snapshot, in px</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>768</integer>
+    </map>
+    <key>LastSnapshotToDiskWidth</key>
+    <map>
+      <key>Comment</key>
+      <string>The width of the last disk snapshot, in px</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>1024</integer>
+    </map>
+    <key>LastSnapshotToInventoryHeight</key>
+    <map>
+      <key>Comment</key>
+      <string>The height of the last texture snapshot, in px</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>512</integer>
+    </map>
+    <key>LastSnapshotToInventoryWidth</key>
+    <map>
+      <key>Comment</key>
+      <string>The width of the last texture snapshot, in px</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>512</integer>
     </map>
     <key>LastSnapshotType</key>
     <map>
@@ -4300,17 +4658,6 @@
       <string>S32</string>
       <key>Value</key>
       <integer>0</integer>
-    </map>
-    <key>LastSnapshotWidth</key>
-    <map>
-      <key>Comment</key>
-      <string>The width of the last snapshot, in px</string>
-      <key>Persist</key>
-      <integer>1</integer>
-      <key>Type</key>
-      <string>S32</string>
-      <key>Value</key>
-      <integer>1024</integer>
     </map>
     <key>LeftClickShowMenu</key>
     <map>
@@ -4376,7 +4723,7 @@
       <key>Type</key>
       <string>Boolean</string>
       <key>Value</key>
-      <integer>0</integer>
+      <integer>1</integer>
     </map>
     <key>LipSyncOoh</key>
     <map>
@@ -4433,6 +4780,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>LoggedIntoOpenSim</key>
+    <map>
+      <key>Comment</key>
+      <string>Check whether or not we're in an OpenSimulator (default 0)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>LoginAsGod</key>
     <map>
       <key>Comment</key>
@@ -4464,7 +4822,7 @@
       <key>Type</key>
       <string>String</string>
       <key>Value</key>
-      <string />
+      <string>http://imprudenceviewer.org/splash/</string>
     </map>
     <key>LosslessJ2CUpload</key>
     <map>
@@ -4488,17 +4846,6 @@
       <key>Value</key>
       <real>20.0</real>
     </map>
-    <key>MainloopTimeoutDefault</key>
-        <map>
-        <key>Comment</key>
-            <string>Timeout duration for mainloop lock detection, in seconds.</string>
-        <key>Persist</key>
-            <integer>1</integer>
-        <key>Type</key>
-            <string>F32</string>
-        <key>Value</key>
-            <real>10.0</real>
-        </map>
     <key>MapOverlayIndex</key>
     <map>
       <key>Comment</key>
@@ -4520,6 +4867,17 @@
       <string>F32</string>
       <key>Value</key>
       <real>128.0</real>
+    </map>
+    <key>MapShowAgentCount</key>
+    <map>
+      <key>Comment</key>
+      <string>Show number of agents next to region names on world map</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
     </map>
     <key>MapShowEvents</key>
     <map>
@@ -4664,6 +5022,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>MediaDebugLevel</key>
+    <map>
+      <key>Comment</key>
+      <string>How spammy media (GStreamer) debug output should be. (0-4)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>U32</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>MemoryLogFrequency</key>
         <map>
         <key>Comment</key>
@@ -4708,6 +5077,50 @@
       <key>Value</key>
       <integer>410</integer>
     </map>
+    <key>MiniMapCenter</key>
+    <map>
+      <key>Comment</key>
+      <string>Sets the focal point of the minimap. (0=None, 1=Camera)</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
+    <key>MiniMapNotifyChatRange</key>
+    <map>
+      <key>Comment</key>
+      <string>Notify when avatars enter chat range</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
+    <key>MiniMapNotifySimRange</key>
+    <map>
+      <key>Comment</key>
+      <string>Notify when avatars enters the current sim</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
+    <key>MiniMapPrimMaxRadius</key>
+    <map>
+      <key>Comment</key>
+      <string>Radius of the largest prim to show on the MiniMap. Increasing beyond 256 may cause client lag.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>256.0</real>
+    </map>
     <key>MiniMapRotate</key>
     <map>
       <key>Comment</key>
@@ -4719,10 +5132,21 @@
       <key>Value</key>
       <integer>1</integer>
     </map>
+    <key>MiniMapTeleport</key>
+    <map>
+	    <key>Comment</key>
+	    <string>Teleport on Mini-Map double click </string>
+	    <key>Persist</key>
+	    <integer>1</integer>
+	    <key>Type</key>
+	    <string>Boolean</string>
+	    <key>Value</key>
+	    <integer>1</integer>
+    </map>
     <key>MiniMapScale</key>
     <map>
       <key>Comment</key>
-      <string>Miniature world map zoom levle (pixels per region)</string>
+      <string>Miniature world map zoom level (pixels per region)</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -4809,7 +5233,7 @@
     <key>MuteAmbient</key>
     <map>
       <key>Comment</key>
-      <string>Ambient sound effects, such as wind noise, play at 0 volume</string>
+      <string>Ambient sound effects, play at 0 volume</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -4893,6 +5317,28 @@
       <string>Boolean</string>
       <key>Value</key>
       <integer>1</integer>
+    </map>
+    <key>MuteWind</key>
+    <map>
+      <key>Comment</key>
+      <string>Mute inworld wind generation</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
+    <key>NearMeRange</key>
+	    <map>
+	      <key>Comment</key>
+	      <string>Search radius for nearby avatars</string>
+	      <key>Persist</key>
+	      <integer>1</integer>
+	      <key>Type</key>
+	      <string>F32</string>
+	      <key>Value</key>
+	      <integer>96</integer>
     </map>
     <key>NewCacheLocation</key>
     <map>
@@ -5069,6 +5515,22 @@
          <real>1</real>
       </array>
     </map>
+    <key>ObjectIMColor</key>
+    <map>
+      <key>Comment</key>
+      <string>Color of IMs from objects</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Color4</string>
+      <key>Value</key>
+      <array>
+        <real>0.699999988079</real>
+        <real>0.899999976158</real>
+        <real>0.699999988079</real>
+        <real>1</real>
+      </array>
+    </map>
     <key>OpenDebugStatAdvanced</key>
     <map>
       <key>Comment</key>
@@ -5194,6 +5656,17 @@
       <string>Boolean</string>
       <key>Value</key>
       <integer>0</integer>
+    </map>
+    <key>ParticleChat</key>
+		<map>
+			<key>Comment</key>
+			<string>Chat target of effect beam to channel 9000</string>
+			<key>Persist</key>
+			<integer>1</integer>
+			<key>Type</key>
+			<string>Boolean</string>
+			<key>Value</key>
+			<integer>1</integer>
     </map>
     <key>PerAccountSettingsFile</key>
     <map>
@@ -5342,6 +5815,17 @@
       <string>F32</string>
       <key>Value</key>
       <real>6.0</real>
+    </map>
+    <key>PreferredMaturity</key>
+    <map>
+      <key>Comment</key>
+      <string>Setting for the user's preferred maturity level.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>U32</string>
+      <key>Value</key>
+      <integer>13</integer>
     </map>
     <key>PreviewAnimRect</key>
     <map>
@@ -5625,7 +6109,7 @@
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
-      <string>S32</string>
+      <string>F32</string>
       <key>Value</key>
       <integer>0</integer>
     </map>
@@ -6066,6 +6550,17 @@
       <key>Value</key>
       <real>1.3</real>
     </map>
+    <key>RenderGround</key>
+    <map>
+      <key>Comment</key>
+	  <string>Determines whether we can render the ground pool or not</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>RenderHUDInSnapshot</key>
     <map>
       <key>Comment</key>
@@ -6076,6 +6571,17 @@
       <string>Boolean</string>
       <key>Value</key>
       <integer>0</integer>
+    </map>
+    <key>RenderHighlightSelections</key>
+    <map>
+      <key>Comment</key>
+      <string>Show selection outlines on objects</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
     </map>
     <key>RenderHiddenSelections</key>
     <map>
@@ -6676,6 +7182,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>SelectCopyableOnly</key>
+    <map>
+      <key>Comment</key>
+      <string>Select only objects you can copy</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>SelectOwnedOnly</key>
     <map>
       <key>Comment</key>
@@ -7149,6 +7666,17 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>ShowStreamTitle</key>
+    <map>
+      <key>Comment</key>
+      <string>Show the title of the song playing on the parcel's stream</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
     <key>ShowTangentBasis</key>
     <map>
       <key>Comment</key>
@@ -7208,6 +7736,17 @@
     <map>
       <key>Comment</key>
       <string>Show individual volume slider for voice, sound effects, etc</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
+    <key>ShowWindlightSettingsPopup</key>
+    <map>
+      <key>Comment</key>
+      <string>Show environment settings popup</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -7464,6 +8003,28 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+    <key>SpamCount</key>
+    <map>
+      <key>Comment</key>
+      <string>Number of items spammed per time set in SpamTime. RECOMMENDED IS 4.000</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>4.0</real>
+    </map>
+    <key>SpamTime</key>
+    <map>
+      <key>Comment</key>
+      <string>Time of Evalulating spam. RECOMMENDED NUMBER IS 1.000</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1.0</real>
+    </map>
     <key>SpeakingColor</key>
     <map>
       <key>Comment</key>
@@ -7609,7 +8170,7 @@
     <key>SystemLanguage</key>
     <map>
       <key>Comment</key>
-      <string>Language indicated by system settings (for XUI)</string>
+      <string>Language indicated by system settings (for UI)</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -7719,7 +8280,7 @@
       <key>Type</key>
       <string>F32</string>
       <key>Value</key>
-      <real>500.0</real>
+      <real>1000.0</real>
     </map>
     <key>ToolHelpRect</key>
     <map>
@@ -9557,16 +10118,27 @@
       <key>Value</key>
       <string>-1</string>
     </map>
-    <key>VivoxDebugServerName</key>
+    <key>VivoxDebugSIPURIHostName</key>
     <map>
       <key>Comment</key>
-      <string>Hostname of the vivox account server to use for voice when not connected to Agni.</string>
+      <string>Hostname portion of vivox SIP URIs (empty string for the default).</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
       <string>String</string>
       <key>Value</key>
-      <string>bhd.vivox.com</string>
+      <string></string>
+    </map>
+    <key>VivoxDebugVoiceAccountServerURI</key>
+    <map>
+      <key>Comment</key>
+      <string>URI to the vivox account management server (empty string for the default).</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string></string>
     </map>
     <key>VoiceCallsFriendsOnly</key>
     <map>
@@ -9709,7 +10281,7 @@
       <key>Type</key>
       <string>U32</string>
       <key>Value</key>
-      <integer>44124</integer>
+      <integer>44125</integer>
     </map>
     <key>WLSkyDetail</key>
     <map>
@@ -9913,6 +10485,17 @@
     <map>
       <key>Comment</key>
       <string>Enables FirstMedia warning dialog</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>1</integer>
+    </map>
+    <key>WarnFirstMiniMap</key>
+    <map>
+      <key>Comment</key>
+      <string>Enables FirstMiniMap warning dialog</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
@@ -10310,5 +10893,38 @@
       <key>Value</key>
       <integer>0</integer>
     </map>
+  <key>DefaultGrid</key>
+  <map>
+    <key>Comment</key>
+    <string>Nickname of the default grid</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>String</string>
+    <key>Value</key>
+    <string>secondlife</string>
+  </map>
+  <key>KeepAppearance</key>
+  <map>
+    <key>Comment</key>
+    <string>Keep appearance across grid teleport</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <string>0</string>
+  </map>
+  <key>CheckForGridUpdates</key>
+  <map>
+    <key>Comment</key>
+    <string>Check for grid info updates on the web server</string>
+    <key>Persist</key>
+    <integer>1</integer>
+    <key>Type</key>
+    <string>Boolean</string>
+    <key>Value</key>
+    <integer>1</integer>
+  </map>
   </map>
 </llsd>

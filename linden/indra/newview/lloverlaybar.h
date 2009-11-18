@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -40,6 +40,7 @@ extern S32 STATUS_BAR_HEIGHT;
 class LLButton;
 class LLLineEditor;
 class LLMediaRemoteCtrl;
+
 class LLMessageSystem;
 class LLTextBox;
 class LLTextEditor;
@@ -49,6 +50,7 @@ class LLFrameTimer;
 class LLStatGraph;
 class LLSlider;
 class LLVoiceRemoteCtrl;
+class LLWindlightRemoteCtrl;
 
 class LLOverlayBar
 :	public LLPanel
@@ -80,21 +82,28 @@ public:
 	static void musicStop(void*);
 	static void mediaStop(void*);
 
+	// hack to make sure the music button plays.
+	static void musicFirstRun();
+
 	static void toggleAudioVolumeFloater(void*);
 
 protected:	
 	static void* createMediaRemote(void* userdata);
 	static void* createVoiceRemote(void* userdata);
+	static void* createWindlightRemote(void* userdata);
 	static void* createChatBar(void* userdata);
 
 	void enableMediaButtons();
 
 protected:
-	LLMediaRemoteCtrl*	mMediaRemote;
-	LLVoiceRemoteCtrl*	mVoiceRemote;
-	bool mBuilt;	// dialog constructed yet?
+	LLMediaRemoteCtrl*		mMediaRemote;
+	LLVoiceRemoteCtrl*		mVoiceRemote;
+	LLWindlightRemoteCtrl*	mWindlightRemote;
+	bool				mBuilt;	// dialog constructed yet?
+	S32					mMusicState;
+	std::string			mOriginalIMLabel;
+
 	enum { STOPPED=0, PLAYING=1, PAUSED=2 };
-	S32 mMusicState;
 };
 
 extern LLOverlayBar* gOverlayBar;

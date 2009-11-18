@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -80,6 +80,7 @@
 #include "llfloatertools.h"
 #include "llfloaterworldmap.h"
 #include "llgroupmgr.h"
+#include "llhomelocationresponder.h"
 #include "llhudeffectlookat.h"
 #include "llhudmanager.h"
 #include "llinventorymodel.h"
@@ -90,6 +91,7 @@
 #include "llmoveview.h"
 #include "llnotify.h"
 #include "llquantize.h"
+#include "llsdutil.h"
 #include "llselectmgr.h"
 #include "llsky.h"
 #include "llrendersphere.h"
@@ -230,6 +232,7 @@ LLAgent gAgent;
 // Statics
 //
 BOOL LLAgent::sDebugDisplayTarget = FALSE;
+BOOL LLAgent::sPhantom = FALSE;
 
 const F32 LLAgent::TYPING_TIMEOUT_SECS = 5.f;
 
@@ -445,7 +448,7 @@ void LLAgent::init()
 	mCameraFocusOffsetTarget = LLVector4(gSavedSettings.getVector3("CameraOffsetBuild"));
 	mCameraOffsetDefault = gSavedSettings.getVector3("CameraOffsetDefault");
 //	mCameraOffsetNorm = mCameraOffsetDefault;
-//	mCameraOffsetNorm.normVec();
+//	mCameraOffsetNorm.normalize();
 	mCameraCollidePlane.clearVec();
 	mCurrentCameraDistance = mCameraOffsetDefault.magVec();
 	mTargetCameraDistance = mCurrentCameraDistance;
@@ -464,6 +467,10 @@ void LLAgent::init()
 //-----------------------------------------------------------------------------
 void LLAgent::cleanup()
 {
+	mInitialized = FALSE;
+	mWearablesLoaded = FALSE;
+	mShowAvatar = TRUE;
+
 	setSitCamera(LLUUID::null);
 	mAvatarObject = NULL;
 	mLookAt = NULL;
@@ -490,7 +497,7 @@ LLAgent::~LLAgent()
 //-----------------------------------------------------------------------------
 // resetView()
 //-----------------------------------------------------------------------------
-void LLAgent::resetView(BOOL reset_camera)
+void LLAgent::resetView(BOOL reset_camera, BOOL change_camera)
 {
 	if (mAutoPilot)
 	{
@@ -515,6 +522,30 @@ void LLAgent::resetView(BOOL reset_camera)
 		gMenuHolder->hideMenus();
 	}
 
+	if (change_camera && !gSavedSettings.getBOOL("FreezeTime"))
+	{
+		changeCameraToDefault();
+		
+		if (LLViewerJoystick::getInstance()->getOverrideCamera())
+		{
+			handle_toggle_flycam();
+		}
+
+		// reset avatar mode from eventual residual motion
+		if (LLToolMgr::getInstance()->inBuildMode())
+		{
+			LLViewerJoystick::getInstance()->moveAvatar(true);
+		}
+
+		gFloaterTools->close();
+		
+		gViewerWindow->showCursor();
+
+		// Switch back to basic toolset
+		LLToolMgr::getInstance()->setCurrentToolset(gBasicToolset);
+	}
+
+
 	if (reset_camera && !gSavedSettings.getBOOL("FreezeTime"))
 	{
 		if (!gViewerWindow->getLeftMouseDown() && cameraThirdPerson())
@@ -522,7 +553,7 @@ void LLAgent::resetView(BOOL reset_camera)
 			// leaving mouse-steer mode
 			LLVector3 agent_at_axis = getAtAxis();
 			agent_at_axis -= projected_vec(agent_at_axis, getReferenceUpVector());
-			agent_at_axis.normVec();
+			agent_at_axis.normalize();
 			gAgent.resetAxes(lerp(getAtAxis(), agent_at_axis, LLCriticalDamp::getInterpolant(0.3f)));
 		}
 
@@ -731,6 +762,9 @@ void LLAgent::movePitch(S32 direction)
 // Does this parcel allow you to fly?
 BOOL LLAgent::canFly()
 {
+// [RLVa:KB] - Checked: 2009-07-05 (RLVa-1.0.0c)
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_FLY)) return FALSE;
+// [/RLVa:KB]
 	if (isGodlike()) return TRUE;
 
 	LLViewerRegion* regionp = getRegion();
@@ -770,6 +804,13 @@ void LLAgent::setFlying(BOOL fly)
 
 	if (fly)
 	{
+// [RLVa:KB] - Checked: 2009-07-05 (RLVa-1.0.0c)
+		if (gRlvHandler.hasBehaviour(RLV_BHVR_FLY))
+		{
+			return;
+		}
+// [/RLVa:KB]
+
 		BOOL was_flying = getFlying();
 		if (!canFly() && !was_flying)
 		{
@@ -805,6 +846,35 @@ void LLAgent::toggleFlying()
 
 	setFlying( fly );
 	resetView();
+}
+
+
+//-----------------------------------------------------------------------------
+// togglePhantom()
+//-----------------------------------------------------------------------------
+void LLAgent::togglePhantom()
+{
+	BOOL phan = !(sPhantom);
+
+	setPhantom( phan );
+}
+
+
+//-----------------------------------------------------------------------------
+// setPhantom()  lgg
+//-----------------------------------------------------------------------------
+void LLAgent::setPhantom(BOOL phantom)
+{
+	sPhantom = phantom;
+}
+
+
+//-----------------------------------------------------------------------------
+// getPhantom()  lgg
+//-----------------------------------------------------------------------------
+BOOL LLAgent::getPhantom()
+{
+	return sPhantom;
 }
 
 
@@ -1033,7 +1103,7 @@ void LLAgent::slamLookAt(const LLVector3 &look_at)
 {
 	LLVector3 look_at_norm = look_at;
 	look_at_norm.mV[VZ] = 0.f;
-	look_at_norm.normVec();
+	look_at_norm.normalize();
 	resetAxes(look_at_norm);
 }
 
@@ -1294,7 +1364,7 @@ LLQuaternion LLAgent::getQuat() const
 //-----------------------------------------------------------------------------
 // calcFocusOffset()
 //-----------------------------------------------------------------------------
-LLVector3 LLAgent::calcFocusOffset(LLViewerObject *object, S32 x, S32 y)
+LLVector3 LLAgent::calcFocusOffset(LLViewerObject *object, LLVector3 pos_agent, S32 x, S32 y)
 {
 	// calculate offset based on view direction
 	BOOL is_avatar = object->isAvatar();
@@ -1305,7 +1375,7 @@ LLVector3 LLAgent::calcFocusOffset(LLViewerObject *object, S32 x, S32 y)
 
 	LLVector3 obj_dir_abs = obj_pos - LLViewerCamera::getInstance()->getOrigin();
 	obj_dir_abs.rotVec(inv_obj_rot);
-	obj_dir_abs.normVec();
+	obj_dir_abs.normalize();
 	obj_dir_abs.abs();
 
 	LLVector3 object_extents = object->getScale();
@@ -1330,7 +1400,7 @@ LLVector3 LLAgent::calcFocusOffset(LLViewerObject *object, S32 x, S32 y)
 	{
 		normal.setVec(obj_matrix.getUpRow4());
 	}
-	normal.normVec();
+	normal.normalize();
 
 	LLVector3d focus_pt_global;
 	// RN: should we check return value for valid pick?
@@ -1397,7 +1467,7 @@ LLVector3 LLAgent::calcFocusOffset(LLViewerObject *object, S32 x, S32 y)
 	if (!is_avatar) 
 	{
 		//unproject relative clicked coordinate from window coordinate using GL
-		GLint viewport[4];
+		/*GLint viewport[4];
 		GLdouble modelview[16];
 		GLdouble projection[16];
 		GLfloat winX, winY, winZ;
@@ -1419,11 +1489,9 @@ LLVector3 LLAgent::calcFocusOffset(LLViewerObject *object, S32 x, S32 y)
 		winY = ((F32)y) * gViewerWindow->getDisplayScale().mV[VY];
 		glReadPixels( llfloor(winX), llfloor(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
 
-		gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);
+		gluUnProject( winX, winY, winZ, modelview, projection, viewport, &posX, &posY, &posZ);*/
 
-		LLVector3 obj_rel((F32)posX, (F32)posY, (F32)posZ);
-		obj_rel = obj_rel * object->getRenderMatrix();
-		obj_rel -= object->getRenderPosition();
+		LLVector3 obj_rel = pos_agent - object->getRenderPosition();
 		
 		LLVector3 obj_center = LLVector3(0, 0, 0) * object->getRenderMatrix();
 
@@ -1534,7 +1602,7 @@ BOOL LLAgent::calcCameraMinDistance(F32 &obj_min_distance)
 	camera_offset_target_abs_norm.abs();
 	// make sure offset is non-zero
 	camera_offset_target_abs_norm.clamp(0.001f, F32_MAX);
-	camera_offset_target_abs_norm.normVec();
+	camera_offset_target_abs_norm.normalize();
 
 	// find camera position relative to normalized object extents
 	LLVector3 camera_offset_target_scaled = camera_offset_target_abs_norm;
@@ -1580,7 +1648,7 @@ BOOL LLAgent::calcCameraMinDistance(F32 &obj_min_distance)
 	LLVector3 object_split_axis;
 	LLVector3 target_offset_scaled = target_offset_origin;
 	target_offset_scaled.abs();
-	target_offset_scaled.normVec();
+	target_offset_scaled.normalize();
 	target_offset_scaled.mV[VX] /= object_extents.mV[VX];
 	target_offset_scaled.mV[VY] /= object_extents.mV[VY];
 	target_offset_scaled.mV[VZ] /= object_extents.mV[VZ];
@@ -1703,7 +1771,7 @@ void LLAgent::setCameraZoomFraction(F32 fraction)
 	else if (cameraCustomizeAvatar())
 	{
 		LLVector3d camera_offset_dir = mCameraFocusOffsetTarget;
-		camera_offset_dir.normVec();
+		camera_offset_dir.normalize();
 		mCameraFocusOffsetTarget = camera_offset_dir * rescale(fraction, 0.f, 1.f, APPEARANCE_MAX_ZOOM, APPEARANCE_MIN_ZOOM);
 	}
 	else
@@ -1730,7 +1798,7 @@ void LLAgent::setCameraZoomFraction(F32 fraction)
 		}
 
 		LLVector3d camera_offset_dir = mCameraFocusOffsetTarget;
-		camera_offset_dir.normVec();
+		camera_offset_dir.normalize();
 		mCameraFocusOffsetTarget = camera_offset_dir * rescale(fraction, 0.f, 1.f, max_zoom, min_zoom);
 	}
 	startCameraAnimation();
@@ -1777,7 +1845,7 @@ void LLAgent::cameraOrbitOver(const F32 angle)
 	else
 	{
 		LLVector3 camera_offset_unit(mCameraFocusOffsetTarget);
-		camera_offset_unit.normVec();
+		camera_offset_unit.normalize();
 
 		F32 angle_from_up = acos( camera_offset_unit * getReferenceUpVector() );
 
@@ -1812,7 +1880,7 @@ void LLAgent::cameraZoomIn(const F32 fraction)
 	LLVector3d	camera_offset(mCameraFocusOffsetTarget);
 	LLVector3d	camera_offset_unit(mCameraFocusOffsetTarget);
 	F32 min_zoom = LAND_MIN_ZOOM;
-	F32 current_distance = (F32)camera_offset_unit.normVec();
+	F32 current_distance = (F32)camera_offset_unit.normalize();
 	F32 new_distance = current_distance * fraction;
 
 	// Don't move through focus point
@@ -1881,7 +1949,7 @@ void LLAgent::cameraOrbitIn(const F32 meters)
 	{
 		LLVector3d	camera_offset(mCameraFocusOffsetTarget);
 		LLVector3d	camera_offset_unit(mCameraFocusOffsetTarget);
-		F32 current_distance = (F32)camera_offset_unit.normVec();
+		F32 current_distance = (F32)camera_offset_unit.normalize();
 		F32 new_distance = current_distance - meters;
 		F32 min_zoom = LAND_MIN_ZOOM;
 		
@@ -1938,6 +2006,8 @@ void LLAgent::cameraPanIn(F32 meters)
 	mFocusGlobal = mFocusTargetGlobal;
 	// don't enforce zoom constraints as this is the only way for users to get past them easily
 	updateFocusOffset();
+	// NOTE: panning movements expect the camera to move exactly with the focus target, not animated behind -Nyx
+	mCameraSmoothingLastPositionGlobal = calcCameraPositionTargetGlobal();
 }
 
 //-----------------------------------------------------------------------------
@@ -1956,6 +2026,8 @@ void LLAgent::cameraPanLeft(F32 meters)
 	
 	cameraZoomIn(1.f);
 	updateFocusOffset();
+	// NOTE: panning movements expect the camera to move exactly with the focus target, not animated behind - Nyx
+	mCameraSmoothingLastPositionGlobal = calcCameraPositionTargetGlobal();
 }
 
 //-----------------------------------------------------------------------------
@@ -1974,6 +2046,8 @@ void LLAgent::cameraPanUp(F32 meters)
 
 	cameraZoomIn(1.f);
 	updateFocusOffset();
+	// NOTE: panning movements expect the camera to move exactly with the focus target, not animated behind -Nyx
+	mCameraSmoothingLastPositionGlobal = calcCameraPositionTargetGlobal();
 }
 
 //-----------------------------------------------------------------------------
@@ -2246,7 +2320,7 @@ void LLAgent::startAutoPilotGlobal(const LLVector3d &target_global, const std::s
 		mAutoPilotUseRotation = TRUE;
 		mAutoPilotTargetFacing = LLVector3::x_axis * *target_rotation;
 		mAutoPilotTargetFacing.mV[VZ] = 0.f;
-		mAutoPilotTargetFacing.normVec();
+		mAutoPilotTargetFacing.normalize();
 	}
 	else
 	{
@@ -2369,8 +2443,8 @@ void LLAgent::autoPilot(F32 *delta_yaw)
 		at.mV[VZ] = 0.f;
 		direction.mV[VZ] = 0.f;
 
-		at.normVec();
-		F32 xy_distance = direction.normVec();
+		at.normalize();
+		F32 xy_distance = direction.normalize();
 
 		F32 yaw = 0.f;
 		if (mAutoPilotTargetDist > mAutoPilotStopDistance)
@@ -2786,7 +2860,7 @@ U8 LLAgent::getRenderState()
 static const LLFloaterView::skip_list_t& get_skip_list()
 {
 	static LLFloaterView::skip_list_t skip_list;
-	skip_list.insert(gFloaterMap);
+	skip_list.insert(LLFloaterMap::getInstance());
 	return skip_list;
 }
 
@@ -2864,7 +2938,7 @@ void LLAgent::endAnimationUpdateUI()
 		// let the mini-map go visible again. JC
         if (!LLAppViewer::instance()->quitRequested())
 		{
-			gFloaterMap->popVisible();
+			LLFloaterMap::getInstance()->popVisible();
 		}
 
 		if( gMorphView )
@@ -2961,7 +3035,7 @@ void LLAgent::endAnimationUpdateUI()
 	{
 		LLToolMgr::getInstance()->setCurrentToolset(gFaceEditToolset);
 
-		gFloaterMap->pushVisible(FALSE);
+		LLFloaterMap::getInstance()->pushVisible(FALSE);
 		/*
 		LLView *view;
 		for (view = gFloaterView->getFirstChild(); view; view = gFloaterView->getNextChild())
@@ -3529,7 +3603,7 @@ void LLAgent::setupSitCamera()
 		// slam agent coordinate frame to proper parent local version
 		LLVector3 at_axis = mFrameAgent.getAtAxis();
 		at_axis.mV[VZ] = 0.f;
-		at_axis.normVec();
+		at_axis.normalize();
 		resetAxes(at_axis * ~parent_rot);
 	}
 }
@@ -3665,7 +3739,7 @@ LLVector3d LLAgent::calcCameraPositionTargetGlobal(BOOL *hit_limit)
 				// slam agent coordinate frame to proper parent local version
 				LLVector3 at_axis = mFrameAgent.getAtAxis() * parent_rot;
 				at_axis.mV[VZ] = 0.f;
-				at_axis.normVec();
+				at_axis.normalize();
 				resetAxes(at_axis * ~parent_rot);
 
 				local_camera_offset = local_camera_offset * mFrameAgent.getQuaternion() * parent_rot;
@@ -3686,7 +3760,7 @@ LLVector3d LLAgent::calcCameraPositionTargetGlobal(BOOL *hit_limit)
 					offset_dot_norm = 0.001f;
 				}
 				
-				camera_distance = local_camera_offset.normVec();
+				camera_distance = local_camera_offset.normalize();
 
 				F32 pos_dot_norm = getPosAgentFromGlobal(frame_center_global + head_offset) * plane_normal;
 				
@@ -3710,7 +3784,7 @@ LLVector3d LLAgent::calcCameraPositionTargetGlobal(BOOL *hit_limit)
 			}
 			else
 			{
-				camera_distance = local_camera_offset.normVec();
+				camera_distance = local_camera_offset.normalize();
 			}
 
 			mTargetCameraDistance = llmax(camera_distance, MIN_CAMERA_DISTANCE);
@@ -3745,7 +3819,7 @@ LLVector3d LLAgent::calcCameraPositionTargetGlobal(BOOL *hit_limit)
 				{
 					LLVector3 frame_at_axis = mFrameAgent.getAtAxis();
 					frame_at_axis -= projected_vec(frame_at_axis, getReferenceUpVector());
-					frame_at_axis.normVec();
+					frame_at_axis.normalize();
 
 					//transition smoothly in air mode, to avoid camera pop
 					F32 u = (time_in_air - GROUND_TO_AIR_CAMERA_TRANSITION_START_TIME) / GROUND_TO_AIR_CAMERA_TRANSITION_TIME;
@@ -3932,7 +4006,7 @@ void LLAgent::resetCamera()
 	// Remove any pitch from the avatar
 	LLVector3 at = mFrameAgent.getAtAxis();
 	at.mV[VZ] = 0.f;
-	at.normVec();
+	at.normalize();
 	gAgent.resetAxes(at);
 	// have to explicitly clear field of view zoom now
 	mCameraFOVZoomFactor = 0.f;
@@ -4101,7 +4175,10 @@ void LLAgent::changeCameraToThirdPerson(BOOL animate)
 
 	if (mAvatarObject)
 	{
-		mAvatarObject->mPelvisp->setPosition(LLVector3::zero);
+		if (!mAvatarObject->mIsSitting)
+		{
+			mAvatarObject->mPelvisp->setPosition(LLVector3::zero);
+		}
 		mAvatarObject->startMotion( ANIM_AGENT_BODY_NOISE );
 		mAvatarObject->startMotion( ANIM_AGENT_BREATHE_ROT );
 	}
@@ -4147,14 +4224,14 @@ void LLAgent::changeCameraToThirdPerson(BOOL animate)
 		LLQuaternion obj_rot = ((LLViewerObject*)mAvatarObject->getParent())->getRenderRotation();
 		at_axis = LLViewerCamera::getInstance()->getAtAxis();
 		at_axis.mV[VZ] = 0.f;
-		at_axis.normVec();
+		at_axis.normalize();
 		resetAxes(at_axis * ~obj_rot);
 	}
 	else
 	{
 		at_axis = mFrameAgent.getAtAxis();
 		at_axis.mV[VZ] = 0.f;
-		at_axis.normVec();
+		at_axis.normalize();
 		resetAxes(at_axis);
 	}
 
@@ -4180,6 +4257,13 @@ void LLAgent::changeCameraToCustomizeAvatar(BOOL avatar_animate, BOOL camera_ani
 		return;
 	}
 
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g)
+	if ( (gRlvHandler.hasBehaviour(RLV_BHVR_UNSIT)) && (mAvatarObject.notNull()) && (mAvatarObject->mIsSitting) )
+	{
+		return;
+	}
+// [/RLVa:KB]
+
 	setControlFlags(AGENT_CONTROL_STAND_UP); // force stand up
 	gViewerWindow->getWindow()->resetBusyCount();
 
@@ -4201,7 +4285,7 @@ void LLAgent::changeCameraToCustomizeAvatar(BOOL avatar_animate, BOOL camera_ani
 	// Remove any pitch from the avatar
 	//LLVector3 at = mFrameAgent.getAtAxis();
 	//at.mV[VZ] = 0.f;
-	//at.normVec();
+	//at.normalize();
 	//gAgent.resetAxes(at);
 
 	if( mCameraMode != CAMERA_MODE_CUSTOMIZE_AVATAR )
@@ -4228,7 +4312,7 @@ void LLAgent::changeCameraToCustomizeAvatar(BOOL avatar_animate, BOOL camera_ani
 				// Remove any pitch from the avatar
 			LLVector3 at = mFrameAgent.getAtAxis();
 			at.mV[VZ] = 0.f;
-			at.normVec();
+			at.normalize();
 			gAgent.resetAxes(at);
 
 			sendAnimationRequest(ANIM_AGENT_CUSTOMIZE, ANIM_REQUEST_START);
@@ -4508,14 +4592,14 @@ void LLAgent::setFocusOnAvatar(BOOL focus_on_avatar, BOOL animate)
 				LLQuaternion obj_rot = ((LLViewerObject*)mAvatarObject->getParent())->getRenderRotation();
 				at_axis = LLViewerCamera::getInstance()->getAtAxis();
 				at_axis.mV[VZ] = 0.f;
-				at_axis.normVec();
+				at_axis.normalize();
 				resetAxes(at_axis * ~obj_rot);
 			}
 			else
 			{
 				at_axis = LLViewerCamera::getInstance()->getAtAxis();
 				at_axis.mV[VZ] = 0.f;
-				at_axis.normVec();
+				at_axis.normalize();
 				resetAxes(at_axis);
 			}
 		}
@@ -4578,7 +4662,7 @@ void LLAgent::lookAtLastChat()
 			{
 				delta_pos = chatter->getPositionAgent() - getPositionAgent();
 			}
-			delta_pos.normVec();
+			delta_pos.normalize();
 
 			setControlFlags(AGENT_CONTROL_STOP);
 
@@ -4586,9 +4670,9 @@ void LLAgent::lookAtLastChat()
 
 			LLVector3 new_camera_pos = mAvatarObject->mHeadp->getWorldPosition();
 			LLVector3 left = delta_pos % LLVector3::z_axis;
-			left.normVec();
+			left.normalize();
 			LLVector3 up = left % delta_pos;
-			up.normVec();
+			up.normalize();
 			new_camera_pos -= delta_pos * 0.4f;
 			new_camera_pos += left * 0.3f;
 			new_camera_pos += up * 0.2f;
@@ -4607,7 +4691,7 @@ void LLAgent::lookAtLastChat()
 		else
 		{
 			delta_pos = chatter->getRenderPosition() - getPositionAgent();
-			delta_pos.normVec();
+			delta_pos.normalize();
 
 			setControlFlags(AGENT_CONTROL_STOP);
 
@@ -4615,9 +4699,9 @@ void LLAgent::lookAtLastChat()
 
 			LLVector3 new_camera_pos = mAvatarObject->mHeadp->getWorldPosition();
 			LLVector3 left = delta_pos % LLVector3::z_axis;
-			left.normVec();
+			left.normalize();
 			LLVector3 up = left % delta_pos;
-			up.normVec();
+			up.normalize();
 			new_camera_pos -= delta_pos * 0.4f;
 			new_camera_pos += left * 0.3f;
 			new_camera_pos += up * 0.2f;
@@ -4631,68 +4715,107 @@ void LLAgent::lookAtLastChat()
 
 const F32 SIT_POINT_EXTENTS = 0.2f;
 
-// Grabs current position
-void LLAgent::setStartPosition(U32 location_id)
+void LLAgent::setStartPosition( U32 location_id )
 {
-	LLViewerObject		*object;
+  LLViewerObject          *object;
 
-	if ( !(gAgentID == LLUUID::null) )
-	{
-		// we've got an ID for an agent viewerobject
-		object = gObjectList.findObject(gAgentID);
-		if (object)
-		{
-			// we've got the viewer object
-			// Sometimes the agent can be velocity interpolated off of
-			// this simulator.  Clamp it to the region the agent is
-			// in, a little bit in on each side.
-			const F32 INSET = 0.5f;	//meters
-			const F32 REGION_WIDTH = LLWorld::getInstance()->getRegionWidthInMeters();
+  if ( !(gAgentID == LLUUID::null) )
+  {
+    // we've got an ID for an agent viewerobject
+    object = gObjectList.findObject(gAgentID);
+    if (object)
+    {
+      // we've got the viewer object
+      // Sometimes the agent can be velocity interpolated off of
+      // this simulator.  Clamp it to the region the agent is
+      // in, a little bit in on each side.
+      const F32 INSET = 0.5f; //meters
+      const F32 REGION_WIDTH = LLWorld::getInstance()->getRegionWidthInMeters();
 
-			LLVector3 agent_pos = getPositionAgent();
+      LLVector3 agent_pos = getPositionAgent();
+      LLVector3 agent_look_at = mFrameAgent.getAtAxis();
 
-			if (mAvatarObject)
-			{
-				// the z height is at the agent's feet
-				agent_pos.mV[VZ] -= 0.5f * mAvatarObject->mBodySize.mV[VZ];
-			}
+      if (mAvatarObject)
+      {
+	// the z height is at the agent's feet
+	agent_pos.mV[VZ] -= 0.5f * mAvatarObject->mBodySize.mV[VZ];
+      }
 
-			agent_pos.mV[VX] = llclamp( agent_pos.mV[VX], INSET, REGION_WIDTH - INSET );
-			agent_pos.mV[VY] = llclamp( agent_pos.mV[VY], INSET, REGION_WIDTH - INSET );
+      agent_pos.mV[VX] = llclamp( agent_pos.mV[VX], INSET, REGION_WIDTH - INSET );
+      agent_pos.mV[VY] = llclamp( agent_pos.mV[VY], INSET, REGION_WIDTH - INSET );
 
-			// Don't let them go below ground, or too high.
-			agent_pos.mV[VZ] = llclamp( agent_pos.mV[VZ], 
-				mRegionp->getLandHeightRegion( agent_pos ), 
-				LLWorld::getInstance()->getRegionMaxHeight() );
+      // Don't let them go below ground, or too high.
+      agent_pos.mV[VZ] = llclamp( agent_pos.mV[VZ],
+				  mRegionp->getLandHeightRegion( agent_pos ),
+				  LLWorld::getInstance()->getRegionMaxHeight() );
+      // Send the CapReq
 
-			LLMessageSystem* msg = gMessageSystem;
-			msg->newMessageFast(_PREHASH_SetStartLocationRequest);
-			msg->nextBlockFast( _PREHASH_AgentData);
-			msg->addUUIDFast(_PREHASH_AgentID, getID());
-			msg->addUUIDFast(_PREHASH_SessionID, getSessionID());
-			msg->nextBlockFast( _PREHASH_StartLocationData);
-			// corrected by sim
-			msg->addStringFast(_PREHASH_SimName, "");
-			msg->addU32Fast(_PREHASH_LocationID, location_id);
-			msg->addVector3Fast(_PREHASH_LocationPos, agent_pos);
-			msg->addVector3Fast(_PREHASH_LocationLookAt,mFrameAgent.getAtAxis());
+      LLSD body;
 
-			// Reliable only helps when setting home location.  Last
-			// location is sent on quit, and we don't have time to ack
-			// the packets.
-			msg->sendReliable(mRegionp->getHost());
+      std::string url = gAgent.getRegion()->getCapability("HomeLocation");
+      std::ostringstream strBuffer;
+      if( url.empty() )
+      {
+	LLMessageSystem* msg = gMessageSystem;
+	msg->newMessageFast(_PREHASH_SetStartLocationRequest);
+	msg->nextBlockFast( _PREHASH_AgentData);
+	msg->addUUIDFast(_PREHASH_AgentID, getID());
+	msg->addUUIDFast(_PREHASH_SessionID, getSessionID());
+	msg->nextBlockFast( _PREHASH_StartLocationData);
+	// corrected by sim
+	msg->addStringFast(_PREHASH_SimName, "");
+	msg->addU32Fast(_PREHASH_LocationID, location_id);
+	msg->addVector3Fast(_PREHASH_LocationPos, agent_pos);
+	msg->addVector3Fast(_PREHASH_LocationLookAt,mFrameAgent.getAtAxis());
+	
+	// Reliable only helps when setting home location.  Last
+	// location is sent on quit, and we don't have time to ack
+	// the packets.
+	msg->sendReliable(mRegionp->getHost());
 
-			const U32 HOME_INDEX = 1;
-			if( HOME_INDEX == location_id )
-			{
-				setHomePosRegion( mRegionp->getHandle(), getPositionAgent() );
-			}
-		}
-		else
-		{
-			llinfos << "setStartPosition - Can't find agent viewerobject id " << gAgentID << llendl;
-		}
-	}
+	const U32 HOME_INDEX = 1;
+	if( HOME_INDEX == location_id )
+	  {
+	    setHomePosRegion( mRegionp->getHandle(), getPositionAgent() );
+	  }
+      }
+      else
+      {
+	strBuffer << location_id;
+	body["HomeLocation"]["LocationId"] = strBuffer.str();
+
+	strBuffer.str("");
+	strBuffer << agent_pos.mV[VX];
+	body["HomeLocation"]["LocationPos"]["X"] = strBuffer.str();
+
+	strBuffer.str("");
+	strBuffer << agent_pos.mV[VY];
+	body["HomeLocation"]["LocationPos"]["Y"] = strBuffer.str();
+
+	strBuffer.str("");
+	strBuffer << agent_pos.mV[VZ];
+	body["HomeLocation"]["LocationPos"]["Z"] = strBuffer.str();
+
+	strBuffer.str("");
+	strBuffer << agent_look_at.mV[VX];
+	body["HomeLocation"]["LocationLookAt"]["X"] = strBuffer.str();
+
+	strBuffer.str("");
+	strBuffer << agent_look_at.mV[VY];
+	body["HomeLocation"]["LocationLookAt"]["Y"] = strBuffer.str();
+
+	strBuffer.str("");
+	strBuffer << agent_look_at.mV[VZ];
+	body["HomeLocation"]["LocationLookAt"]["Z"] = strBuffer.str();
+
+	LLHTTPClient::post( url, body, new LLHomeLocationResponder() );
+      }
+    }
+    else
+    {
+      llinfos << "setStartPosition - Can't find agent viewerobject id " << gAgentID << llendl;
+    }
+  }
 }
 
 void LLAgent::requestStopMotion( LLMotion* motion )
@@ -4769,6 +4892,32 @@ void LLAgent::setTeen(bool teen)
 	{
 		mAccess = SIM_ACCESS_MATURE;
 	}
+}
+
+//static 
+void LLAgent::convertTextToMaturity(char text) // HACK: remove when based on 1.23
+{
+	if ('A' == text)
+	{
+		mAccess = SIM_ACCESS_ADULT;
+		//return SIM_ACCESS_ADULT;
+	}
+	else if ('M'== text)
+	{
+		mAccess = SIM_ACCESS_MATURE;
+		//return SIM_ACCESS_MATURE;
+	}
+	else if ('P'== text)
+	{
+		mAccess = SIM_ACCESS_PG;
+		//return SIM_ACCESS_PG;
+	}
+	else
+	{
+		mAccess = SIM_ACCESS_MIN;
+		//return SIM_ACCESS_MIN;
+	}
+	gSavedSettings.setU32("PreferredMaturity", mAccess);
 }
 
 void LLAgent::buildFullname(std::string& name) const
@@ -4935,6 +5084,14 @@ BOOL LLAgent::setUserGroupFlags(const LLUUID& group_id, BOOL accept_notices, BOO
 // utility to build a location string
 void LLAgent::buildLocationString(std::string& str)
 {
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC))
+	{
+		str = rlv_handler_t::cstrHidden;
+		return;
+	}
+// [/RLVa:KB]
+
 	const LLVector3& agent_pos_region = getPositionAgent();
 	S32 pos_x = S32(agent_pos_region.mV[VX]);
 	S32 pos_y = S32(agent_pos_region.mV[VY]);
@@ -5750,18 +5907,13 @@ bool LLAgent::teleportCore(bool is_local)
 		return false;
 	}
 
-	// Stop all animation before actual teleporting 
+	// Cease sitting on the current object, if any.
 	LLVOAvatar* avatarp = gAgent.getAvatarObject();
 	if (avatarp)
-	{
-		for ( LLVOAvatar::AnimIterator anim_it= avatarp->mPlayingAnimations.begin()
-			; anim_it != avatarp->mPlayingAnimations.end()
-			; anim_it++)
-		{
-			avatarp->stopMotion(anim_it->first);
-		}
-		avatarp->processAnimationStateChanges();
-	}
+		avatarp->getOffObject();
+
+	// Stop all animations before actual teleporting 
+	stopCurrentAnimations();
 
 	// Don't call LLFirstUse::useTeleport because we don't know
 	// yet if the teleport will succeed.  Look in 
@@ -5822,6 +5974,15 @@ void LLAgent::teleportRequest(
 // Landmark ID = LLUUID::null means teleport home
 void LLAgent::teleportViaLandmark(const LLUUID& landmark_asset_id)
 {
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d)
+	if ( (rlv_handler_t::isEnabled()) &&
+		 ( (gRlvHandler.hasBehaviour("tplm")) || 
+		   ((gRlvHandler.hasBehaviour(RLV_BHVR_UNSIT)) && (mAvatarObject.notNull()) && (mAvatarObject->mIsSitting)) ))
+	{
+		return;
+	}
+// [/RLVa:KB]
+
 	LLViewerRegion *regionp = getRegion();
 	if(regionp && teleportCore())
 	{
@@ -5886,6 +6047,17 @@ void LLAgent::teleportCancel()
 
 void LLAgent::teleportViaLocation(const LLVector3d& pos_global)
 {
+// [RLVa:KB] - Alternate: Snowglobe-1.0 | Checked: 2009-07-07 (RLVa-1.0.0d)
+	// If we're getting teleported due to @tpto we should disregard any @tploc=n or @unsit=n restrictions from the same object
+	if ( (rlv_handler_t::isEnabled()) &&
+		 ( (gRlvHandler.hasBehaviourExcept("tploc", gRlvHandler.getCurrentObject())) ||
+		   ( (mAvatarObject.notNull()) && (mAvatarObject->mIsSitting) && 
+			 (gRlvHandler.hasBehaviourExcept(RLV_BHVR_UNSIT, gRlvHandler.getCurrentObject()))) ) )
+	{
+		return;
+	}
+// [/RLVa:KB]
+
 	LLViewerRegion* regionp = getRegion();
 	LLSimInfo* info = LLWorldMap::getInstance()->simInfoFromPosGlobal(pos_global);
 	if(regionp && info)
@@ -5926,6 +6098,28 @@ void LLAgent::teleportViaLocation(const LLVector3d& pos_global)
 	}
 }
 
+
+void LLAgent::teleportHome()
+{
+	teleportViaLandmark(LLUUID::null);
+}
+
+void LLAgent::teleportHomeConfirm()
+{
+	gViewerWindow->alertXml("ConfirmTeleportHome", LLAgent::teleportHomeCallback, (void *)this);
+}
+
+// static
+void LLAgent::teleportHomeCallback(S32 option, void *userdata)
+{
+	if( option == 0 )
+	{
+		// They confirmed it. Here we go!
+		((LLAgent *) userdata)->teleportHome();
+	}
+}
+
+
 void LLAgent::setTeleportState(ETeleportState state)
 {
 	mTeleportState = state;
@@ -5937,6 +6131,49 @@ void LLAgent::setTeleportState(ETeleportState state)
 	{
 		// We're outa here. Save "back" slurl.
 		mTeleportSourceSLURL = getSLURL();
+	}
+
+// [RLVa:KB] - Version: 1.22.11 | Checked: 2009-07-07 (RLVa-1.0.0d) | Added: RLVa-0.2.0b
+	if ( (rlv_handler_t::isEnabled()) && (TELEPORT_NONE == mTeleportState) )
+	{
+		gRlvHandler.setCanCancelTp(true);
+	}
+// [/RLVa:KB]
+}
+
+void LLAgent::stopCurrentAnimations()
+{
+	// This function stops all current overriding animations on this
+	// avatar, propagating this change back to the server.
+
+	LLVOAvatar* avatarp = gAgent.getAvatarObject();
+	if (avatarp)
+	{
+		for ( LLVOAvatar::AnimIterator anim_it =
+			      avatarp->mPlayingAnimations.begin();
+		      anim_it != avatarp->mPlayingAnimations.end();
+		      anim_it++)
+		{
+			if (anim_it->first ==
+			    ANIM_AGENT_SIT_GROUND_CONSTRAINED)
+			{
+				// don't cancel a ground-sit anim, as viewers
+				// use this animation's status in
+				// determining whether we're sitting. ick.
+			}
+			else
+			{
+				// stop this animation locally
+				avatarp->stopMotion(anim_it->first, TRUE);
+				// ...and tell the server to tell everyone.
+				sendAnimationRequest(anim_it->first, ANIM_REQUEST_STOP);
+			}
+		}
+
+		// re-assert at least the default standing animation, because
+		// viewers get confused by avs with no associated anims.
+		sendAnimationRequest(ANIM_AGENT_STAND,
+				     ANIM_REQUEST_START);
 	}
 }
 
@@ -6467,11 +6704,19 @@ BOOL LLAgent::isWearingItem( const LLUUID& item_id )
 // static
 void LLAgent::processAgentInitialWearablesUpdate( LLMessageSystem* mesgsys, void** user_data )
 {
+	if (gNoRender)
+	{
+		return;
+	}
+
 	// We should only receive this message a single time.  Ignore subsequent AgentWearablesUpdates
 	// that may result from AgentWearablesRequest having been sent more than once. 
+	// If we do this, then relogging won't work. - Gigs
+	/*
 	static bool first = true;
 	if (!first) return;
 	first = false;
+	*/
 
 	LLUUID agent_id;
 	gMessageSystem->getUUIDFast(_PREHASH_AgentData, _PREHASH_AgentID, agent_id );
@@ -6529,10 +6774,17 @@ void LLAgent::processAgentInitialWearablesUpdate( LLMessageSystem* mesgsys, void
 		}
 
 		// now that we have the asset ids...request the wearable assets
+// [RLVa:KB] - Checked: 2009-08-08 (RLVa-1.0.1g) | Added: RLVa-1.0.1g
+		LLInventoryFetchObserver::item_ref_t rlvItems;
+// [/RLVa:KB]
 		for( i = 0; i < WT_COUNT; i++ )
 		{
 			if( !gAgent.mWearableEntry[i].mItemID.isNull() )
 			{
+// [RLVa:KB] - Checked: 2009-08-08 (RLVa-1.0.1g) | Added: RLVa-1.0.1g
+				if (rlv_handler_t::isEnabled())
+					rlvItems.push_back(gAgent.mWearableEntry[i].mItemID);
+// [/RLVa:KB]
 				gWearableList.getAsset( 
 					asset_id_array[i],
 					LLStringUtil::null,
@@ -6540,6 +6792,15 @@ void LLAgent::processAgentInitialWearablesUpdate( LLMessageSystem* mesgsys, void
 					LLAgent::onInitialWearableAssetArrived, (void*)(intptr_t)i );
 			}
 		}
+
+// [RLVa:KB] - Checked: 2009-08-08 (RLVa-1.0.1g) | Added: RLVa-1.0.1g
+		// TODO-RLVa: checking that we're in STATE_STARTED is probably not needed, but leave it until we can be absolutely sure
+		if ( (rlv_handler_t::isEnabled()) && (LLStartUp::getStartupState() == STATE_STARTED) )
+		{
+			RlvCurrentlyWorn f;
+			f.fetchItems(rlvItems);
+		}
+// [/RLVa:KB]
 	}
 }
 
@@ -7037,6 +7298,13 @@ void LLAgent::removeWearable( EWearableType type )
 		return;
 	}
 
+// [RLVa:KB] - Version: 1.22.11 | Checked: 2009-07-07 (RLVa-1.0.0d)
+	if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.isRemovable(type)) )
+	{
+		return;
+	}
+// [/RLVa:KB]
+
 	if( old_wearable )
 	{
 		if( old_wearable->isDirty() )
@@ -7159,15 +7427,17 @@ void LLAgent::setWearableOutfit(
 	wearables_to_remove[WT_SKIN]		= FALSE;
 	wearables_to_remove[WT_HAIR]		= FALSE;
 	wearables_to_remove[WT_EYES]		= FALSE;
-	wearables_to_remove[WT_SHIRT]		= remove;
-	wearables_to_remove[WT_PANTS]		= remove;
-	wearables_to_remove[WT_SHOES]		= remove;
-	wearables_to_remove[WT_SOCKS]		= remove;
-	wearables_to_remove[WT_JACKET]		= remove;
-	wearables_to_remove[WT_GLOVES]		= remove;
-	wearables_to_remove[WT_UNDERSHIRT]	= (!gAgent.isTeen()) & remove;
-	wearables_to_remove[WT_UNDERPANTS]	= (!gAgent.isTeen()) & remove;
-	wearables_to_remove[WT_SKIRT]		= remove;
+// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c) | Added: RLVa-0.2.2a
+	wearables_to_remove[WT_SHIRT]		= remove && gRlvHandler.isRemovable(WT_SHIRT);
+	wearables_to_remove[WT_PANTS]		= remove && gRlvHandler.isRemovable(WT_PANTS);
+	wearables_to_remove[WT_SHOES]		= remove && gRlvHandler.isRemovable(WT_SHOES);
+	wearables_to_remove[WT_SOCKS]		= remove && gRlvHandler.isRemovable(WT_SOCKS);
+	wearables_to_remove[WT_JACKET]		= remove && gRlvHandler.isRemovable(WT_JACKET);
+	wearables_to_remove[WT_GLOVES]		= remove && gRlvHandler.isRemovable(WT_GLOVES);
+	wearables_to_remove[WT_UNDERSHIRT]	= (!gAgent.isTeen()) && remove && gRlvHandler.isRemovable(WT_UNDERSHIRT);
+	wearables_to_remove[WT_UNDERPANTS]	= (!gAgent.isTeen()) && remove && gRlvHandler.isRemovable(WT_UNDERPANTS);
+	wearables_to_remove[WT_SKIRT]		= remove && gRlvHandler.isRemovable(WT_SKIRT);
+// [/RLVa:KB]
 
 	S32 count = wearables.count();
 	llassert( items.count() == count );
@@ -7259,6 +7529,15 @@ void LLAgent::setWearable( LLInventoryItem* new_item, LLWearable* new_wearable )
 	EWearableType type = new_wearable->getType();
 
 	LLWearable* old_wearable = mWearableEntry[ type ].mWearable;
+
+// [RLVa:KB] - Checked: 2009-07-07 (RLVa-1.0.0d)
+	// Block if: we can't wear on that layer; or we're already wearing something there we can't take off
+	if ( (rlv_handler_t::isEnabled()) && ((!gRlvHandler.isWearable(type)) || ((old_wearable) && (!gRlvHandler.isRemovable(type)))) )
+	{
+		return;
+	}
+// [/RLVa:KB]
+
 	if( old_wearable )
 	{
 		const LLUUID& old_item_id = mWearableEntry[ type ].mItemID;
@@ -7410,6 +7689,25 @@ void LLAgent::userRemoveWearable( void* userdata )
 	}
 }
 
+
+// static
+void LLAgent::userRemoveAllClothesConfirm()
+{
+	gViewerWindow->alertXml("ConfirmRemoveAllClothes",
+	                        LLAgent::userRemoveAllClothesCallback, NULL);
+}
+
+// static
+void LLAgent::userRemoveAllClothesCallback(S32 option, void *userdata)
+{
+	if( option == 0 )
+	{
+		// They confirmed it. Here we go!
+		LLAgent::userRemoveAllClothes(NULL);
+	}
+}
+
+
 void LLAgent::userRemoveAllClothes( void* userdata )
 {
 	// We have to do this up front to avoid having to deal with the case of multiple wearables being dirty.
@@ -7448,10 +7746,13 @@ void LLAgent::userRemoveAllAttachments( void* userdata )
 		return;
 	}
 
-	gMessageSystem->newMessage("ObjectDetach");
-	gMessageSystem->nextBlockFast(_PREHASH_AgentData);
-	gMessageSystem->addUUIDFast(_PREHASH_AgentID, gAgent.getID() );
-	gMessageSystem->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
+// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c) | Added: RLVa-0.2.0c
+	// NOTE-RLVa: This function is called from inside RlvHandler as well, hence the rather heavy modifications
+	std::list<U32> rlvAttachments;
+	// TODO-RLVa: Once we have the improved "removeWearable" logic implemented we can just get rid of the whole "rlvCompFolders" hassle
+	#ifdef RLV_EXPERIMENTAL_COMPOSITES
+		std::list<LLUUID> rlvCompFolders;
+	#endif // RLV_EXPERIMENTAL_COMPOSITES
 
 	for (LLVOAvatar::attachment_map_t::iterator iter = avatarp->mAttachmentPoints.begin(); 
 		 iter != avatarp->mAttachmentPoints.end(); )
@@ -7461,11 +7762,78 @@ void LLAgent::userRemoveAllAttachments( void* userdata )
 		LLViewerObject* objectp = attachment->getObject();
 		if (objectp)
 		{
-			gMessageSystem->nextBlockFast(_PREHASH_ObjectData);
-			gMessageSystem->addU32Fast(_PREHASH_ObjectLocalID, objectp->getLocalID());
+			if (rlv_handler_t::isEnabled())
+			{
+				if (!gRlvHandler.isDetachable(curiter->first))
+					continue;
+
+				// Check if we're being called in response to an RLV command (that would be @detach=force)
+				if ( (gRlvHandler.getCurrentCommand()) && (attachment->getItemID().notNull()) )
+				{
+					if (!gRlvHandler.isStrippable(attachment->getItemID()))	// "nostrip" can be taken off by the user but not @detach
+						continue;
+
+					#ifdef RLV_EXPERIMENTAL_COMPOSITES
+						LLViewerInventoryCategory* pFolder;
+						if (gRlvHandler.getCompositeInfo(attachment->getItemID(), NULL, &pFolder))
+						{
+							#ifdef RLV_EXPERIMENTAL_COMPOSITE_LOCKING
+								if (!gRlvHandler.canTakeOffComposite(pFolder))
+									continue;
+							#endif // RLV_EXPERIMENTAL_COMPOSITE_LOCKING
+
+							// The attachment belongs to a composite folder so there may be additional things we need to take off
+							if (std::find(rlvCompFolders.begin(), rlvCompFolders.end(), pFolder->getUUID()) != rlvCompFolders.end())
+								rlvCompFolders.push_back(pFolder->getUUID());
+						}
+					#endif // RLV_EXPERIMENTAL_COMPOSITES
+				}
+			}
+			rlvAttachments.push_back(objectp->getLocalID());
 		}
 	}
-	gMessageSystem->sendReliable( gAgent.getRegionHost() );
+
+	// Only send the message if we actually have something to detach
+	if (rlvAttachments.size() > 0)
+	{
+		gMessageSystem->newMessage("ObjectDetach");
+		gMessageSystem->nextBlockFast(_PREHASH_AgentData);
+		gMessageSystem->addUUIDFast(_PREHASH_AgentID, gAgent.getID() );
+		gMessageSystem->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
+
+		for (std::list<U32>::const_iterator itAttach = rlvAttachments.begin(); itAttach != rlvAttachments.end(); ++itAttach)
+		{
+			gMessageSystem->nextBlockFast(_PREHASH_ObjectData);
+			gMessageSystem->addU32Fast(_PREHASH_ObjectLocalID, *itAttach);
+		}
+
+		gMessageSystem->sendReliable( gAgent.getRegionHost() );
+	}
+
+	#ifdef RLV_EXPERIMENTAL_COMPOSITES
+		if (rlv_handler_t::isEnabled)
+		{
+			// If we encountered any composite folders then we need to @detach all of them
+			for (std::list<LLUUID>::const_iterator itFolder = rlvCompFolders.begin(); itFolder != rlvCompFolders.end(); ++itFolder)
+			{
+				std::string strFolder = gRlvHandler.getSharedPath(*itFolder);
+
+				// It shouldn't happen but make absolutely sure that we don't issue @detach:=force and reenter this function
+				if (!strFolder.empty())
+				{
+					std::string strCmd = "detach:" + strFolder + "=force";
+					#ifdef RLV_DEBUG
+						RLV_INFOS << "\t- detaching composite folder: @" << strCmd << LL_ENDL;
+					#endif // RLV_DEBUG
+
+					// HACK-RLV: executing a command while another command is currently executing isn't the best thing to do, however
+					//           in this specific case it is safe (and still better than making processForceCommand public)
+					gRlvHandler.processCommand(gRlvHandler.getCurrentObject(), strCmd);
+				}
+			}
+		}
+	#endif // RLV_EXPERIMENTAL_COMPOSITES
+// [/RLVa:KB]
 }
 
 void LLAgent::observeFriends()

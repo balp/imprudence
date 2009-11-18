@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -95,7 +95,6 @@ public:
 	/*virtual*/  void draw();
 
 	void dirty();
-	void showMore(BOOL show_more);
 	void showPanel(EInfoPanel panel);
 
 	void setStatusText(const std::string& text);
@@ -108,6 +107,9 @@ private:
 	void refresh();
 
 	static void onClickGridOptions(void* data);
+
+	static void onClickLink(void* data);
+	static void onClickUnlink(void* data);
 
 public:
 
@@ -152,7 +154,11 @@ public:
 	LLButton	*mBtnDuplicate;
 	LLButton	*mBtnDuplicateInPlace;
 
+	LLButton	*mBtnLink;
+	LLButton	*mBtnUnlink;
+
 	// Create buttons
+	LLComboBox		*mComboTreesGrass;
 	LLCheckBoxCtrl	*mCheckSticky;
 	LLCheckBoxCtrl	*mCheckCopySelection;
 	LLCheckBoxCtrl	*mCheckCopyCenters;
@@ -190,10 +196,11 @@ public:
 
 private:
 	BOOL					mDirty;
-	S32						mSmallHeight;
-	S32						mLargeHeight;
 
 	std::map<std::string, std::string> mStatusText;
+
+	void updateTreeGrassCombo(bool visible);
+	static void onSelectTreesGrass(LLUICtrl*, void*);
 };
 
 extern LLFloaterTools *gFloaterTools;

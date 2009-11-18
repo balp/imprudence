@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -50,7 +50,6 @@
 #include "llfirstuse.h"
 #include "llfloaterbuyland.h"
 #include "llfloatergroups.h"
-//#include "llfloaterhtml.h"
 #include "llfloatersellland.h"
 #include "llfloatertools.h"
 #include "llnotify.h"
@@ -1693,7 +1692,12 @@ void LLViewerParcelMgr::processParcelProperties(LLMessageSystem *msg, void **use
 
 void optionally_start_music(const std::string& music_url)
 {
-	if (gSavedSettings.getBOOL("AudioStreamingMusic"))
+	// Check to see if this your first time on a music-enabled parcel.
+	if (gSavedSettings.getWarning("FirstStreamingMusic"))
+	{
+		gViewerWindow->alertXml("ParcelCanPlayMusic", callback_start_music, (void*)&music_url);
+	}
+	else if (gSavedSettings.getBOOL("AudioStreamingMusic"))
 	{
 		// Make the user click the start button on the overlay bar. JC
 		//		llinfos << "Starting parcel music " << music_url << llendl;
@@ -1705,6 +1709,21 @@ void optionally_start_music(const std::string& music_url)
 			gAudiop->startInternetStream(music_url);
 		}
 	}
+}
+
+
+void callback_start_music(S32 option, void* data)
+{
+	if (option == 0)
+	{
+		// Before the callback, we verified the url was good.
+		// We fetch again to avoid lag while loading.
+		LLParcel* parcel = LLViewerParcelMgr::getInstance()->getAgentParcel();		
+		gAudiop->startInternetStream(parcel->getMusicURL());
+
+		LLOverlayBar::musicFirstRun();
+	}
+	gSavedSettings.setWarning("FirstStreamingMusic", FALSE);
 }
 
 // static

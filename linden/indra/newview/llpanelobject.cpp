@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -46,6 +46,7 @@
 // project includes
 #include "llagent.h"
 #include "llbutton.h"
+#include "llcalc.h"
 #include "llcheckboxctrl.h"
 #include "llcolorswatch.h"
 #include "llcombobox.h"
@@ -73,6 +74,10 @@
 #include "llfirstuse.h"
 
 #include "lldrawpool.h"
+
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g)
+#include "llvoavatar.h"
+// [/RLVa:KB]
 
 //
 // Constants
@@ -109,6 +114,9 @@ BOOL	LLPanelObject::postBuild()
 	// Top
 	//--------------------------------------------------------
 	
+	// Build constant tipsheet
+	childSetAction("build_math_constants",onClickBuildConstants,this);
+
 	// Lock checkbox
 	mCheckLock = getChild<LLCheckBoxCtrl>("checkbox locked");
 	childSetCommitCallback("checkbox locked",onCommitLock,this);
@@ -341,6 +349,8 @@ void LLPanelObject::getState( )
 		}
 	}
 
+	LLCalc* calcp = LLCalc::getInstance();
+	
 	LLVOVolume *volobjp = NULL;
 	if ( objectp && (objectp->getPCode() == LL_PCODE_VOLUME))
 	{
@@ -357,6 +367,7 @@ void LLPanelObject::getState( )
 
 		// Disable all text input fields
 		clearCtrls();
+		calcp->clearAllVariables();
 		return;
 	}
 
@@ -365,6 +376,28 @@ void LLPanelObject::getState( )
 	BOOL enable_scale	= objectp->permMove() && objectp->permModify();
 	BOOL enable_rotate	= objectp->permMove() && ( (objectp->permModify() && !objectp->isAttachment()) || !gSavedSettings.getBOOL("EditLinkedParts"));
 
+	childSetEnabled("build_math_constants",true);
+
+	S32 selected_count = LLSelectMgr::getInstance()->getSelection()->getObjectCount();
+	BOOL single_volume = (LLSelectMgr::getInstance()->selectionAllPCode( LL_PCODE_VOLUME ))
+						 && (selected_count == 1);
+
+	if (LLSelectMgr::getInstance()->getSelection()->getRootObjectCount() > 1)
+	{
+		enable_move = FALSE;
+		enable_scale = FALSE;
+		enable_rotate = FALSE;
+	}
+
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g)
+	if ( (rlv_handler_t::isEnabled()) && ((gRlvHandler.hasBehaviour(RLV_BHVR_UNSIT)) || (gRlvHandler.hasBehaviour(RLV_BHVR_SITTP))) )
+	{
+		LLVOAvatar* pAvatar = gAgent.getAvatarObject();
+		if ( (pAvatar) && (pAvatar->mIsSitting) && (pAvatar->getRoot() == objectp->getRootEdit()) )
+			enable_move = enable_scale = enable_rotate = FALSE;
+	}
+// [/RLVa:KB]
+
 	LLVector3 vec;
 	if (enable_move)
 	{
@@ -372,12 +405,18 @@ void LLPanelObject::getState( )
 		mCtrlPosX->set( vec.mV[VX] );
 		mCtrlPosY->set( vec.mV[VY] );
 		mCtrlPosZ->set( vec.mV[VZ] );
+		calcp->setVar(LLCalc::X_POS, vec.mV[VX]);
+		calcp->setVar(LLCalc::Y_POS, vec.mV[VY]);
+		calcp->setVar(LLCalc::Z_POS, vec.mV[VZ]);
 	}
 	else
 	{
 		mCtrlPosX->clear();
 		mCtrlPosY->clear();
 		mCtrlPosZ->clear();
+		calcp->clearVar(LLCalc::X_POS);
+		calcp->clearVar(LLCalc::Y_POS);
+		calcp->clearVar(LLCalc::Z_POS);
 	}
 
 
@@ -392,12 +431,18 @@ void LLPanelObject::getState( )
 		mCtrlScaleX->set( vec.mV[VX] );
 		mCtrlScaleY->set( vec.mV[VY] );
 		mCtrlScaleZ->set( vec.mV[VZ] );
+		calcp->setVar(LLCalc::X_SCALE, vec.mV[VX]);
+		calcp->setVar(LLCalc::Y_SCALE, vec.mV[VY]);
+		calcp->setVar(LLCalc::Z_SCALE, vec.mV[VZ]);
 	}
 	else
 	{
 		mCtrlScaleX->clear();
 		mCtrlScaleY->clear();
 		mCtrlScaleZ->clear();
+		calcp->setVar(LLCalc::X_SCALE, 0.f);
+		calcp->setVar(LLCalc::Y_SCALE, 0.f);
+		calcp->setVar(LLCalc::Z_SCALE, 0.f);
 	}
 
 	mLabelSize->setEnabled( enable_scale );
@@ -417,12 +462,18 @@ void LLPanelObject::getState( )
 		mCtrlRotX->set( mCurEulerDegrees.mV[VX] );
 		mCtrlRotY->set( mCurEulerDegrees.mV[VY] );
 		mCtrlRotZ->set( mCurEulerDegrees.mV[VZ] );
+		calcp->setVar(LLCalc::X_ROT, mCurEulerDegrees.mV[VX]);
+		calcp->setVar(LLCalc::Y_ROT, mCurEulerDegrees.mV[VY]);
+		calcp->setVar(LLCalc::Z_ROT, mCurEulerDegrees.mV[VZ]);
 	}
 	else
 	{
 		mCtrlRotX->clear();
 		mCtrlRotY->clear();
 		mCtrlRotZ->clear();
+		calcp->clearVar(LLCalc::X_ROT);
+		calcp->clearVar(LLCalc::Y_ROT);
+		calcp->clearVar(LLCalc::Z_ROT);
 	}
 
 	mLabelRotation->setEnabled( enable_rotate );
@@ -438,9 +489,6 @@ void LLPanelObject::getState( )
 	// BUG? Check for all objects being editable?
 	S32 roots_selected = LLSelectMgr::getInstance()->getSelection()->getRootObjectCount();
 	BOOL editable = root_objectp->permModify();
-	S32 selected_count = LLSelectMgr::getInstance()->getSelection()->getObjectCount();
-	BOOL single_volume = (LLSelectMgr::getInstance()->selectionAllPCode( LL_PCODE_VOLUME ))
-						 && (selected_count == 1);
 
 	// Select Single Message
 	childSetVisible("select_single", FALSE);
@@ -583,6 +631,10 @@ void LLPanelObject::getState( )
 	}
 	else
 	{
+		mCtrlScaleX->setMaxValue(LLManipScale::getMaxPrimSize());
+		mCtrlScaleY->setMaxValue(LLManipScale::getMaxPrimSize());
+		mCtrlScaleZ->setMaxValue(LLManipScale::getMaxPrimSize());
+
 		// Only allowed to change these parameters for objects
 		// that you have permissions on AND are not attachments.
 		enabled = root_objectp->permModify();
@@ -678,8 +730,9 @@ void LLPanelObject::getState( )
 		F32 end_t	= volume_params.getEndT();
 
 		// Hollowness
-		F32 hollow = volume_params.getHollow();
-		mSpinHollow->set( 100.f * hollow );
+		F32 hollow = 100.f * volume_params.getHollow();
+		mSpinHollow->set( hollow );
+		calcp->setVar(LLCalc::HOLLOW, hollow);
 
 		// All hollow objects allow a shape to be selected.
 		if (hollow > 0.f)
@@ -732,6 +785,10 @@ void LLPanelObject::getState( )
 		mSpinCutEnd		->set( cut_end );
 		mCtrlPathBegin	->set( adv_cut_begin );
 		mCtrlPathEnd	->set( adv_cut_end );
+		calcp->setVar(LLCalc::CUT_BEGIN, cut_begin);
+		calcp->setVar(LLCalc::CUT_END, cut_end);
+		calcp->setVar(LLCalc::PATH_BEGIN, adv_cut_begin);
+		calcp->setVar(LLCalc::PATH_END, adv_cut_end);
 
 		// Twist
 		F32 twist		= volume_params.getTwist();
@@ -750,18 +807,24 @@ void LLPanelObject::getState( )
 
 		mSpinTwist		->set( twist );
 		mSpinTwistBegin	->set( twist_begin );
+		calcp->setVar(LLCalc::TWIST_END, twist);
+		calcp->setVar(LLCalc::TWIST_BEGIN, twist_begin);
 
 		// Shear
 		F32 shear_x = volume_params.getShearX();
 		F32 shear_y = volume_params.getShearY();
 		mSpinShearX->set( shear_x );
 		mSpinShearY->set( shear_y );
+		calcp->setVar(LLCalc::X_SHEAR, shear_x);
+		calcp->setVar(LLCalc::Y_SHEAR, shear_y);
 
 		// Taper
 		F32 taper_x	= volume_params.getTaperX();
 		F32 taper_y = volume_params.getTaperY();
 		mSpinTaperX->set( taper_x );
 		mSpinTaperY->set( taper_y );
+		calcp->setVar(LLCalc::X_TAPER, taper_x);
+		calcp->setVar(LLCalc::Y_TAPER, taper_y);
 
 		// Radius offset.
 		F32 radius_offset = volume_params.getRadiusOffset();
@@ -791,10 +854,12 @@ void LLPanelObject::getState( )
 			}
 		}
 		mSpinRadiusOffset->set( radius_offset);
+		calcp->setVar(LLCalc::RADIUS_OFFSET, radius_offset);
 
 		// Revolutions
 		F32 revolutions = volume_params.getRevolutions();
 		mSpinRevolutions->set( revolutions );
+		calcp->setVar(LLCalc::REVOLUTIONS, revolutions);
 		
 		// Skew
 		F32 skew	= volume_params.getSkew();
@@ -819,6 +884,7 @@ void LLPanelObject::getState( )
 			}
 		}
 		mSpinSkew->set( skew );
+		calcp->setVar(LLCalc::SKEW, skew);
 	}
 
 	// Compute control visibility, label names, and twist range.
@@ -924,6 +990,8 @@ void LLPanelObject::getState( )
 	case MI_RING:
 		mSpinScaleX->set( scale_x );
 		mSpinScaleY->set( scale_y );
+		calcp->setVar(LLCalc::X_HOLE, scale_x);
+		calcp->setVar(LLCalc::Y_HOLE, scale_y);
 		mSpinScaleX->setMinValue(OBJECT_MIN_HOLE_SIZE);
 		mSpinScaleX->setMaxValue(OBJECT_MAX_HOLE_SIZE_X);
 		mSpinScaleY->setMinValue(OBJECT_MIN_HOLE_SIZE);
@@ -938,6 +1006,14 @@ void LLPanelObject::getState( )
 			mSpinScaleX->setMaxValue(1.f);
 			mSpinScaleY->setMinValue(-1.f);
 			mSpinScaleY->setMaxValue(1.f);
+
+			// Torus' Hole Size is Box/Cyl/Prism's Taper
+			calcp->setVar(LLCalc::X_TAPER, 1.f - scale_x);
+			calcp->setVar(LLCalc::Y_TAPER, 1.f - scale_y);
+
+			// Box/Cyl/Prism have no hole size
+			calcp->setVar(LLCalc::X_HOLE, 0.f);
+			calcp->setVar(LLCalc::Y_HOLE, 0.f);
 		}
 		break;
 	}
@@ -1148,7 +1224,7 @@ void LLPanelObject::getState( )
 		mSculptTextureRevert = LLUUID::null;
 	}
 
-	
+
 	//----------------------------------------------------------------------------
 
 	mObject = objectp;
@@ -1913,6 +1989,8 @@ void LLPanelObject::clearCtrls()
 	childSetEnabled( "advanced_cut", FALSE );
 	childSetEnabled( "advanced_dimple", FALSE );
 	childSetVisible("advanced_slice", FALSE);
+
+	childSetEnabled("build_math_constants",false);
 }
 
 //
@@ -1954,6 +2032,9 @@ void LLPanelObject::onCommitRotation( LLUICtrl* ctrl, void* userdata )
 	LLPanelObject* self = (LLPanelObject*) userdata;
 	BOOL btn_down = ((LLSpinCtrl*)ctrl)->isMouseHeldDown() ;
 	self->sendRotation(btn_down);
+
+	// Needed to ensure all rotations are shown consistently in range
+	self->refresh();
 }
 
 // static
@@ -2047,4 +2128,10 @@ void LLPanelObject::onCommitSculptType(LLUICtrl *ctrl, void* userdata)
 	LLPanelObject* self = (LLPanelObject*) userdata;
 
 	self->sendSculpt();
+}
+
+// static
+void LLPanelObject::onClickBuildConstants(void *)
+{
+	gViewerWindow->alertXml("ClickBuildConstants");
 }

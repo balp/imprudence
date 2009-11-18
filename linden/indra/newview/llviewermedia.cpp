@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -496,6 +496,13 @@ void LLViewerMedia::initClass()
 		const LLMIMETypes::LLMIMEInfo& info = it->second;
 		mm->addMimeTypeImplNameMap( mime_type, info.mImpl );
 	}
+
+	LLMediaBase *impl = mm->createSourceFromMimeType("http", "audio/mpeg");
+	if (impl)
+	{
+		U32 level = gSavedSettings.getU32("MediaDebugLevel");
+		impl->setDebugLevel( (LLMediaBase::EDebugLevel)level );
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -552,6 +559,7 @@ void LLViewerMedia::buildMediaManagerData( LLMediaManagerData* init_data )
 // static
 void LLViewerMedia::cleanupClass()
 {
+	stop() ;
 	LLMediaManager::cleanupClass();
 }
 

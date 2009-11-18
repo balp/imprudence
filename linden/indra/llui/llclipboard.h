@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -43,10 +43,19 @@ public:
 	LLClipboard();
 	~LLClipboard();
 
+	/* We support two flavors of clipboard.  The default is the explicitly
+	   copy-and-pasted clipboard.  The second is the so-called 'primary' clipboard
+	   which is implicitly copied upon selection on platforms which expect this
+	   (i.e. X11/Linux). */
+
 	void		copyFromSubstring(const LLWString &copy_from, S32 pos, S32 len, const LLUUID& source_id = LLUUID::null );
 	BOOL		canPasteString() const;
 	const LLWString&	getPasteWString(LLUUID* source_id = NULL);
-	
+
+	void		copyFromPrimarySubstring(const LLWString &copy_from, S32 pos, S32 len, const LLUUID& source_id = LLUUID::null );
+	BOOL		canPastePrimaryString() const;
+	const LLWString&	getPastePrimaryWString(LLUUID* source_id = NULL);	
+
 private:
 	LLUUID		mSourceID;
 	LLWString	mString;

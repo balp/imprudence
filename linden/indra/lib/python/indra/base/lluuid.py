@@ -4,7 +4,7 @@
 
 $LicenseInfo:firstyear=2004&license=mit$
 
-Copyright (c) 2004-2008, Linden Research, Inc.
+Copyright (c) 2004-2009, Linden Research, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@ THE SOFTWARE.
 $/LicenseInfo$
 """
 
-import md5, random, socket, string, time, re
+import random, socket, string, time, re
+from hashlib import md5
 import uuid
 
 def _int2binstr(i,l):
@@ -196,7 +197,7 @@ class UUID(object):
         from c++ implementation for portability reasons.
         Returns self.
         """
-        m = md5.new()
+        m = md5()
         m.update(uuid.uuid1().bytes)
         self._bits = m.digest()
         return self

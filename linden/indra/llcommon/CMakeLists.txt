@@ -20,6 +20,7 @@ set(llcommon_SOURCE_FILES
     llcommon.cpp
     llcrc.cpp
     llcriticaldamp.cpp
+    llcursortypes.cpp
     lldate.cpp
     llerror.cpp
     llerrorthread.cpp
@@ -90,6 +91,7 @@ set(llcommon_HEADER_FILES
     llcommon.h
     llcrc.h
     llcriticaldamp.h
+    llcursortypes.h
     lldarray.h
     lldarrayptr.h
     lldate.h
@@ -187,3 +189,10 @@ set_source_files_properties(${llcommon_HEADER_FILES}
 list(APPEND llcommon_SOURCE_FILES ${llcommon_HEADER_FILES})
 
 add_library (llcommon ${llcommon_SOURCE_FILES})
+target_link_libraries(
+    llcommon
+    ${APRUTIL_LIBRARIES}
+    ${APR_LIBRARIES}
+    ${EXPAT_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    )

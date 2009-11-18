@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<floater bottom="-359" can_close="true" can_drag_on_left="false" can_minimize="true"
-     can_resize="false" follows="left|top" height="550" 
+<floater bottom="-374" can_close="true" can_drag_on_left="false" can_minimize="true"
+     can_resize="false" follows="left|top" height="565" 
      left="308" min_height="100" min_width="100" mouse_opaque="true"
      name="toolbox floater" rect_control="ToolboxRect" sound_flags="0" title=""
      short_title="Build" width="272">
@@ -83,38 +83,45 @@
 	     font="SansSerifSmall" height="16" initial_value="false"
 	     label="Edit linked parts" left="4" mouse_opaque="true"
 	     name="checkbox edit linked parts" width="114" />
-	<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
-	     bottom_delta="-20" drop_shadow_visible="true" follows="left|top"
+  <button bottom_delta="-19" follows="left|top" font="SansSerifSmall"
+          halign="center" height="18" label="Link" label_selected="Link"
+          left="10" mouse_opaque="true" name="link_btn" width="68" />
+  <button bottom_delta="0" follows="left|top" font="SansSerifSmall"
+          halign="center" height="18" label="Unlink" label_selected="Unlink"
+          left_delta="75" mouse_opaque="true" name="unlink_btn" width="68" />
+  <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+	     bottom_delta="-18" drop_shadow_visible="true" follows="left|top"
 	     font="SansSerifSmall" h_pad="0" halign="left" height="14" left="6"
 	     mouse_opaque="true" name="text ruler mode" v_pad="0" width="68">
-		Ruler mode:
-	</text>
+    Ruler:
+  </text>
 	<combo_box allow_text_entry="false" bottom_delta="-4" follows="left|top" height="20"
-	     left_delta="74" max_chars="20" mouse_opaque="true"
+	     left_delta="40" max_chars="20" mouse_opaque="true"
 	     name="combobox grid mode" width="86">
-		<combo_item name="World" value="World">
-			World
-		</combo_item>
-		<combo_item name="Local" value="Local">
-			Local
-		</combo_item>
-		<combo_item name="Reference" value="Reference">
-			Reference
-		</combo_item>
-	</combo_box>
-	<check_box bottom="-70" control_name="ScaleUniform" follows="left|top"
+    <combo_item name="World" value="World">
+      World
+    </combo_item>
+    <combo_item name="Local" value="Local">
+      Local
+    </combo_item>
+    <combo_item name="Reference" value="Reference">
+      Reference
+    </combo_item>
+  </combo_box>
+  <check_box bottom="-70" control_name="ScaleUniform" follows="left|top"
 	     font="SansSerifSmall" height="16" initial_value="false"
 	     label="Stretch Both Sides" left="143" mouse_opaque="true"
 	     name="checkbox uniform" width="134" />
-	<check_box bottom_delta="-15" control_name="ScaleStretchTextures" follows="left|top"
+  <check_box bottom_delta="-15" control_name="ScaleStretchTextures" follows="left|top"
 	     font="SansSerifSmall" height="16" initial_value="true"
 	     label="Stretch Textures" left_delta="0" mouse_opaque="true"
 	     name="checkbox stretch textures" width="134" />
-	<check_box bottom_delta="-19" control_name="SnapEnabled" follows="left|top"
+  <check_box bottom_delta="-19" control_name="SnapEnabled" follows="left|top"
 	     font="SansSerifSmall" height="16" initial_value="true" label="Use Grid"
 	     left_delta="0" mouse_opaque="true" name="checkbox snap to grid" width="134" />
-	<button bottom_delta="-14" follows="left|top" font="SansSerifSmall" halign="center"
-	     height="16" label="Options..." label_selected="Options..." left_delta="20"
+	<button bottom_delta="-19" follows="left|top" font="SansSerifSmall"
+       halign="center" valign="center"
+	     height="20" label="Options..." label_selected="Options..." left_delta="20"
 	     mouse_opaque="true" name="Options..." scale_image="TRUE" width="80" />
 
 <!-- Help text -->
@@ -227,6 +234,13 @@
 	     image_unselected="object_grass.tga" label="" label_selected=""
 	     left_delta="23" mouse_opaque="true" name="ToolGrass" scale_image="TRUE"
 	     tool_tip="Grass" width="24" />
+  <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+	     bottom="-104" drop_shadow_visible="true" follows="left|top"
+	     font="SansSerifSmall" h_pad="0" halign="left" height="16" right="-5"
+	     mouse_opaque="true" name="tree_grass_label" v_pad="0" width="135" />
+  <combo_box max_chars="20" enabled="false" allow_text_entry="false" name="trees_grass"
+       height="18" width="135" right="-5" bottom="-122"
+       follows="left|top" mouse_opaque="true" />
 	<check_box bottom="-117" control_name="CreateToolKeepSelected" follows="left|top"
 	     font="SansSerifSmall" height="16" initial_value="false"
 	     label="Keep Tool Selected" left="4" mouse_opaque="true"
@@ -276,18 +290,18 @@
 	<text type="string" length="1" bg_visible="false" border_drop_shadow_visible="false"
 	     border_visible="false" bottom_delta="-16" drop_shadow_visible="true" enabled="true"
 	     follows="left|top" font="SansSerifSmall" h_pad="0" halign="left" height="12" left="118"
-	     hidden="false" mouse_opaque="true" name="Brush:" v_pad="0" width="100">
-	          Brush:
+	     hidden="false" mouse_opaque="true" name="Bulldozer:" v_pad="0" width="100">
+	          Bulldozer:
 	</text>
 
 	<text type="string" length="1" bg_visible="false" border_drop_shadow_visible="false"
 	     border_visible="false" bottom_delta="-18" drop_shadow_visible="true" enabled="true"
 	     follows="left|top" font="SansSerifSmall" h_pad="0" halign="left" height="12" left="132"
-	     hidden="false" mouse_opaque="true" name="Brush Size:" v_pad="0" width="100">
+	     hidden="false" mouse_opaque="true" name="Dozer Size:" v_pad="0" width="100">
 	          Size
 	</text>
 	<volume_slider bottom_delta="-4" follows="left|top" height="16" hidden="false"
-	     increment="1.0" initial_val="0.0" left="178" max_val="2.0" min_val="0.0"
+         increment="0.1" initial_val="2.0" left="178" max_val="11.0" min_val="1.0"
 	     mouse_opaque="true" name="slider brush size" width="80" />	
 
 
@@ -299,21 +313,23 @@
 	</text>
 	<volume_slider bottom_delta="-4" follows="left|top" height="16" hidden="false"
 	     increment="0.1" initial_val="0.00" left="178" max_val="2.0" min_val="-1.0"
-	     mouse_opaque="true" name="slider force" width="80" />	
-
-
-	<button bottom="-163" follows="left|top" font="SansSerifSmall" halign="center"
-	     height="20" label="More &gt;&gt;" left="186" mouse_opaque="true"
-	     name="button more" scale_image="TRUE" tool_tip="Advanced Options"
-	     width="80" />
-	<button bottom_delta="0" follows="left|top" font="SansSerifSmall" halign="center"
-	     height="20" label="&lt;&lt; Less" left_delta="0" mouse_opaque="true"
-	     name="button less" scale_image="TRUE" tool_tip="Advanced Options"
-	     width="80" />
+	     mouse_opaque="true" name="slider force" width="80" />
+  <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+         bottom="-168" left="118" drop_shadow_visible="true" follows="left|top"
+         font="SansSerifSmall" h_pad="0" halign="right" height="16"
+         mouse_opaque="true" name="obj_count" v_pad="0" width="143">
+    Selected objects: [COUNT]
+  </text>
+  <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+       bottom="-181" left="118" drop_shadow_visible="true" follows="left|top"
+       font="SansSerifSmall" h_pad="0" halign="right" height="16"
+       mouse_opaque="true" name="prim_count" v_pad="0" width="143">
+    primitives: [COUNT]
+  </text>
 
 <!-- Sub-tabs -->
 
-	<tab_container bottom="-550" follows="left|top" height="384" left="0" mouse_opaque="false"
+	<tab_container bottom="-565" follows="left|top" height="384" left="0" mouse_opaque="false"
 	     name="Object Info Tabs" tab_max_width="52" tab_min_width="40"
 	     tab_position="top" width="272">
 		<panel border="true" bottom="-383" follows="left|top|right|bottom" height="367"
@@ -351,7 +367,7 @@
 				Thrax Linden
 			</text>
 			<button bottom="-66" follows="top|right" font="SansSerifSmall" halign="center"
-			     height="16" label="Profile..." label_selected="Profile..." left_delta="94"
+			     height="20" label="Profile..." label_selected="Profile..." left_delta="94"
 			     mouse_opaque="true" name="button creator profile" scale_image="TRUE"
 			     width="78" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
@@ -367,31 +383,41 @@
 				Thrax Linden
 			</text>
 			<button bottom="-86" follows="top|right" font="SansSerifSmall" halign="center"
-			     height="16" label="Profile..." label_selected="Profile..." left_delta="94"
+			     height="20" label="Profile..." label_selected="Profile..." left_delta="94"
 			     mouse_opaque="true" name="button owner profile" scale_image="TRUE"
 			     width="78" />
+      <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+			     bottom_delta="-20" drop_shadow_visible="true" follows="left|top"
+			     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="10"
+			     mouse_opaque="true" name="Last Owner:" v_pad="0" width="78">
+        Last Owner:
+      </text>
+      <text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+			     bottom_delta="0" drop_shadow_visible="true" follows="left|top"
+			     font="SansSerifSmall" h_pad="0" halign="left" height="16" left_delta="78"
+			     mouse_opaque="true" name="Last Owner Name" v_pad="0" width="88">
+        Thrax Linden
+      </text>
+      <button bottom_delta="0" follows="top|right" font="SansSerifSmall" halign="center"
+			     height="20" label="Profile..." label_selected="Profile..." left_delta="94"
+			     mouse_opaque="true" name="button last owner profile" scale_image="TRUE"
+			     width="78" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
-			     bottom="-106" drop_shadow_visible="true" follows="left|top"
+			     bottom="-126" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="10"
 			     mouse_opaque="true" name="Group:" v_pad="0" width="78">
 				Group:
 			</text>
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
-			     bottom="-106" drop_shadow_visible="true" follows="left|top"
+			     bottom="-126" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="16" left_delta="78"
 			     mouse_opaque="true" name="Group Name Proxy" v_pad="0" visible="false"
 			     width="88">
 				The Lindens
 			</text>
-			<button bottom="-106" follows="top|right" font="SansSerifSmall" halign="center"
-			     height="16" label="Set..." label_selected="Set..." left_delta="94"
+			<button bottom="-126" follows="top|right" font="SansSerifSmall" halign="center"
+			     height="20" label="Set..." label_selected="Set..." left_delta="94"
 			     mouse_opaque="true" name="button set group" scale_image="TRUE" width="78" />
-			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
-			     bottom="-126" drop_shadow_visible="true" follows="left|top"
-			     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="10"
-			     mouse_opaque="true" name="prim info" v_pad="0" width="166">
-				1 Object, 1 Primitive
-			</text>
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 			     bottom_delta="-20" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="10"
@@ -407,7 +433,7 @@
 			<check_box bottom_delta="-20" follows="left|top" font="SansSerifSmall" height="16"
 			     initial_value="false" label="Share with group" left="10"
 			     mouse_opaque="true" name="checkbox share with group"
-			     tool_tip="Allow group members to move, modify, copy and delete."
+			     tool_tip="Allow all members of the set group to share and use your permissions for this object. You must Deed to enable role restrictions."
 			     width="166" />
 			<string name="text deed continued">
 				Deed...
@@ -415,8 +441,8 @@
 			<string name="text deed">
 				Deed
 			</string>
-			<button bottom="-186" follows="top|right" font="SansSerifSmall" halign="center"
-			     height="16" label="Deed..." label_selected="Deed..." left_delta="172"
+			<button bottom_delta="0" follows="top|right" font="SansSerifSmall" halign="center"
+			     height="20" label="Deed..." label_selected="Deed..." left_delta="172"
 			     mouse_opaque="true" name="button deed" scale_image="TRUE"
 			     tool_tip="Group shared objects can be deeded by a group officer."
 			     width="78" />
@@ -587,7 +613,10 @@
 			     mouse_opaque="true" name="edit_object" v_pad="0" width="252">
 				Edit object parameters:
 			</text>
-			<check_box bottom_delta="-26" follows="left|top" font="SansSerifSmall" height="16"
+      <button bottom_delta="-10" follows="left|top" font="SansSerif" halign="center"
+			     height="22" label="?" label_selected="?" right="-8" tool_tip="Object math constants" 
+			     mouse_opaque="true" name="build_math_constants" scale_image="true" width="22" />
+			<check_box bottom_delta="-16" follows="left|top" font="SansSerifSmall" height="16"
 			     initial_value="false" label="Locked" left="8" mouse_opaque="true"
 			     name="checkbox locked"
 			     tool_tip="Prevents object from being moved or deleted. Frequently useful during building to avoid unintended edits."
@@ -614,15 +643,15 @@
 			<spinner bottom_delta="-20" decimal_digits="3" follows="left|top" height="16"
 			     increment="0.01" initial_val="0" label="X" label_width="10" left="10"
 			     max_val="512" min_val="-256" mouse_opaque="true" name="Pos X"
-			     text_enabled_color="110, 15, 15, 255" width="87" />
+			     text_enabled_color="110, 15, 15, 255" width="96" />
 			<spinner bottom_delta="-18" decimal_digits="3" follows="left|top" height="16"
 			     increment="0.01" initial_val="0" label="Y" label_width="10" left="10"
 			     max_val="512" min_val="-256" mouse_opaque="true" name="Pos Y"
-			     text_enabled_color="0, 100, 40, 255" width="87" />
+			     text_enabled_color="0, 100, 40, 255" width="96" />
 			<spinner bottom_delta="-18" decimal_digits="3" follows="left|top" height="16"
 			     increment="0.01" initial_val="0" label="Z" label_width="10" left="10"
 			     max_val="4096" min_val="0" mouse_opaque="true" name="Pos Z"
-			     text_enabled_color="0, 67, 132, 255" width="87" />
+			     text_enabled_color="0, 67, 132, 255" width="96" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 			     bottom_delta="-16" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="10" left="10"
@@ -631,16 +660,16 @@
 			</text>
 			<spinner bottom_delta="-20" decimal_digits="3" follows="left|top" height="16"
 			     increment="0.01" initial_val="0" label="X" label_width="10" left="10"
-			     max_val="10" min_val="0.01" mouse_opaque="true" name="Scale X"
-			     text_enabled_color="1, 1, 1, 1" width="87" />
+			     min_val="0.01" mouse_opaque="true" name="Scale X"
+			     text_enabled_color="1, 1, 1, 1" width="96" />
 			<spinner bottom_delta="-18" decimal_digits="3" follows="left|top" height="16"
 			     increment="0.01" initial_val="0" label="Y" label_width="10" left="10"
-			     max_val="10" min_val="0.01" mouse_opaque="true" name="Scale Y"
-			     text_enabled_color="1, 1, 1, 1" width="87" />
+			     min_val="0.01" mouse_opaque="true" name="Scale Y"
+			     text_enabled_color="1, 1, 1, 1" width="96" />
 			<spinner bottom_delta="-18" decimal_digits="3" follows="left|top" height="16"
 			     increment="0.01" initial_val="0" label="Z" label_width="10" left="10"
-			     max_val="10" min_val="0.01" mouse_opaque="true" name="Scale Z"
-			     text_enabled_color="1, 1, 1, 1" width="87" />
+			     min_val="0.01" mouse_opaque="true" name="Scale Z"
+			     text_enabled_color="1, 1, 1, 1" width="96" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 			     bottom_delta="-16" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="10" left="10"
@@ -650,15 +679,15 @@
 			<spinner bottom_delta="-22" decimal_digits="2" follows="left|top" height="16"
 			     increment="1" initial_val="0" label="X" label_width="10" left="10"
 			     max_val="9999" min_val="-9999" mouse_opaque="true" name="Rot X"
-			     text_enabled_color="1, 1, 1, 1" width="87" />
+			     text_enabled_color="1, 1, 1, 1" width="96" />
 			<spinner bottom_delta="-18" decimal_digits="2" follows="left|top" height="16"
 			     increment="1" initial_val="0" label="Y" label_width="10" left="10"
 			     max_val="9999" min_val="-9999" mouse_opaque="true" name="Rot Y"
-			     text_enabled_color="1, 1, 1, 1" width="87" />
+			     text_enabled_color="1, 1, 1, 1" width="96" />
 			<spinner bottom_delta="-18" decimal_digits="2" follows="left|top" height="16"
 			     increment="1" initial_val="0" label="Z" label_width="10" left="10"
 			     max_val="9999" min_val="-9999" mouse_opaque="true" name="Rot Z"
-			     text_enabled_color="1, 1, 1, 1" width="87" />
+			     text_enabled_color="1, 1, 1, 1" width="96" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 			     bottom_delta="-16" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="10" left="10"
@@ -1018,7 +1047,7 @@
 			</text>
 			<spinner bottom_delta="-20" decimal_digits="0" follows="left|top" height="16"
 			     increment="2" initial_val="0" left="180" max_val="100" min_val="0"
-			     mouse_opaque="true" name="ColorTrans" width="80" />
+			     mouse_opaque="true" name="ColorTrans" width="58" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 			     bottom_delta="-12" drop_shadow_visible="true" follows="left|top"
 			     font="SansSerifSmall" h_pad="0" halign="left" height="10"
@@ -1027,7 +1056,7 @@
 			</text>
 			<spinner bottom_delta="-20" decimal_digits="2" follows="left|top" height="16"
 			     increment="0.1" initial_val="0" left="180" max_val="1"
-			     min_val="0" mouse_opaque="true" name="glow" width="80" />
+			     min_val="0" mouse_opaque="true" name="glow" width="58" />
 			<check_box bottom_delta="-23" follows="left|top" font="SansSerifSmall" height="16"
 			     initial_value="false" label="Full Bright" left="180" mouse_opaque="true"
 			     name="checkbox fullbright" width="81" />
@@ -1176,7 +1205,7 @@
 			     initial_val="1" left="112" max_val="10" min_val="0.1" mouse_opaque="true"
 			     name="rptctrl" width="68" />
 			<button bottom="-256" follows="left|top" font="SansSerifSmall" halign="center"
-			     height="16" label="Apply" label_selected="Apply" left_delta="78"
+			     height="20" label="Apply" label_selected="Apply" left_delta="78"
 			     mouse_opaque="true" name="button apply" scale_image="TRUE" width="75" />
 			<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 			     bottom="-288" drop_shadow_visible="true" follows="left|top"
@@ -1201,13 +1230,19 @@
 			<button bottom="-360" follows="left|top" font="SansSerifSmall" halign="center"
 			     height="16" label="Align" label_selected="Align" left="112"
 			     mouse_opaque="true" name="button align" scale_image="TRUE" width="68" />
+      <button bottom="-162" follows="left|top" font="SansSerif" halign="center"
+			     height="22" label="?" label_selected="?" right="-8" tool_tip="Texture math constants"
+			     mouse_opaque="true" name="texture_math_constants" scale_image="true" width="24" />
 		</panel>
 		<panel border="true" bottom="-383" follows="left|top|right|bottom" height="367"
 		     label="Content" left="1" mouse_opaque="false" name="Contents" width="270">
-			<button bottom="-30" follows="left|top" font="SansSerif" halign="center" height="20"
-			      label="New Script..." label_selected="New Script..."
+      <button bottom="-30" follows="left|top" font="SansSerif" halign="center" height="20"
+			      label="New Script" label_selected="New Script..."
 			     left="10" mouse_opaque="true" name="button new script" scale_image="TRUE"
-			     width="130" />
+			     width="100" />
+      <!--<button bottom_delta="0" left_delta="110" width="100" height="20" follows="left|top"
+            label="Permissions..." name="button permissions" font="SansSerif" halign="center"
+            mouse_opaque="true" scale_image="TRUE" />-->
 			<panel bottom_delta="-330" follows="left|top" height="325"  left="10"
 			     mouse_opaque="true" name="ContentsInventory" width="252" />
 		</panel>
@@ -1217,21 +1252,9 @@
 
 	<panel bottom="-550" follows="left|top" height="384" left="0" mouse_opaque="true"
 	     name="land info panel" width="272">
+	<!-- Parcel Information -->
 		<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 		     bottom="-40" drop_shadow_visible="true" follows="left|top"
-		     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="40"
-		     mouse_opaque="true" name="label_parcel_modify" v_pad="0" width="150">
-			Modify Parcel
-		</text>
-		<button bottom_delta="-24" follows="left|top" font="SansSerif" halign="center"
-		     height="20" label="Subdivide..." label_selected="Subdivide..." left="48"
-		     mouse_opaque="true" name="button subdivide land" scale_image="TRUE"
-		     width="112" />
-		<button bottom_delta="-24" follows="left|top" font="SansSerif" halign="center"
-		     height="20" label="Join..." label_selected="Join..." left="48"
-		     mouse_opaque="true" name="button join land" scale_image="TRUE" width="112" />
-		<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
-		     bottom_delta="-56" drop_shadow_visible="true" follows="left|top"
 		     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="40"
 		     mouse_opaque="true" name="label_parcel_info" v_pad="0" width="150">
 			Parcel Information
@@ -1252,12 +1275,27 @@
 		     height="20" label="About Land..." label_selected="About Land..." left="48"
 		     mouse_opaque="true" name="button about land" scale_image="TRUE" width="112" />
 		<check_box bottom_delta="-24" control_name="ShowParcelOwners" follows="left|top"
-		     tool_tip="Colour parcels according to their status" font="SansSerifSmall"
-		     height="16" initial_value="false" label="Show Status" left="48" 
+		     tool_tip="Colour parcels according to their ownership" font="SansSerifSmall"
+		     height="16" initial_value="false" label="Show owners" left="48" 
 		     mouse_opaque="true" name="checkbox show owners" width="100" />
 			<button bottom_delta="0" follows="left|top" font="SansSerif" halign="center"
 			     height="18" label="?" label_selected="?" left_delta="94"
 			     mouse_opaque="true" name="button show owners help" width="18" />
+	<!-- Modify Parcel -->
+		<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
+		     bottom_delta="-56" drop_shadow_visible="true" follows="left|top"
+		     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="40"
+		     mouse_opaque="true" name="label_parcel_modify" v_pad="0" width="150">
+			Modify Parcel
+		</text>
+		<button bottom_delta="-24" follows="left|top" font="SansSerif" halign="center"
+		     height="20" label="Subdivide..." label_selected="Subdivide..." left="48"
+		     mouse_opaque="true" name="button subdivide land" scale_image="TRUE"
+		     width="112" />
+		<button bottom_delta="-24" follows="left|top" font="SansSerif" halign="center"
+		     height="20" label="Join..." label_selected="Join..." left="48"
+		     mouse_opaque="true" name="button join land" scale_image="TRUE" width="112" />
+	<!-- Land Transactions -->
 		<text bg_visible="false" border_drop_shadow_visible="false" border_visible="false"
 		     bottom_delta="-56" drop_shadow_visible="true" follows="left|top"
 		     font="SansSerifSmall" h_pad="0" halign="left" height="16" left="40"
@@ -1288,10 +1326,10 @@
 		Click and drag to change view
 	</string>
 	<string name="status_grab">
-		Drag to move objects, Ctrl to lift, Ctrl-Shift to spin
+		Drag to move, Ctrl to lift, Ctrl-Shift to rotate
 	</string>
 	<string name="status_place">
-		Click in the world to create, shift-click to select
+		Click inworld to build
 	</string>
 	<string name="status_selectland">
 		Click and drag to select land

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -50,7 +50,7 @@ void LLMsgVarData::addData(const void *data, S32 size, EMsgVariableType type, S3
 	}
 	if(size)
 	{
-		delete mData; // Delete it if it already exists
+		delete[] mData; // Delete it if it already exists
 		mData = new U8[size];
 		htonmemcpy(mData, data, mType, size);
 	}
@@ -175,3 +175,23 @@ std::ostream& operator<<(std::ostream& s, LLMessageTemplate &msg)
 
 	return s;
 }
+
+void LLMessageTemplate::banUdp()
+{
+	static const char* deprecation[] = {
+		"NotDeprecated",
+		"Deprecated",
+		"UDPDeprecated",
+		"UDPBlackListed"
+	};
+	if (mDeprecation != MD_DEPRECATED)
+	{
+		llinfos << "Setting " << mName << " to UDPBlackListed was " << deprecation[mDeprecation] << llendl;
+		mDeprecation = MD_UDPBLACKLISTED;
+	}
+	else
+	{
+		llinfos << mName << " is already more deprecated than UDPBlackListed" << llendl;
+	}
+}
+

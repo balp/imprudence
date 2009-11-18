@@ -13,7 +13,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -82,13 +82,14 @@ public:
 	virtual LLXMLNodePtr getXML(bool save_children = true) const;
 	void setColorParameters(LLXMLNodePtr node);
 	static LLView* fromXML(LLXMLNodePtr node, LLView *parent, LLUICtrlFactory *factory);
-	static void cleanupClass();
+	static void cleanupLineEditor();
 
 	// mousehandler overrides
 	/*virtual*/ BOOL	handleMouseDown(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleMouseUp(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleHover(S32 x, S32 y, MASK mask);
 	/*virtual*/ BOOL	handleDoubleClick(S32 x,S32 y,MASK mask);
+	/*virtual*/ BOOL	handleMiddleMouseDown(S32 x,S32 y,MASK mask);
 	/*virtual*/ BOOL	handleKeyHere(KEY key, MASK mask );
 	/*virtual*/ BOOL	handleUnicodeCharHere(llwchar uni_char);
 	/*virtual*/ void	onMouseCaptureLost();
@@ -96,13 +97,16 @@ public:
 	// LLEditMenuHandler overrides
 	virtual void	cut();
 	virtual BOOL	canCut() const;
-
 	virtual void	copy();
 	virtual BOOL	canCopy() const;
-
 	virtual void	paste();
 	virtual BOOL	canPaste() const;
-	
+
+	virtual void	updatePrimary();
+	virtual void	copyPrimary();
+ 	virtual void	pastePrimary();
+	virtual BOOL	canPastePrimary() const;
+
 	virtual void	doDelete();
 	virtual BOOL	canDoDelete() const;
 
@@ -188,13 +192,13 @@ public:
 
 	void			setHandleEditKeysDirectly( BOOL b ) { mHandleEditKeysDirectly = b; }
 	void			setSelectAllonFocusReceived(BOOL b);
+	void			setSelectAllonCommit(BOOL b) { mSelectAllonCommit = b; }
 
 	void			setKeystrokeCallback(void (*keystroke_callback)(LLLineEditor* caller, void* user_data));
 
 	void			setMaxTextLength(S32 max_text_length);
 	void			setTextPadding(S32 left, S32 right); // Used to specify room for children before or after text.
 
-	static BOOL		isPartOfWord(llwchar c);
 	// Prevalidation controls which keystrokes can affect the editor
 	void			setPrevalidate( BOOL (*func)(const LLWString &) );
 	static BOOL		prevalidateFloat(const LLWString &str );
@@ -208,6 +212,8 @@ public:
 	static BOOL		prevalidateASCII(const LLWString &str);
 
 	static BOOL		postvalidateFloat(const std::string &str);
+	
+	BOOL			evaluateFloat();
 
 	// line history support:
 	void			setEnableLineHistory( BOOL enabled ) { mHaveHistory = enabled; } // switches line history on or off 
@@ -217,6 +223,9 @@ public:
 	
 private:
 	// private helper methods
+
+	void                    pasteHelper(bool is_primary);
+
 	void			removeChar();
 	void			addChar(const llwchar c);
 	void			setCursorAtLocalPos(S32 local_mouse_x);
@@ -297,6 +306,7 @@ protected:
 
 	BOOL		mHandleEditKeysDirectly;  // If true, the standard edit keys (Ctrl-X, Delete, etc,) are handled here instead of routed by the menu system
 	BOOL		mSelectAllonFocusReceived;
+	BOOL		mSelectAllonCommit;
 	BOOL		mPassDelete;
 
 	BOOL		mReadOnly;

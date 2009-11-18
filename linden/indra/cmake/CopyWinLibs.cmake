@@ -6,28 +6,16 @@
 
 include(CMakeCopyIfDifferent)
 
-set(vivox_src_dir "${CMAKE_SOURCE_DIR}/newview/vivox-runtime/i686-win32")
-set(vivox_files
-    tntk.dll
-    libeay32.dll
-    SLVoice.exe
-    ssleay32.dll
-    SLVoiceAgent.exe
-    srtp.dll
-    alut.dll
-    vivoxsdk.dll
-    ortp.dll
-    wrap_oal.dll
-    )
-
 set(debug_src_dir "${CMAKE_SOURCE_DIR}/../libraries/i686-win32/lib/debug")
 set(debug_files
+    alut.dll
     freebl3.dll
-    gksvggdiplus.dll
     js3250.dll
     nspr4.dll
     nss3.dll
     nssckbi.dll
+    openal32.dll
+    openjpegd.dll
     plc4.dll
     plds4.dll
     smime3.dll
@@ -35,8 +23,55 @@ set(debug_files
     ssl3.dll
     xpcom.dll
     xul.dll
-    openjpegd.dll
     windbgdlg.exe
+    iconv.dll
+    libxml2.dll
+	libcairo-2.dll
+    libgio-2.0-0.dll
+    libglib-2.0-0.dll
+    libgmodule-2.0-0.dll
+    libgobject-2.0-0.dll
+    libgthread-2.0-0.dll
+    charset.dll
+	intl.dll
+	libgcrypt-11.dll
+	libgnutls-26.dll
+	libgpg-error-0.dll
+	libgstapp.dll
+	libgstaudio.dll
+	libgstbase-0.10.dll
+	libgstcdda.dll
+	libgstcontroller-0.10.dll
+	libgstdataprotocol-0.10.dll
+	libgstdshow.dll
+	libgstfft.dll
+	libgstinterfaces.dll
+	libgstnet-0.10.dll
+	libgstnetbuffer.dll
+	libgstpbutils.dll
+	libgstreamer-0.10.dll
+	libgstriff.dll
+	libgstrtp.dll
+	libgstrtsp.dll
+	libgstsdp.dll
+	libgsttag.dll
+	libgstvideo.dll
+	libjpeg.dll
+	libmp3lame-0.dll
+	libneon-27.dll
+	libogg-0.dll
+	liboil-0.3-0.dll
+	libopenjpeg-2.dll
+    libpng12-0.dll
+	libschroedinger-1.0-0.dll
+	libspeex-1.dll
+	libtheora-0.dll
+	libvorbis-0.dll
+	libvorbisenc-2.dll
+	libxml2-2.dll
+	glew32.dll
+    xvidcore.dll
+    zlib1.dll
     )
 
 copy_if_different(
@@ -47,22 +82,16 @@ copy_if_different(
     )
 set(all_targets ${all_targets} ${out_targets})
 
-copy_if_different(
-    ${vivox_src_dir} 
-    "${CMAKE_CURRENT_BINARY_DIR}/Debug"
-    out_targets 
-    ${vivox_files}
-    )
-set(all_targets ${all_targets} ${out_targets})
-
 set(release_src_dir "${CMAKE_SOURCE_DIR}/../libraries/i686-win32/lib/release")
 set(release_files
+    alut.dll
     freebl3.dll
-    gksvggdiplus.dll
     js3250.dll
     nspr4.dll
     nss3.dll
     nssckbi.dll
+    openal32.dll
+    openjpeg.dll
     plc4.dll
     plds4.dll
     smime3.dll
@@ -70,7 +99,54 @@ set(release_files
     ssl3.dll
     xpcom.dll
     xul.dll
-    openjpeg.dll
+    iconv.dll
+    libxml2.dll
+	libcairo-2.dll
+    libgio-2.0-0.dll
+    libglib-2.0-0.dll
+    libgmodule-2.0-0.dll
+    libgobject-2.0-0.dll
+    libgthread-2.0-0.dll
+	charset.dll
+	intl.dll
+	libgcrypt-11.dll
+	libgnutls-26.dll
+	libgpg-error-0.dll
+	libgstapp.dll
+	libgstaudio.dll
+	libgstbase-0.10.dll
+	libgstcdda.dll
+	libgstcontroller-0.10.dll
+	libgstdataprotocol-0.10.dll
+	libgstdshow.dll
+	libgstfft.dll
+	libgstinterfaces.dll
+	libgstnet-0.10.dll
+	libgstnetbuffer.dll
+	libgstpbutils.dll
+	libgstreamer-0.10.dll
+	libgstriff.dll
+	libgstrtp.dll
+	libgstrtsp.dll
+	libgstsdp.dll
+	libgsttag.dll
+	libgstvideo.dll
+	libjpeg.dll
+	libmp3lame-0.dll
+	libneon-27.dll
+	libogg-0.dll
+	liboil-0.3-0.dll
+	libopenjpeg-2.dll
+    libpng12-0.dll
+	libschroedinger-1.0-0.dll
+	libspeex-1.dll
+	libtheora-0.dll
+	libvorbis-0.dll
+	libvorbisenc-2.dll
+	libxml2-2.dll
+	glew32.dll
+    xvidcore.dll
+    zlib1.dll
     )
     
 copy_if_different(
@@ -82,14 +158,6 @@ copy_if_different(
 set(all_targets ${all_targets} ${out_targets})
 
 copy_if_different(
-    ${vivox_src_dir} 
-    "${CMAKE_CURRENT_BINARY_DIR}/Release"
-    out_targets 
-    ${vivox_files}
-    )
-set(all_targets ${all_targets} ${out_targets})
-
-copy_if_different(
     ${release_src_dir} 
     "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo"
     out_targets 
@@ -97,59 +165,62 @@ copy_if_different(
     )
 set(all_targets ${all_targets} ${out_targets})
 
-copy_if_different(
-    ${vivox_src_dir} 
-    "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo"
-    out_targets 
-    ${vivox_files}
-    )
-set(all_targets ${all_targets} ${out_targets})
 
-set(internal_llkdu_path "${CMAKE_SOURCE_DIR}/llkdu")
-if(EXISTS ${internal_llkdu_path})
-    set(internal_llkdu_src "${CMAKE_BINARY_DIR}/llkdu/${CMAKE_CFG_INTDIR}/llkdu.dll")
-    set(llkdu_dst "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/llkdu.dll")
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${llkdu_dst}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${internal_llkdu_src} ${llkdu_dst}
-        DEPENDS ${internal_llkdu_src}
-        COMMENT "Copying llkdu.dll ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}"
+# Copy MS C runtime dlls, required for packaging.
+# *TODO - Adapt this to support VC9
+if (MSVC80)
+    FIND_PATH(debug_msvc8_redist_path msvcr80d.dll
+        PATHS
+         [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\8.0\\Setup\\VC;ProductDir]/redist/Debug_NonRedist/x86/Microsoft.VC80.DebugCRT
+        NO_DEFAULT_PATH
         )
-    set(all_targets ${all_targets} ${llkdu_dst})
-else(EXISTS ${internal_llkdu_path})
-    set(debug_llkdu_src "${debug_src_dir}/llkdu.dll")
-    set(debug_llkdu_dst "${CMAKE_CURRENT_BINARY_DIR}/Debug/llkdu.dll")
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${debug_llkdu_dst}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${debug_llkdu_src} ${debug_llkdu_dst}
-        DEPENDS ${debug_llkdu_src}
-        COMMENT "Copying llkdu.dll ${CMAKE_CURRENT_BINARY_DIR}/Debug"
-        )
-    set(all_targets ${all_targets} ${debug_llkdu_dst})
 
-    set(release_llkdu_src "${release_src_dir}/llkdu.dll")
-    set(release_llkdu_dst "${CMAKE_CURRENT_BINARY_DIR}/Release/llkdu.dll")
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${release_llkdu_dst}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${release_llkdu_src} ${release_llkdu_dst}
-        DEPENDS ${release_llkdu_src}
-        COMMENT "Copying llkdu.dll ${CMAKE_CURRENT_BINARY_DIR}/Release"
-        )
-    set(all_targets ${all_targets} ${release_llkdu_dst})
+    if(EXISTS ${debug_msvc8_redist_path})
+        set(debug_msvc8_files
+            msvcr80d.dll
+            msvcp80d.dll
+            Microsoft.VC80.DebugCRT.manifest
+            )
 
-    set(relwithdebinfo_llkdu_dst "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/llkdu.dll")
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${relwithdebinfo_llkdu_dst}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${release_llkdu_src} ${relwithdebinfo_llkdu_dst}
-        DEPENDS ${release_llkdu_src}
-        COMMENT "Copying llkdu.dll ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo"
+        copy_if_different(
+            ${debug_msvc8_redist_path} 
+            "${CMAKE_CURRENT_BINARY_DIR}/Debug"
+            out_targets 
+            ${debug_msvc8_files}
+            )
+        set(all_targets ${all_targets} ${out_targets})
+    endif (EXISTS ${debug_msvc8_redist_path})
+
+    FIND_PATH(release_msvc8_redist_path msvcr80.dll
+        PATHS
+         [HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\8.0\\Setup\\VC;ProductDir]/redist/x86/Microsoft.VC80.CRT
+        NO_DEFAULT_PATH
         )
-    set(all_targets ${all_targets} ${relwithdebinfo_llkdu_dst})
-   
-endif (EXISTS ${internal_llkdu_path})
+
+    if(EXISTS ${release_msvc8_redist_path})
+        set(release_msvc8_files
+            msvcr80.dll
+            msvcp80.dll
+            Microsoft.VC80.CRT.manifest
+            )
+
+        copy_if_different(
+            ${release_msvc8_redist_path} 
+            "${CMAKE_CURRENT_BINARY_DIR}/Release"
+            out_targets 
+            ${release_msvc8_files}
+            )
+        set(all_targets ${all_targets} ${out_targets})
+
+        copy_if_different(
+            ${release_msvc8_redist_path} 
+            "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo"
+            out_targets 
+            ${release_msvc8_files}
+            )
+        set(all_targets ${all_targets} ${out_targets})
+
+    endif (EXISTS ${release_msvc8_redist_path})
+endif (MSVC80)
 
 add_custom_target(copy_win_libs ALL DEPENDS ${all_targets})
-
-if(EXISTS ${internal_llkdu_path})
-    add_dependencies(copy_win_libs llkdu)
-endif(EXISTS ${internal_llkdu_path})

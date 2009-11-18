@@ -29,6 +29,9 @@ set(llmedia_SOURCE_FILES
     llmediaimplexample2.cpp
     llmediaimplfactory.cpp
     llmediamanager.cpp
+    llmediaimplgstreamer.cpp
+    llmediaimplgstreamervidplug.cpp
+    llgstplaythread.cpp
     )
     
 set(llmedia_HEADER_FILES
@@ -43,20 +46,10 @@ set(llmedia_HEADER_FILES
     llmediaimplregister.h
     llmediamanager.h
     llmediaobserver.h
+    llmediaimplgstreamer.h
+    llmediaimplgstreamervidplug.h
+    llgstplaythread.h
     )
-
-if (GSTREAMER)
-  list(APPEND llmedia_SOURCE_FILES
-       llmediaimplgstreamer.cpp
-       llmediaimplgstreamer_syms.cpp
-       llmediaimplgstreamervidplug.cpp
-       )
-
-  list(APPEND llmedia_HEADER_FILES
-       llmediaimplgstreamer.h
-       llmediaimplgstreamervidplug.h
-       llmediaimplgstreamer_syms.h
-       )
 
   # Work around a bad interaction between broken gstreamer headers and
   # g++ 4.3's increased strictness.
@@ -65,7 +58,6 @@ if (GSTREAMER)
     set_source_files_properties(llmediaimplgstreamervidplug.cpp PROPERTIES
                                 COMPILE_FLAGS -Wno-error=write-strings)
   endif (${CXX_VERSION} MATCHES "4.[23]")
-endif (GSTREAMER)
 
 if (MOZLIB)
   list(APPEND llmedia_SOURCE_FILES llmediaimplllmozlib.cpp)
@@ -73,22 +65,15 @@ if (MOZLIB)
   list(APPEND llmedia_HEADER_FILES llmediaimplllmozlib.h)
 endif (MOZLIB)
 
-if (QUICKTIME)
-  list(APPEND llmedia_SOURCE_FILES llmediaimplquicktime.cpp)
-  list(APPEND llmedia_HEADER_FILES llmediaimplquicktime.h)
-
-  # We use a bunch of deprecated system APIs.
-  if (DARWIN)
-    set_source_files_properties(
-        llmediaimplquicktime.cpp PROPERTIES
-        COMPILE_FLAGS -Wno-deprecated-declarations
-        )
-  endif (DARWIN)
-endif (QUICKTIME)
-
 set_source_files_properties(${llmedia_HEADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 
 list(APPEND llmedia_SOURCE_FILES ${llmedia_HEADER_FILES})
 
 add_library (llmedia ${llmedia_SOURCE_FILES})
+target_link_libraries(
+    llmedia
+    ${GSTREAMER_LIBRARIES}
+    ${GSTREAMER_PLUGINS_BASE_LIBRARIES}
+    ${QUICKTIME_LIBRARY}
+    )

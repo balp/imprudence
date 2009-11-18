@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -79,9 +79,15 @@ public:
 	/*virtual*/ void captureMouse();
 	/*virtual*/ void releaseMouse();
 	/*virtual*/ void setMouseClipping( BOOL b );
+
 	/*virtual*/ BOOL isClipboardTextAvailable();
 	/*virtual*/ BOOL pasteTextFromClipboard(LLWString &dst);
 	/*virtual*/ BOOL copyTextToClipboard(const LLWString & src);
+
+	/*virtual*/ BOOL isPrimaryTextAvailable();
+	/*virtual*/ BOOL pasteTextFromPrimary(LLWString &dst);
+	/*virtual*/ BOOL copyTextToPrimary(const LLWString & src);
+ 
 	/*virtual*/ void flashIcon(F32 seconds);
 	/*virtual*/ F32 getGamma();
 	/*virtual*/ BOOL setGamma(const F32 gamma); // Set the gamma
@@ -89,6 +95,7 @@ public:
 	/*virtual*/ void setFSAASamples(const U32 samples);
 	/*virtual*/ BOOL restoreGamma();			// Restore original gamma table (before updating gamma)
 	/*virtual*/ ESwapMethod getSwapMethod() { return mSwapMethod; }
+	/*virtual*/ void processMiscNativeEvents();
 	/*virtual*/ void gatherInput();
 	/*virtual*/ void swapBuffers();
 
@@ -122,12 +129,21 @@ public:
 	// Not great that these are public, but they have to be accessible
 	// by non-class code and it's better than making them global.
 #if LL_X11
-	// These are set up by the X11 clipboard initialization code
 	Window mSDL_XWindowID;
 	Display *mSDL_Display;
 #endif
 	void (*Lock_Display)(void);
 	void (*Unlock_Display)(void);
+
+#if LL_GTK
+	// Lazily initialize and check the runtime GTK version for goodness.
+	static bool ll_try_gtk_init(void);
+#endif // LL_GTK
+
+#if LL_X11
+	static Window get_SDL_XWindowID(void);
+	static Display* get_SDL_Display(void);
+#endif // LL_X11	
 
 protected:
 	LLWindowSDL(
@@ -195,18 +211,10 @@ protected:
 
 #if LL_X11
 private:
-	// more X11 clipboard stuff
-	int init_x11clipboard(void);
-	void quit_x11clipboard(void);
-	int is_empty_x11clipboard(void);
-	void put_x11clipboard(int type, int srclen, const char *src);
-	void get_x11clipboard(int type, int *dstlen, char **dst);
 	void x11_set_urgent(BOOL urgent);
 	BOOL mFlashing;
 	LLTimer mFlashTimer;
 #endif //LL_X11
-
-	
 };
 
 
@@ -222,17 +230,5 @@ public:
 };
 
 S32 OSMessageBoxSDL(const std::string& text, const std::string& caption, U32 type);
-
-void load_url_external(const char* url);
-
-#if LL_GTK
-// Lazily initialize and check the runtime GTK version for goodness.
-BOOL ll_try_gtk_init(void);
-#endif // LL_GTK
-
-#if LL_X11
-Window get_SDL_XWindowID(void);
-Display* get_SDL_Display(void);
-#endif // LL_X11
 
 #endif //LL_LLWINDOWSDL_H

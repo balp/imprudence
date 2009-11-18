@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -47,6 +47,7 @@
 #include "lltimer.h"
 #include "llstat.h"
 #include "llalertdialog.h"
+#include "llmousehandler.h"
 
 class LLView;
 class LLViewerObject;
@@ -57,7 +58,6 @@ class LLVelocityBar;
 class LLTextBox;
 class LLImageRaw;
 class LLHUDIcon;
-class LLMouseHandler;
 
 #define PICK_HALF_WIDTH 5
 #define PICK_DIAMETER (2 * PICK_HALF_WIDTH + 1)
@@ -81,7 +81,7 @@ public:
 
 	static bool isFlora(LLViewerObject* object);
 
-	typedef enum e_pick_type
+	typedef enum
 	{
 		PICK_OBJECT,
 		PICK_FLORA,
@@ -150,6 +150,7 @@ public:
 	/*virtual*/ BOOL handleTranslatedKeyUp(KEY key,  MASK mask);
 	/*virtual*/ void handleScanKey(KEY key, BOOL key_down, BOOL key_up, BOOL key_level);
 	/*virtual*/ BOOL handleUnicodeChar(llwchar uni_char, MASK mask);	// NOT going to handle extended 
+	/*virtual*/ BOOL handleAnyMouseClick(LLWindow *window,  LLCoordGL pos, MASK mask, LLMouseHandler::EClickType clicktype, BOOL down);
 	/*virtual*/ BOOL handleMouseDown(LLWindow *window,  LLCoordGL pos, MASK mask);
 	/*virtual*/ BOOL handleMouseUp(LLWindow *window,  LLCoordGL pos, MASK mask);
 	/*virtual*/ BOOL handleCloseRequest(LLWindow *window);
@@ -212,6 +213,7 @@ public:
 	LLCoordGL		getCurrentMouseDelta()	const	{ return mCurrentMouseDelta; }
 	LLStat *		getMouseVelocityStat()		{ return &mMouseVelocityStat; }
 	BOOL			getLeftMouseDown()	const	{ return mLeftMouseDown; }
+	BOOL			getMiddleMouseDown()	const	{ return mMiddleMouseDown; }
 	BOOL			getRightMouseDown()	const	{ return mRightMouseDown; }
 
 	const LLPickInfo&	getLastPick() const { return mLastPick; }
@@ -279,7 +281,7 @@ public:
 
 	// snapshot functionality.
 	// perhaps some of this should move to llfloatershapshot?  -MG
-	typedef enum e_snapshot_type
+	typedef enum
 	{
 		SNAPSHOT_TYPE_COLOR,
 		SNAPSHOT_TYPE_DEPTH,
@@ -310,9 +312,13 @@ public:
 	LLPickInfo		pickImmediate(S32 x, S32 y, BOOL pick_transparent);
 	static void     hoverPickCallback(const LLPickInfo& pick_info);
 	
+	LLHUDIcon* cursorIntersectIcon(S32 mouse_x, S32 mouse_y, F32 depth,
+										   LLVector3* intersection);
+
 	LLViewerObject* cursorIntersect(S32 mouse_x = -1, S32 mouse_y = -1, F32 depth = 512.f,
 									LLViewerObject *this_object = NULL,
 									S32 this_face = -1,
+									BOOL pick_transparent = FALSE,
 									S32* face_hit = NULL,
 									LLVector3 *intersection = NULL,
 									LLVector2 *uv = NULL,
@@ -338,8 +344,11 @@ public:
 
 	// Request display setting changes	
 	void			toggleFullscreen(BOOL show_progress);
+	void			toggleFullscreenConfirm();
+	static void	toggleFullscreenCallback(S32 option, void *userdata);
 
 	// handle shutting down GL and bringing it back up
+	void			requestResolutionUpdate(bool fullscreen_checked);
 	BOOL			checkSettings();
 	void			restartDisplay(BOOL show_progress_bar);
 	BOOL			changeDisplaySettings(BOOL fullscreen, LLCoordScreen size, BOOL disable_vsync, BOOL show_progress_bar);
@@ -390,6 +399,7 @@ protected:
 	LLCoordGL		mCurrentMouseDelta;		//amount mouse moved this frame
 	LLStat			mMouseVelocityStat;
 	BOOL			mLeftMouseDown;
+	BOOL			mMiddleMouseDown;
 	BOOL			mRightMouseDown;
 
 	LLProgressView	*mProgressView;
@@ -421,6 +431,11 @@ protected:
 	std::string		mInitAlert;			// Window / GL initialization requires an alert
 	
 	class LLDebugText* mDebugText; // Internal class for debug text
+	
+	bool			mResDirty;
+	bool			mStatesDirty;
+	bool			mIsFullscreenChecked; // Did the user check the fullscreen checkbox in the display settings
+	U32			mCurrResolutionIndex;
 
 protected:
 	static std::string sSnapshotBaseName;
@@ -473,6 +488,7 @@ extern LLVector3        gDebugRaycastIntersection;
 extern LLVector2        gDebugRaycastTexCoord;
 extern LLVector3        gDebugRaycastNormal;
 extern LLVector3        gDebugRaycastBinormal;
+extern S32				gDebugRaycastFaceHit;
 
 extern S32 CHAT_BAR_HEIGHT; 
 

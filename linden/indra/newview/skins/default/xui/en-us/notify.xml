@@ -374,7 +374,7 @@ You cannot fly here.
 	</notify>
 	<notify name="PushRestricted" tip="false" unique="true">
 		<message name="message">
-			This land is &apos;llPushObject Restricted&apos;.
+			This land is &apos;No Pushing&apos;.
 You cannot push others here unless you own the land.
 		</message>
 	</notify>
@@ -579,6 +579,9 @@ to his or her location:
 		<option name="Decline">
 			Decline
 		</option>
+		<option name="Ignore">
+			Ignore
+		</option>
 	</notify>
 	<notify name="OfferFriendshipNoMessage" tip="false">
 		<message name="message">
@@ -592,6 +595,9 @@ see each other&apos;s online status.)
 		</option>
 		<option name="Decline">
 			Decline
+		</option>
+		<option name="Ignore">
+			Ignore
 		</option>
 	</notify>
 	<notify name="FriendshipAccepted" tip="false">
@@ -615,6 +621,9 @@ so you can quickly IM this resident.
 		</option>
 		<option name="Decline">
 			Decline
+		</option>
+		<option name="Ignore">
+			Ignore
 		</option>
 	</notify>
 	<notify name="RegionRestartMinutes" tip="false">
@@ -826,6 +835,11 @@ Use the controls on the right to find things
 and display different backgrounds.
 		</message>
 	</notify>
+  <notify name="FirstMiniMap" tip="false">
+    <message name="message">
+      Right-click the Mini-Map for more options.
+    </message>
+  </notify>
 	<notify name="FirstBuild" tip="false">
 		<message name="message">
 			You can build new objects in some areas of [SECOND_LIFE].
@@ -909,7 +923,24 @@ You can find example sculpted textures in the inventory library.
 			You have begun playing media.  Media can set to play automatically in the preferences window under Audio / Video. Note that this can be a security risk for media sites you do not trust.
 		</message>
 	</notify>
-	<notify name="MaxListSelectMessage" tip="true">
+  <!-- [RLVa:KB] -->
+  <notify name="FirstRLVDetach" tip="false">
+    <message name="message">
+One of your attachments was made nondetachable using Restrained Life.
+Please note that this also disables the &apos;Wear&apos; option on all prim attachments in your inventory unless they are properly named.
+
+For more information search for &apos;Restrained Life&apos; on the SL wiki.
+    </message>
+  </notify>
+  <notify name="FirstRLVFartouch" tip="false">
+    <message name="message">
+You have been fartouch restricted: you will be unable to touch objects farther than 1.5m from your avatar until the restriction is lifted.
+
+Tip: if an object is out of range the mouse cursor will not change as you hover over it and you'll hear an error sound if you try to right-click it.
+    </message>
+  </notify>
+  <!-- [/RLVa:KB] -->
+  <notify name="MaxListSelectMessage" tip="true">
 		<message name="message">
 			You may only select up to [MAX_SELECT] items
 from this list.

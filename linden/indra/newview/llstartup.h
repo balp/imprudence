@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -87,6 +87,10 @@ public:
 	// Always use this to set gStartupState so changes are logged
 	static void setStartupState( EStartupState state );
 	static EStartupState getStartupState() { return gStartupState; };
+	static void	resetLogin();
+
+	static void setStartedOnce(bool started);
+	static bool getStartedOnce() { return mStartedOnce;     };
 
 	static void multimediaInit();
 		// Initialize LLViewerMedia multimedia engine.
@@ -104,8 +108,12 @@ public:
 	static std::string sSLURLCommand;
 		// *HACK: On startup, if we were passed a secondlife://app/do/foo
 		// command URL, store it for later processing.
+	static bool shouldAutoLogin() { return mShouldAutoLogin; };
+	static void setShouldAutoLogin(bool value) { mShouldAutoLogin = value; };
 
 private:
+ 	static bool mStartedOnce;
+	static bool mShouldAutoLogin;
 	static std::string startupStateToString(EStartupState state);
 	static EStartupState gStartupState; // Do not set directly, use LLStartup::setStartupState
 };

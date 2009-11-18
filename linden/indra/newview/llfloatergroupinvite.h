@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2006&license=viewergpl$
  * 
- * Copyright (c) 2006-2008, Linden Research, Inc.
+ * Copyright (c) 2006-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -52,6 +52,12 @@ protected:
 
 	class impl;
 	impl* mImpl;
+private:
+	static void callbackLoadGroupName(const LLUUID& id, 
+				const std::string& first, 
+				const std::string& last, 
+				BOOL is_group, 
+				void* data);
 };
 
 #endif

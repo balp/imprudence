@@ -385,7 +385,75 @@ Go to the Second Life web site for more information on partnering?
 			Cancel
 		</option>
 	</alert>
-	<alert modal="true" name="ClickWebProfileHelpAvatar">
+  <alert modal="true" name="ClickBuildConstants">
+    <message name="message">
+      The following constants are accepted in this tab:
+
+      PX  --  X-axis position
+      PY  --  Y-axis position
+      PZ  --  Z-axis position
+      SX  --  X-axis size
+      SY  --  Y-axis size
+      SZ  --  Z-axis size
+      RX  --  X-axis rotation
+      RY  --  Y-axis rotation
+      RZ  --  Z-axis rotation
+      CB  --  Path cut begin
+      CE  --  Path cut end
+      HLW  --  Hollow size
+      SKW  --  Skew
+      PB  --  Slice/Dimple/Profile cut begin
+      PE  --  Slice/Dimple/Profile cut end
+      TB  --  Twist begin
+      TE  --  Twist end
+      SHX  --  X-axis top shear
+      SHY  --  Y-axis top shear
+      HLX  --  X-axis hole size
+      HLY  --  Y-axis hole size
+      TPX  --  X-axis taper
+      TPY  --  Y-axis taper
+      ROF  --  Radius offset
+      REV  --  Revolutions
+
+      PI  --  pi
+      TWO_PI  --  2pi
+      PI_BY_TWO  --  pi/2
+      SQRT2  --  Square root of 2
+      DEG_TO_RAD  --  DEG_TO_RAD conversion (pi/180)
+      RAD_TO_DEG  --  RAD_TO_DEG conversion (180/pi)
+      GRAVITY  --  -9.8
+
+      *  --  Multiplication
+      \  --  Division
+      +  --  Addition
+      -  --  Subtraction
+
+      For what these are and how to use them, read:
+      http://imprudenceviewer.org/wiki/Build_Math_Expressions
+    </message>
+  </alert>
+  <alert modal="true" name="ClickTextureConstants">
+    <message name="message">
+      The following constants are accepted in this tab:
+
+      TSU  --  Repeats per face (horizontal)
+      TSV  --  Repeats per face (vertical)
+      TOU  --  Offsets per face (horizontal)
+      TOV  --  Offsets per face (vertical)
+      TRNS --  Transparency
+      TROT --  Texture rotation
+      GLOW --  Glow
+
+      *  --  Multiplication
+      \  --  Division
+      +  --  Addition
+      -  --  Subtraction
+
+      For what these are and how to use them, read:
+      http://imprudenceviewer.org/wiki/Build_Math_Expressions
+    </message>
+  </alert>
+  <alert modal="true" name="ClickWebProfileHelpAvatar">
 		<message name="message">
 			If this Resident has set a web profile URL then you can:
  * Click &apos;Load&apos; to see the page in this Web tab.
@@ -473,7 +541,7 @@ Do you wish to proceed?
 	<alert modal="true" name="JoinGroupCannotAfford">
 		<message name="message">
 			Joining this group costs L$[COST].
-You do not have a sufficient balance to join this group.
+You do not have enough L$ to join this group.
 		</message>
 	</alert>
 	<alert modal="true" name="LandBuyPass">
@@ -665,7 +733,7 @@ to set its Landing Point.
 	</alert>
 	<alert modal="true" name="PromptRecipientEmail">
 		<message name="message">
-			Please enter the recipient&apos;s email address.
+			Please enter a valid email address for the recipient(s).
 		</message>
 	</alert>
 	<alert modal="true" name="PromptSelfEmail">
@@ -725,21 +793,13 @@ The outfit folder contains no clothing, body parts, or attachments.
 			You can not wear that item because it has not yet loaded. Please try again in a minute.
 		</message>
 	</alert>
-	<alert modal="true" name="MustHaveAccountToLogInNoLinks">
-		<message name="message">
-			You must have an account to connect to [SECOND_LIFE].
-		</message>
-		<option name="OK">
-			Close
-		</option>
-	</alert>
 	<alert modal="true" name="MustHaveAccountToLogIn">
 		<message name="message">
 Oops! Something was left blank.
 You need to enter both the First and Last name of your avatar.
 
 You need an account to enter [SECOND_LIFE]. Would you like to create one now?
-</message>
+		</message>
 		<option name="OK">
 			Create a new account
 		</option>
@@ -1410,7 +1470,29 @@ chat, or interact with the world.
 			Cancel
 		</option>
 	</alert>
-	<alert modal="true" name="InvalidUUID">
+    <alert modal="true" name="EjectAvatarNoBan">
+        <message name="message">
+            Eject this avatar from your land?
+        </message>
+        <option name="Eject">
+            Eject
+        </option>
+        <option name="Cancel">
+            Cancel
+        </option>
+    </alert>
+    <alert modal="true" name="EjectAvatarFullnameNoBan">
+        <message name="message">
+            Eject [AVATAR_NAME] from your land?
+        </message>
+        <option name="Eject">
+            Eject
+        </option>
+        <option name="Cancel">
+            Cancel
+        </option>
+    </alert>
+    <alert modal="true" name="InvalidUUID">
 		<message name="message">
 			Not a valid UUID.
 		</message>
@@ -1592,12 +1674,12 @@ Expected [VALIDS]
 	</alert>
 	<alert modal="true" name="InsufficientFundsToUploadFile">
 		<message name="message">
-			Insufficient L$ to upload file: the price is L$[COST], your balance is L$[BALANCE]
+			Not enough L$ to upload file: the price is L$[COST], your balance is L$[BALANCE]
 		</message>
 	</alert>
 	<alert modal="true" name="InsufficientFundsToFinishUpload">
 		<message name="message">
-			Insufficient L$ to finish uploading [FILE]: the price is L$[COST], your balance is L$[BALANCE]
+			Not enough L$ to finish uploading [FILE]: the price is L$[COST], your balance is L$[BALANCE]
 		</message>
 	</alert>
 	<alert modal="true" name="CannotUploadReason">
@@ -1825,20 +1907,32 @@ Try selecting a single parcel.
 			Region Not Found
 		</message>
 	</alert>
-	<alert modal="true" name="ParcelCanPlayMedia">
-		<message name="message">
-			This location can play streaming media. 
-Streaming media requires a fast Internet connection.
- 
-Play streaming media when available?
-(You can change this option later under 
-Preferences &gt; Audio &amp; Video.)
-		</message>
+  <alert modal="true" name="ParcelCanPlayMusic">
+    <message name="message">
+      This location wants to play streaming music.
+      (Requires a fast Internet connection.)
+
+      Play streaming music now?
+    </message>
+    <option name="PlayMusic">
+      Yes
+    </option>
+    <option name="No">
+      No
+    </option>
+  </alert>
+  <alert modal="true" name="ParcelCanPlayMedia">
+    <message name="message">
+      This location wants to play streaming media.
+      (Requires a fast Internet connection.)
+
+      Play streaming media now?
+    </message>
 		<option name="PlayMedia">
-			Play Media
+			Yes
 		</option>
-		<option name="Disable">
-			Disable
+		<option name="No">
+			No
 		</option>
 	</alert>
 	<alert modal="true" name="CannotDeedLandWaitingForServer">
@@ -2119,6 +2213,23 @@ other on the map and receive online status updates.
 
 Offer friendship to [NAME]?
 		</message>
+		<option name="Offer">
+			OK
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+	</alert>
+	<alert modal="true" name="AddFriendWithMessage" title="Add Friend">
+		<message name="message">
+Friends can give permissions to track each
+other on the map and receive online status updates.
+
+Offer friendship to [NAME]?
+		</message>
+		<editline name="editline">
+			Would you be my friend?
+		</editline>
 		<option name="Offer">
 			OK
 		</option>
@@ -2572,7 +2683,7 @@ You can change your mind later.
 	</alert>
 	<alert modal="true" name="NotEnoughCurrency">
 		<message name="message">
-			[NAME] L$ [PRICE] You don&apos;t have enough currency to do that.
+			[NAME] L$ [PRICE] You don&apos;t have enough L$ to do that.
 		</message>
 	</alert>
 	<alert modal="true" name="GrantedModifyRights">
@@ -4289,9 +4400,9 @@ http://secondlife.com/corporate/cs.php
 
 All reported abuses of the Terms of Service and Community Standards 
 are investigated and resolved. You can view the incident 
-resolution on the Police Blotter at:
+resolution on the Incident Report at:
 
-http://secondlife.com/community/blotter.php
+http://secondlife.com/support/incidentreport.php
 		</message>
 	</alert>
 	<alert modal="true" name="HelpReportAbuseEmailEO">
@@ -4386,7 +4497,7 @@ Entering an accurate description helps us file and process bug reports.
 	<alert modal="true" name="HelpReportAbuseContainsCopyright">
 		<message name="message">
 			Dear Resident,
-
+ 
 You appear to be reporting intellectual property infringement. Please make sure you are reporting it correctly:
 
 (1) The Abuse Process. You may submit an abuse report if you believe a Resident is exploiting the Second Life permissions system, for example, by using CopyBot or similar copying tools, to infringe intellectual property rights. The Abuse Team investigates and issues appropriate disciplinary action for behavior that violates the Second Life Community Standards or Terms of Service. However, the Abuse Team does not handle and will not respond to requests to remove content from the Second Life world.
@@ -4396,8 +4507,9 @@ You appear to be reporting intellectual property infringement. Please make sure 
 If you still wish to continue with the abuse process, please close this window and finish submitting your report.  You may need to select the specific category 'CopyBot or Permissions Exploit'.
 
 Thank you,
-
-Linden Lab</message>
+ 
+Linden Lab
+		</message>
 	</alert>
 	<alert modal="true" name="FailedRequirementsCheck">
 		<message name="message">
@@ -4980,5 +5092,152 @@ Would you like to visit the Second Life website to set this up?
 			The string [STRING_NAME] is missing from strings.xml
 		</message>
 	</alert>
+
+  <alert modal="true" name="ConfirmAutoPilot">
+    <message name="message">
+      Are you sure you want to move here?
+    </message>
+    <ignore name="ignore">
+      When using auto-pilot
+    </ignore>
+    <option name="Move">
+      Move
+    </option>
+    <option name="Cancel">
+      Cancel
+    </option>
+  </alert>
+  
+  <alert modal="true" name="ConfirmDoubleClickTP">
+    <message name="message">
+      Are you sure you want to teleport here?
+    </message>
+    <ignore name="ignore">
+      When double-click teleporting
+    </ignore>
+    <option name="Teleport">
+      Teleport
+    </option>
+    <option name="Cancel">
+      Cancel
+    </option>
+  </alert>
+
+  <alert modal="true" name="ConfirmTeleportHome">
+		<message name="message">
+			Are you sure you want to teleport home?
+		</message>
+		<ignore name="ignore">
+			When teleporting home
+		</ignore>
+		<option name="Teleport">
+			Teleport
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+	</alert>
+
+	<alert modal="true" name="ConfirmToggleFullscreen">
+		<message name="message">
+			Are you sure you want to toggle fullscreen mode?
+		</message>
+		<ignore name="ignore">
+			When toggling fullscreen mode
+		</ignore>
+		<option name="Toggle">
+			Toggle
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+	</alert>
+
+	<alert modal="true" name="ConfirmRestoreToWorld">
+		<message name="message">
+			Are you sure you want to restore the object to its last position?
+
+WARNING: Don't restore if you aren't sure where the object will go!
+		</message>
+		<ignore name="ignore">
+			When restoring objects to their last positions
+		</ignore>
+		<option name="Restore">
+			Restore
+		</option>
+		<option name="MoreInfo">
+			More Info
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+		<url option="1">
+      http://imprudenceviewer.org/wiki/Restore_to_Last_Position
+    </url>
+
+	</alert>
+
+	<alert modal="true" name="ConfirmRemoveAllClothes">
+		<message name="message">
+			Are you sure you want to take off all clothes?
+		</message>
+		<ignore name="ignore">
+			When taking off all clothes
+		</ignore>
+		<option name="Take Off">
+			Take Off
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+	</alert>
+
+	<alert modal="true" name="ConfirmMuteAgent">
+		<message name="message">
+			Are you sure you want to mute [NAME] (resident)?
+		</message>
+		<ignore name="ignore">
+			When muting a Resident
+		</ignore>
+		<option name="Mute">
+			Mute
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+	</alert>
+
+	<alert modal="true" name="ConfirmMuteObject">
+		<message name="message">
+			Are you sure you want to mute [NAME] (object)?
+		</message>
+		<ignore name="ignore">
+			When muting an object
+		</ignore>
+		<option name="Mute">
+			Mute
+		</option>
+		<option name="Cancel">
+			Cancel
+		</option>
+	</alert>
+
+  <!-- [RLVa:KB] -->
+	<alert modal="true" name="FirstRLVGiveToRLV">
+		<message name="message">
+Folders starting with &apos;#RLV/~&apos; can automatically be placed under your #RLV shared folder after you accept the inventory offer.
+
+Please note that - if enabled - the accepted inventory items will instantly be available to scripts and will have full use of the RLV API which may cause unexpected or undesirable situations.
+
+Do you want to enable this feature?
+		</message>
+		<option name="Yes">
+			Yes
+		</option>
+		<option name="No">
+			No
+		</option>
+  </alert>
+  <!-- [/RLVa:KB] -->
 </alerts>
 

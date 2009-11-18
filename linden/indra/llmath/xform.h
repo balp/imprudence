@@ -3,7 +3,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -37,7 +37,7 @@
 
 const F32 MAX_OBJECT_Z 		= 4096.f; // should match REGION_HEIGHT_METERS, Pre-havok4: 768.f
 const F32 MIN_OBJECT_Z 		= -256.f;
-const F32 DEFAULT_MAX_PRIM_SCALE = 10.f;
+//const F32 DEFAULT_MAX_PRIM_SCALE = 10.f; set in llmanipscale.cpp now
 const F32 MIN_PRIM_SCALE = 0.01f;
 const F32 MAX_PRIM_SCALE = 65536.f;	// something very high but not near FLT_MAX
 

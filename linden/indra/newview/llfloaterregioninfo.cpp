@@ -5,7 +5,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -3192,3 +3192,22 @@ bool LLDispatchSetEstateAccess::operator()(
 
 	return true;
 }
+
+// [RLVa:KB] - Checked: 2009-07-04 (RLVa-1.0.0a)
+void LLFloaterRegionInfo::open()
+{
+	// We'll allow access to the estate tools for estate managers (and for the sim owner)
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_SHOWLOC))
+	{
+		LLViewerRegion* pRegion = gAgent.getRegion();
+		if (!pRegion)
+			return;
+
+		// Should be able to call LLRegion::canManageEstate() but then we can fake god like
+		if ( (!pRegion->isEstateManager()) && (pRegion->getOwner() != gAgent.getID()) )
+			return;
+	}
+
+	LLFloater::open();
+}
+// [/RLVa:KB]

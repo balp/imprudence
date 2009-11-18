@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -1344,8 +1344,8 @@ void LLPanelRequestTools::refresh()
 	list->operateOnAll(LLCtrlListInterface::OP_DELETE);
 	list->addSimpleElement(SELECTION);
 	list->addSimpleElement(AGENT_REGION);
-	for (LLWorld::region_list_t::iterator iter = LLWorld::getInstance()->mActiveRegionList.begin();
-		 iter != LLWorld::getInstance()->mActiveRegionList.end(); ++iter)
+	for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin(); 
+			iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 	{
 		LLViewerRegion* regionp = *iter;
 		std::string name = regionp->getName();
@@ -1405,8 +1405,8 @@ void LLPanelRequestTools::onClickRequest(void* data)
 	else
 	{
 		// find region by name
-		for (LLWorld::region_list_t::iterator iter = LLWorld::getInstance()->mActiveRegionList.begin();
-			 iter != LLWorld::getInstance()->mActiveRegionList.end(); ++iter)
+		for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin(); 
+			 iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 		{
 			LLViewerRegion* regionp = *iter;
 			if(dest == regionp->getName())

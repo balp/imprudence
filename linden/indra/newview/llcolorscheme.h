@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2003&license=viewergpl$
  * 
- * Copyright (c) 2003-2008, Linden Research, Inc.
+ * Copyright (c) 2003-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -35,14 +35,9 @@
 #include "v4color.h"
 
 extern LLColor4 gTrackColor;
-extern LLColor4 gSelfMapColor;
-extern LLColor4 gAvatarMapColor;
-extern LLColor4 gFriendMapColor;
 extern LLColor4 gLandmarkMapColor;
 extern LLColor4 gLocationMapColor;
 extern LLColor4 gTelehubMapColor;
-extern LLColor4 gFrustumMapColor;
-extern LLColor4 gRotatingFrustumMapColor;
 extern LLColor4 gEventColor;
 extern LLColor4 gPopularColor;
 extern LLColor4 gPickColor;

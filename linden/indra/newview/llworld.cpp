@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -32,6 +32,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llworld.h"
+#include "llrender.h"
 
 #include "indra_constants.h"
 #include "llstl.h"
@@ -108,7 +109,7 @@ LLWorld::LLWorld() :
 	*(default_texture++) = MAX_WATER_COLOR.mV[3];
 	
 	mDefaultWaterTexturep = new LLViewerImage(raw, FALSE);
-	mDefaultWaterTexturep->bind();
+	gGL.getTexUnit(0)->bind(mDefaultWaterTexturep.get());
 	mDefaultWaterTexturep->setClamp(TRUE, TRUE);
 
 }
@@ -116,6 +117,7 @@ LLWorld::LLWorld() :
 
 void LLWorld::destroyClass()
 {
+	mHoleWaterObjects.clear();
 	gObjectList.destroy();
 	for(region_list_t::iterator region_it = mRegionList.begin(); region_it != mRegionList.end(); )
 	{
@@ -365,9 +367,14 @@ LLVector3d	LLWorld::clipToVisibleRegions(const LLVector3d &start_pos, const LLVe
 		clip_factor = (region_coord.mV[VY] - region_width) / delta_pos_abs.mdV[VY];
 	}
 
-	// clamp to < 256 to stay in sim
+	// clamp to within region dimensions
 	LLVector3d final_region_pos = LLVector3d(region_coord) - (delta_pos * clip_factor);
-	final_region_pos.clamp(0.0, 255.999);
+	final_region_pos.mdV[VX] = llclamp(final_region_pos.mdV[VX], 0.0,
+									   (F64)(region_width - F_ALMOST_ZERO));
+	final_region_pos.mdV[VY] = llclamp(final_region_pos.mdV[VY], 0.0,
+									   (F64)(region_width - F_ALMOST_ZERO));
+	final_region_pos.mdV[VZ] = llclamp(final_region_pos.mdV[VZ], 0.0,
+									   (F64)(LLWorld::getInstance()->getRegionMaxHeight()));
 	return regionp->getPosGlobalFromRegion(LLVector3(final_region_pos));
 }
 
@@ -945,7 +952,7 @@ void LLWorld::updateWaterObjects()
 
 void LLWorld::shiftRegions(const LLVector3& offset)
 {
-	for (region_list_t::iterator i = getRegionList().begin(); i != getRegionList().end(); ++i)
+	for (region_list_t::const_iterator i = getRegionList().begin(); i != getRegionList().end(); ++i)
 	{
 		LLViewerRegion* region = *i;
 		region->updateRenderMatrix();
@@ -1131,8 +1138,8 @@ void send_agent_pause()
 	gAgentPauseSerialNum++;
 	gMessageSystem->addU32Fast(_PREHASH_SerialNum, gAgentPauseSerialNum);
 
-	for (LLWorld::region_list_t::iterator iter = LLWorld::getInstance()->mActiveRegionList.begin();
-		 iter != LLWorld::getInstance()->mActiveRegionList.end(); ++iter)
+	for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin();
+		 iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 	{
 		LLViewerRegion* regionp = *iter;
 		gMessageSystem->sendReliable(regionp->getHost());
@@ -1161,8 +1168,8 @@ void send_agent_resume()
 	gMessageSystem->addU32Fast(_PREHASH_SerialNum, gAgentPauseSerialNum);
 	
 
-	for (LLWorld::region_list_t::iterator iter = LLWorld::getInstance()->mActiveRegionList.begin();
-		 iter != LLWorld::getInstance()->mActiveRegionList.end(); ++iter)
+	for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin();
+		 iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
 	{
 		LLViewerRegion* regionp = *iter;
 		gMessageSystem->sendReliable(regionp->getHost());
@@ -1172,6 +1179,62 @@ void send_agent_resume()
 	LLViewerStats::getInstance()->mFPSStat.start();
 
 	LLAppViewer::instance()->resumeMainloopTimeout();
+}
+
+static LLVector3d unpackLocalToGlobalPosition(U32 compact_local, const LLVector3d& region_origin)
+{
+	LLVector3d pos_global;
+	LLVector3 pos_local;
+	U8 bits;
+
+	bits = compact_local & 0xFF;
+	pos_local.mV[VZ] = F32(bits) * 4.f;
+	compact_local >>= 8;
+
+	bits = compact_local & 0xFF;
+	pos_local.mV[VY] = (F32)bits;
+	compact_local >>= 8;
+
+	bits = compact_local & 0xFF;
+	pos_local.mV[VX] = (F32)bits;
+
+	pos_global.setVec( pos_local );
+	pos_global += region_origin;
+	return pos_global;
+}
+
+void LLWorld::getAvatars(std::vector<LLUUID>* avatar_ids, std::vector<LLVector3d>* positions, const LLVector3d& relative_to, F32 radius) const
+{
+	if(avatar_ids != NULL)
+	{
+		avatar_ids->clear();
+	}
+	if(positions != NULL)
+	{
+		positions->clear();
+	}
+	for (LLWorld::region_list_t::const_iterator iter = LLWorld::getInstance()->getRegionList().begin();
+		iter != LLWorld::getInstance()->getRegionList().end(); ++iter)
+	{
+		LLViewerRegion* regionp = *iter;
+		const LLVector3d& origin_global = regionp->getOriginGlobal();
+		S32 count = regionp->mMapAvatars.count();
+		for (S32 i = 0; i < count; i++)
+		{
+			LLVector3d pos_global = unpackLocalToGlobalPosition(regionp->mMapAvatars.get(i), origin_global);
+			if(dist_vec(pos_global, relative_to) <= radius)
+			{
+				if(positions != NULL)
+				{
+					positions->push_back(pos_global);
+				}
+				if(avatar_ids != NULL)
+				{
+					avatar_ids->push_back(regionp->mMapAvatarIDs.get(i));
+				}
+			}
+		}
+	}
 }
 
 

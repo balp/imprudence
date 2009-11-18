@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -68,6 +68,7 @@ protected:
 	static void onClickRelease(void*);
 	static void onClickCreator(void*);
 	static void onClickOwner(void*);
+	static void onClickLastOwner(void*);
 	static void onClickGroup(void*);
 	static void cbGroupID(LLUUID group_id, void* userdata);
 	static void onClickDeedToGroup(void*);

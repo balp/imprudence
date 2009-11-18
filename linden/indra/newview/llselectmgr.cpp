@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -106,6 +106,7 @@ BOOL gHideSelectedObjects = FALSE;
 BOOL gAllowSelectAvatar = FALSE;
 
 BOOL LLSelectMgr::sRectSelectInclusive = TRUE;
+BOOL LLSelectMgr::sRenderSelectionHighlights = TRUE;
 BOOL LLSelectMgr::sRenderHiddenSelections = TRUE;
 BOOL LLSelectMgr::sRenderLightRadius = FALSE;
 F32	LLSelectMgr::sHighlightThickness = 0.f;
@@ -3444,18 +3445,26 @@ void LLSelectMgr::deselectAllIfTooFar()
 
 	// HACK: Don't deselect when we're navigating to rate an object's
 	// owner or creator.  JC
-	if (gPieObject->getVisible() || gPieRate->getVisible() )
+	if (gPieObject->getVisible())
 	{
 		return;
 	}
 
 	LLVector3d selectionCenter = getSelectionCenterGlobal();
-	if (gSavedSettings.getBOOL("LimitSelectDistance")
+
+//	if (gSavedSettings.getBOOL("LimitSelectDistance")
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-0.2.0f
+	BOOL fRlvFartouch = gRlvHandler.hasBehaviour(RLV_BHVR_FARTOUCH) && gFloaterTools->getVisible();
+	if ( (gSavedSettings.getBOOL("LimitSelectDistance") || (fRlvFartouch) )
+// [/RLVa:KB]
 		&& (!mSelectedObjects->getPrimaryObject() || !mSelectedObjects->getPrimaryObject()->isAvatar())
 		&& !mSelectedObjects->isAttachment()
 		&& !selectionCenter.isExactlyZero())
 	{
-		F32 deselect_dist = gSavedSettings.getF32("MaxSelectDistance");
+//		F32 deselect_dist = gSavedSettings.getF32("MaxSelectDistance");
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-0.2.0f
+		F32 deselect_dist = (!fRlvFartouch) ? gSavedSettings.getF32("MaxSelectDistance") : 1.5f;
+// [/RLVa:KB]
 		F32 deselect_dist_sq = deselect_dist * deselect_dist;
 
 		LLVector3d select_delta = gAgent.getPositionGlobal() - selectionCenter;
@@ -4551,6 +4560,11 @@ extern LLGLdouble	gGLModelView[16];
 
 void LLSelectMgr::updateSilhouettes()
 {
+	if (!mRenderSilhouettes || !LLSelectMgr::sRenderSelectionHighlights)
+	{
+		return;
+	}
+
 	S32 num_sils_genned = 0;
 
 	LLVector3d	cameraPos = gAgent.getCameraPositionGlobal();
@@ -4823,12 +4837,12 @@ void LLSelectMgr::updateSilhouettes()
 
 void LLSelectMgr::renderSilhouettes(BOOL for_hud)
 {
-	if (!mRenderSilhouettes)
+	if (!mRenderSilhouettes || !LLSelectMgr::sRenderSelectionHighlights)
 	{
 		return;
 	}
 
-	LLViewerImage::bindTexture(mSilhouetteImagep);
+	gGL.getTexUnit(0)->bind(mSilhouetteImagep.get());
 	LLGLSPipelineSelection gls_select;
 	gGL.setAlphaRejectSettings(LLRender::CF_GREATER, 0.f);
 	LLGLEnable blend(GL_BLEND);
@@ -4936,7 +4950,7 @@ void LLSelectMgr::renderSilhouettes(BOOL for_hud)
 		stop_glerror();
 	}
 
-	mSilhouetteImagep->unbindTexture(0, GL_TEXTURE_2D);
+	gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
 	gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
 }
 
@@ -4968,6 +4982,7 @@ LLSelectNode::LLSelectNode(LLViewerObject* object, BOOL glow)
 	mSitName = LLStringUtil::null;
 	mSilhouetteExists = FALSE;
 	mDuplicated = FALSE;
+	mCreationDate = 0;
 
 	saveColors();
 }
@@ -5005,6 +5020,7 @@ LLSelectNode::LLSelectNode(const LLSelectNode& nodep)
 	mFromTaskID = nodep.mFromTaskID;
 	mTouchName = nodep.mTouchName;
 	mSitName = nodep.mSitName;
+	mCreationDate = nodep.mCreationDate;
 
 	mSilhouetteVertices = nodep.mSilhouetteVertices;
 	mSilhouetteNormals = nodep.mSilhouetteNormals;
@@ -5313,7 +5329,7 @@ void LLSelectNode::renderOneSilhouette(const LLColor4 &color)
 
 			LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE, GL_GEQUAL);
 			gGL.setAlphaRejectSettings(LLRender::CF_DEFAULT);
-			gGL.begin(LLVertexBuffer::LINES);
+			gGL.begin(LLRender::LINES);
 			{
 				S32 i = 0;
 				for (S32 seg_num = 0; seg_num < (S32)mSilhouetteSegments.size(); seg_num++)
@@ -5334,7 +5350,7 @@ void LLSelectNode::renderOneSilhouette(const LLColor4 &color)
 
 		gGL.flush();
 		gGL.setSceneBlendType(LLRender::BT_ALPHA);
-		gGL.begin(LLVertexBuffer::TRIANGLES);
+		gGL.begin(LLRender::TRIANGLES);
 		{
 			S32 i = 0;
 			for (S32 seg_num = 0; seg_num < (S32)mSilhouetteSegments.size(); seg_num++)
@@ -5498,6 +5514,10 @@ void LLSelectMgr::updateSelectionCenter()
 		// keep a list of jointed objects for showing the joint HUDEffects
 
 		std::vector < LLViewerObject *> jointed_objects;
+
+		// Initialize the bounding box to the root prim, so the BBox orientation
+		// matches the root prim's (affecting the orientation of the manipulators).
+		bbox.addBBoxAgent( (mSelectedObjects->getFirstRootObject(TRUE))->getBoundingBoxAgent() );
 
 		for (LLObjectSelection::iterator iter = mSelectedObjects->begin();
 			 iter != mSelectedObjects->end(); iter++)
@@ -5745,7 +5765,8 @@ BOOL LLSelectMgr::canSelectObject(LLViewerObject* object)
 	}
 
 	if ((gSavedSettings.getBOOL("SelectOwnedOnly") && !object->permYouOwner()) ||
-		(gSavedSettings.getBOOL("SelectMovableOnly") && !object->permMove()))
+		(gSavedSettings.getBOOL("SelectMovableOnly") && !object->permMove()) ||
+		(gSavedSettings.getBOOL("SelectCopyableOnly") && !object->permCopy()))
 	{
 		// only select my own objects
 		return FALSE;
@@ -5940,9 +5961,9 @@ S32 LLObjectSelection::getRootObjectCount()
 	return count;
 }
 
-bool LLObjectSelection::applyToObjects(LLSelectedObjectFunctor* func, bool firstonly)
+bool LLObjectSelection::applyToObjects(LLSelectedObjectFunctor* func)
 {
-	bool result = firstonly ? false : true;
+	bool result = true;
 	for (iterator iter = begin(); iter != end(); )
 	{
 		iterator nextiter = iter++;
@@ -5950,10 +5971,7 @@ bool LLObjectSelection::applyToObjects(LLSelectedObjectFunctor* func, bool first
 		if (!object)
 			continue;
 		bool r = func->apply(object);
-		if (firstonly && r)
-			return true;
-		else
-			result = result && r;
+		result = result && r;
 	}
 	return result;
 }

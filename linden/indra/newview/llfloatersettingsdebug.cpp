@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -38,6 +38,11 @@
 #include "llspinctrl.h"
 #include "llcolorswatch.h"
 #include "llviewercontrol.h"
+
+// [RLVa:KB] - Checked: 2009-07-08 (RLVa-1.0.0g)
+#include "rlvhandler.h"
+#include "rlvextensions.h"
+// [/RLVa:KB]
 
 LLFloaterSettingsDebug* LLFloaterSettingsDebug::sInstance = NULL;
 
@@ -239,6 +244,32 @@ void LLFloaterSettingsDebug::updateControl(LLControlVariable* controlp)
 
 	if (controlp)
 	{
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-0.2.1d
+		if (rlv_handler_t::isEnabled())
+		{
+			// Don't allow changing DBG_WRITE debug settings under @setdebug=n
+			bool fEnable = !( (gRlvHandler.hasBehaviour(RLV_BHVR_SETDEBUG)) && 
+				(RlvExtGetSet::getDebugSettingFlags(controlp->getName()) & RlvExtGetSet::DBG_WRITE) );
+			// Don't allow toggling "Basic Shaders" and/or "Atmopsheric Shaders" through the debug settings under @setenv=n
+			fEnable &= !((gRlvHandler.hasBehaviour(RLV_BHVR_SETENV)) && 
+				(("VertexShaderEnable" == controlp->getName()) || ("WindLightUseAtmosShaders" == controlp->getName())));
+			#ifdef RLV_EXTENSION_STARTLOCATION
+				// Don't allow toggling RestrainedLifeLoginLastLocation
+				fEnable &= !(RLV_SETTING_LOGINLASTLOCATION == controlp->getName());
+			#endif // RLV_EXTENSION_STARTLOCATION
+
+			// NOTE: this runs per-frame so there's no need to explictly handle onCommitSettings() or onClickDefault()
+			spinner1->setEnabled(fEnable);
+			spinner2->setEnabled(fEnable);
+			spinner3->setEnabled(fEnable);
+			spinner4->setEnabled(fEnable);
+			color_swatch->setEnabled(fEnable);
+			childSetEnabled("val_text", fEnable);
+			childSetEnabled("boolean_combo", fEnable);
+			childSetEnabled("default_btn", fEnable);
+		}
+// [/RLVa:KB]
+
 		eControlType type = controlp->type();
 
 		//hide combo box only for non booleans, otherwise this will result in the combo box closing every frame

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -311,6 +311,7 @@ public:
 
 	static void onClickTrack(	void *userdata);
 	static void onClickIM(		void *userdata);
+	static void onClickGroupInvite( void *userdata);
 	static void onClickOfferTeleport(	void *userdata);
 	static void onClickPay(	void *userdata);
 	static void onClickAddFriend(void* userdata);

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2003&license=viewergpl$
  * 
- * Copyright (c) 2003-2008, Linden Research, Inc.
+ * Copyright (c) 2003-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -95,7 +95,7 @@ void handle_map(void*)
 
 void handle_mini_map(void*)
 {
-	LLFloaterMap::toggle(NULL);
+	LLFloaterMap::toggleInstance();
 }
 
 

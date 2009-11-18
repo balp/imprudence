@@ -6,7 +6,7 @@
  *
  * $LicenseInfo:firstyear=2005&license=viewergpl$
  * 
- * Copyright (c) 2005-2008, Linden Research, Inc.
+ * Copyright (c) 2005-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -60,6 +60,21 @@ class LLMediaBase
 
 		// undoes everything init() didm called by the media manager when destroying a source
 		virtual bool reset() = 0;
+
+
+		/* Mirrors GStreamer debug levels. */
+		enum EDebugLevel {
+		  DEBUG_LEVEL_NONE = 0,
+		  DEBUG_LEVEL_ERROR,
+		  DEBUG_LEVEL_WARNING,
+		  DEBUG_LEVEL_INFO,
+		  DEBUG_LEVEL_DEBUG,
+		  DEBUG_LEVEL_LOG,
+		  DEBUG_LEVEL_COUNT,
+		};
+
+    /* Set the debug verbosity level. Only implemented for GStreamer. */
+    virtual bool setDebugLevel( EDebugLevel level ) = 0;
 
 		// accessor for MIME type
 		virtual bool setMimeType( const std::string mime_type ) = 0;
@@ -153,7 +168,8 @@ class LLMediaBase
 			STATUS_STARTED		= 3,
 			STATUS_STOPPED		= 4,
 			STATUS_PAUSED		= 6,
-			STATUS_RESETTING	= 7
+			STATUS_RESETTING	= 7,
+			STATUS_DEAD			= 8
 		};
 		virtual bool addCommand( ECommand cmd ) = 0;
 		virtual bool clearCommand() = 0;

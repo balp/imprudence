@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -136,7 +136,19 @@ LLAvatarTracker::~LLAvatarTracker()
 	deleteTrackingData();
 	std::for_each(mObservers.begin(), mObservers.end(), DeletePointer());
 	std::for_each(mBuddyInfo.begin(), mBuddyInfo.end(), DeletePairedPointer());
+	mObservers.erase(mObservers.begin(), mObservers.end());
+	mBuddyInfo.erase(mBuddyInfo.begin(), mBuddyInfo.end());
 }
+
+
+void LLAvatarTracker::reset()
+{
+    std::for_each(mBuddyInfo.begin(), mBuddyInfo.end(), DeletePairedPointer());
+	mBuddyInfo.erase(mBuddyInfo.begin(), mBuddyInfo.end());
+	mModifyMask |= LLFriendObserver::REMOVE;
+	notifyObservers();
+}
+
 
 void LLAvatarTracker::track(const LLUUID& avatar_id, const std::string& name)
 {
@@ -625,7 +637,7 @@ void LLAvatarTracker::processChangeUserRights(LLMessageSystem* msg, void**)
 void LLAvatarTracker::processNotify(LLMessageSystem* msg, bool online)
 {
 	S32 count = msg->getNumberOfBlocksFast(_PREHASH_AgentBlock);
-	BOOL chat_notify = gSavedSettings.getBOOL("ChatOnlineNotification");
+	BOOL notify = gSavedSettings.getBOOL("ChatOnlineNotification");
 
 	lldebugs << "Received " << count << " online notifications **** " << llendl;
 	if(count > 0)
@@ -637,7 +649,6 @@ void LLAvatarTracker::processNotify(LLMessageSystem* msg, bool online)
 		{
 			tracking_id = mTrackingData->mAvatarID;
 		}
-		BOOL notify = FALSE;
 		LLStringUtil::format_map_t args;
 		for(S32 i = 0; i < count; ++i)
 		{
@@ -646,14 +657,16 @@ void LLAvatarTracker::processNotify(LLMessageSystem* msg, bool online)
 			if(info)
 			{
 				setBuddyOnline(agent_id,online);
-				if(chat_notify)
+				
+				std::string first, last;
+				if(gCacheName->getName(agent_id, first, last))
 				{
-					std::string first, last;
-					if(gCacheName->getName(agent_id, first, last))
+					args["[FIRST]"] = first;
+					args["[LAST]"] = last;
+					if(notify)
 					{
-						notify = TRUE;
-						args["[FIRST]"] = first;
-						args["[LAST]"] = last;
+						// Popup a notify box with online status of this agent
+						LLNotifyBox::showXml(online ? "FriendOnline" : "FriendOffline", args);
 					}
 				}
 			}
@@ -671,20 +684,16 @@ void LLAvatarTracker::processNotify(LLMessageSystem* msg, bool online)
 			// *TODO: get actual inventory id
 			gInventory.addChangedMask(LLInventoryObserver::CALLING_CARD, LLUUID::null);
 		}
-		if(notify)
-		{
-			// Popup a notify box with online status of this agent
-			LLNotifyBox::showXml(online ? "FriendOnline" : "FriendOffline", args);
 
-			// If there's an open IM session with this agent, send a notification there too.
-			LLUUID session_id = LLIMMgr::computeSessionID(IM_NOTHING_SPECIAL, agent_id);
-			LLFloaterIMPanel *floater = gIMMgr->findFloaterBySession(session_id);
-			if (floater)
-			{
-				LLUIString notifyMsg = LLNotifyBox::getTemplateMessage((online ? "FriendOnline" : "FriendOffline"),args);
-				if (!notifyMsg.empty())
-					floater->addHistoryLine(notifyMsg,gSavedSettings.getColor4("SystemChatColor"));
-			}
+		// If there's an open IM session with this agent, send a notification there too
+		// even if ChatOnlineNotification is false.
+		LLUUID session_id = LLIMMgr::computeSessionID(IM_NOTHING_SPECIAL, agent_id);
+		LLFloaterIMPanel *floater = gIMMgr->findFloaterBySession(session_id);
+		if (floater)
+		{
+			LLUIString notifyMsg = LLNotifyBox::getTemplateMessage((online ? "FriendOnline" : "FriendOffline"),args);
+			if (!notifyMsg.empty())
+				floater->addHistoryLine(notifyMsg,gSavedSettings.getColor4("SystemChatColor"));
 		}
 
 		mModifyMask |= LLFriendObserver::ONLINE;

@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2007&license=viewergpl$
  * 
- * Copyright (c) 2007-2008, Linden Research, Inc.
+ * Copyright (c) 2007-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -66,7 +66,8 @@ LLMediaImplCommon::LLMediaImplCommon() :
 	mCommand( LLMediaBase::COMMAND_NONE ),
 	mStatus( LLMediaBase::STATUS_UNKNOWN ),
 	mVolume( 0 ),
-	mLooping( false )
+	mLooping( false ),
+	mDebugLevel( LLMediaBase::DEBUG_LEVEL_NONE )
 {
 }
 
@@ -88,6 +89,15 @@ bool LLMediaImplCommon::init()
 bool LLMediaImplCommon::reset()
 {
 	return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// virtual (derives from LLMediaBase)
+bool LLMediaImplCommon::setDebugLevel( LLMediaBase::EDebugLevel level )
+{
+	mDebugLevel = level;
+
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

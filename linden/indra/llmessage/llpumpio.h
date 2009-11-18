@@ -6,7 +6,7 @@
  *
  * $LicenseInfo:firstyear=2004&license=viewergpl$
  * 
- * Copyright (c) 2004-2008, Linden Research, Inc.
+ * Copyright (c) 2004-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -164,6 +164,14 @@ public:
 	 * @return Returns true if the timer was set.
 	 */
 	bool setTimeoutSeconds(F32 timeout);
+
+	/** 
+	 * @brief Adjust the timeout of the running chain.
+	 *
+	 * This method has no effect if there is no timeout on the chain.
+	 * @param delta The number of seconds to add to/remove from the timeout.
+	 */
+	void adjustTimeoutSeconds(F32 delta);
 
 	/** 
 	 * @brief Set up file descriptors for for the running chain.
@@ -349,6 +357,7 @@ protected:
 		// methods
 		LLChainInfo();
 		void setTimeoutSeconds(F32 timeout);
+		void adjustTimeoutSeconds(F32 delta);
 
 		// basic member data
 		bool mInit;

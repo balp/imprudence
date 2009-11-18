@@ -60,6 +60,7 @@ class LLLoginHandler : public LLCommandHandler
 	LLUUID mWebLoginKey;
 	std::string mFirstName;
 	std::string mLastName;
+	std::string mPassword;
 };
 
 extern LLLoginHandler gLoginHandler;
@@ -86,7 +87,7 @@ public:
 	static void setFields(const std::string& firstname, const std::string& lastname, 
 		const std::string& password, BOOL remember);
 
-	static void addServer(const std::string& server, S32 domain_name);
+	static void addServer(const std::string& server);
 	static void refreshLocation( bool force_visible );
 
 	static void getFields(std::string& firstname, std::string& lastname,
@@ -100,12 +101,14 @@ public:
 	void setSiteIsAlive( bool alive );
 
 	static void loadLoginPage();	
+	static void refreshLoginPage();
 	static void giveFocus();
 	static void setAlwaysRefresh(bool refresh); 
 	static void mungePassword(LLUICtrl* caller, void* user_data);
 	
 private:
 	static void onClickConnect(void*);
+	static void onClickGrid(void*);
 	static void onClickNewAccount(void*);
 	static void newAccountAlertCallback(S32 option, void*);
 	static void onClickQuit(void*);

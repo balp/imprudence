@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2001&license=viewergpl$
  * 
- * Copyright (c) 2001-2008, Linden Research, Inc.
+ * Copyright (c) 2001-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -49,6 +49,7 @@
 #include "llconsole.h"
 #include "llfloater.h"
 #include "llfloatergroupinfo.h"
+#include "llfloaterchatterbox.h"
 #include "llimview.h"
 #include "llinventory.h"
 #include "llinventorymodel.h"
@@ -68,7 +69,6 @@
 #include "lluictrlfactory.h"
 #include "llviewerwindow.h"
 #include "lllogchat.h"
-#include "llfloaterhtml.h"
 #include "llweb.h"
 #include "llhttpclient.h"
 #include "llmutelist.h"
@@ -357,7 +357,7 @@ LLVoiceChannel::LLVoiceChannel(const LLUUID& session_id, const std::string& sess
 		llwarns << "Duplicate voice channels registered for session_id " << session_id << llendl;
 	}
 
-	LLVoiceClient::getInstance()->addStatusObserver(this);
+	LLVoiceClient::getInstance()->addObserver(this);
 }
 
 LLVoiceChannel::~LLVoiceChannel()
@@ -365,7 +365,7 @@ LLVoiceChannel::~LLVoiceChannel()
 	// Don't use LLVoiceClient::getInstance() here -- this can get called during atexit() time and that singleton MAY have already been destroyed.
 	if(gVoiceClient)
 	{
-		gVoiceClient->removeStatusObserver(this);
+		gVoiceClient->removeObserver(this);
 	}
 	
 	sVoiceChannelMap.erase(mSessionID);
@@ -983,7 +983,8 @@ void LLVoiceChannelP2P::activate()
 		// otherwise answering the call
 		else
 		{
-			LLVoiceClient::getInstance()->answerInvite(mSessionHandle, mOtherUserID);
+			LLVoiceClient::getInstance()->answerInvite(mSessionHandle);
+			
 			// using the session handle invalidates it.  Clear it out here so we can't reuse it by accident.
 			mSessionHandle.clear();
 		}
@@ -1000,7 +1001,7 @@ void LLVoiceChannelP2P::getChannelInfo()
 }
 
 // receiving session from other user who initiated call
-void LLVoiceChannelP2P::setSessionHandle(const std::string& handle)
+void LLVoiceChannelP2P::setSessionHandle(const std::string& handle, const std::string &inURI)
 { 
 	BOOL needs_activate = FALSE;
 	if (callStarted())
@@ -1023,8 +1024,17 @@ void LLVoiceChannelP2P::setSessionHandle(const std::string& handle)
 	}
 
 	mSessionHandle = handle;
+
 	// The URI of a p2p session should always be the other end's SIP URI.
-	setURI(LLVoiceClient::getInstance()->sipURIFromID(mOtherUserID));
+	if(!inURI.empty())
+	{
+		setURI(inURI);
+	}
+	else
+	{
+		setURI(LLVoiceClient::getInstance()->sipURIFromID(mOtherUserID));
+	}
+	
 	mReceivedCall = TRUE;
 
 	if (needs_activate)
@@ -1161,6 +1171,7 @@ void LLFloaterIMPanel::init(const std::string& session_label)
 								FALSE);
 
 	setTitle(mSessionLabel);
+
 	mInputEditor->setMaxTextLength(1023);
 	// enable line history support for instant message bar
 	mInputEditor->setEnableLineHistory(TRUE);
@@ -1207,7 +1218,23 @@ LLFloaterIMPanel::~LLFloaterIMPanel()
 {
 	delete mSpeakers;
 	mSpeakers = NULL;
-
+	
+	// End the text IM session if necessary
+	if(gVoiceClient && mOtherParticipantUUID.notNull())
+	{
+		switch(mDialog)
+		{
+			case IM_NOTHING_SPECIAL:
+			case IM_SESSION_P2P_INVITE:
+				gVoiceClient->endUserIMSession(mOtherParticipantUUID);
+			break;
+			
+			default:
+				// Appease the compiler
+			break;
+		}
+	}
+	
 	//kicks you out of the voice channel if it is currently active
 
 	// HAVE to do this here -- if it happens in the LLVoiceChannel destructor it will call the wrong version (since the object's partially deconstructed at that point).
@@ -1473,7 +1500,21 @@ void LLFloaterIMPanel::addHistoryLine(const std::string &utf8msg, const LLColor4
 			&& hostp 
 			&& source != gAgent.getID())
 		{
-			hostp->setFloaterFlashing(this, TRUE);
+			// Only start flashing on first update so we can
+			// get the proper unread number of unread tabs here
+			if (!hostp->isFloaterFlashing(this))
+			{
+				hostp->setFloaterFlashing(this, TRUE);
+				LLFloaterChatterBox::markAsUnread(true);
+			}
+
+			//// Only increment the number of unread IMs if they're from individuals
+			//// We increment the first received for the rest during new IM creation.
+			//if (mDialog == IM_SESSION_P2P_INVITE ||
+			//	mDialog == IM_NOTHING_SPECIAL)
+			//{
+			//	LLFloaterChatterBox::markAsUnread(true);
+			//}
 		}
 	}
 
@@ -1502,8 +1543,8 @@ void LLFloaterIMPanel::addHistoryLine(const std::string &utf8msg, const LLColor4
 		else
 		{
 			// Convert the name to a hotlink and add to message.
-			const LLStyleSP &source_style = LLStyleMap::instance().lookup(source);
-			mHistoryEditor->appendStyledText(name,false,prepend_newline,&source_style);
+			const LLStyleSP &source_style = LLStyleMap::instance().lookupAgent(source);
+			mHistoryEditor->appendStyledText(name,false,prepend_newline,source_style);
 		}
 		prepend_newline = false;
 	}
@@ -1541,13 +1582,17 @@ void LLFloaterIMPanel::setVisible(BOOL b)
 	LLMultiFloater* hostp = getHost();
 	if( b && hostp )
 	{
-		hostp->setFloaterFlashing(this, FALSE);
+		if (hostp->isFloaterFlashing(this))
+		{
+			hostp->setFloaterFlashing(this, FALSE);
+			LLFloaterChatterBox::markAsUnread(false);
 
-		/* Don't change containing floater title - leave it "Instant Message" JC
-		LLUIString title = sTitleString;
-		title.setArg("[NAME]", mSessionLabel);
-		hostp->setTitle( title );
-		*/
+			/* Don't change containing floater title - leave it "Instant Message" JC
+			LLUIString title = sTitleString;
+			title.setArg("[NAME]", mSessionLabel);
+			hostp->setTitle( title );
+			*/
+		}
 	}
 }
 
@@ -1881,33 +1926,45 @@ void deliver_message(const std::string& utf8_text,
 					 EInstantMessage dialog)
 {
 	std::string name;
+	bool sent = false;
 	gAgent.buildFullname(name);
 
 	const LLRelationship* info = NULL;
 	info = LLAvatarTracker::instance().getBuddyInfo(other_participant_id);
+	
 	U8 offline = (!info || info->isOnline()) ? IM_ONLINE : IM_OFFLINE;
-
-	// default to IM_SESSION_SEND unless it's nothing special - in
-	// which case it's probably an IM to everyone.
-	U8 new_dialog = dialog;
-
-	if ( dialog != IM_NOTHING_SPECIAL )
+	
+	if((offline == IM_OFFLINE) && (LLVoiceClient::getInstance()->isOnlineSIP(other_participant_id)))
 	{
-		new_dialog = IM_SESSION_SEND;
+		// User is online through the OOW connector, but not with a regular viewer.  Try to send the message via SLVoice.
+		sent = gVoiceClient->sendTextMessage(other_participant_id, utf8_text);
 	}
+	
+	if(!sent)
+	{
+		// Send message normally.
 
-	pack_instant_message(
-		gMessageSystem,
-		gAgent.getID(),
-		FALSE,
-		gAgent.getSessionID(),
-		other_participant_id,
-		name,
-		utf8_text,
-		offline,
-		(EInstantMessage)new_dialog,
-		im_session_id);
-	gAgent.sendReliableMessage();
+		// default to IM_SESSION_SEND unless it's nothing special - in
+		// which case it's probably an IM to everyone.
+		U8 new_dialog = dialog;
+
+		if ( dialog != IM_NOTHING_SPECIAL )
+		{
+			new_dialog = IM_SESSION_SEND;
+		}
+		pack_instant_message(
+			gMessageSystem,
+			gAgent.getID(),
+			FALSE,
+			gAgent.getSessionID(),
+			other_participant_id,
+			name.c_str(),
+			utf8_text.c_str(),
+			offline,
+			(EInstantMessage)new_dialog,
+			im_session_id);
+		gAgent.sendReliableMessage();
+	}
 
 	// If there is a mute list and this is not a group chat...
 	if ( LLMuteList::getInstance() )
@@ -1952,6 +2009,42 @@ void LLFloaterIMPanel::sendMsg()
 			std::string utf8_text = wstring_to_utf8str(text);
 			utf8_text = utf8str_truncate(utf8_text, MAX_MSG_BUF_SIZE - 1);
 			
+// [RLVa:KB] - Checked: 2009-07-10 (RLVa-1.0.0g) | Modified: RLVa-1.0.0g
+			if (gRlvHandler.hasBehaviour(RLV_BHVR_SENDIM))
+			{
+				if (IM_NOTHING_SPECIAL == mDialog)			// One-on-one IM: allow if recipient is a sendim exception
+				{
+					if (!gRlvHandler.isException(RLV_BHVR_SENDIM, mOtherParticipantUUID))
+						utf8_text = rlv_handler_t::cstrBlockedSendIM;
+				}
+				else if (gAgent.isInGroup(mSessionUUID))	// Group chat: allow if recipient is a sendim exception
+				{
+					if (!gRlvHandler.isException(RLV_BHVR_SENDIM, mSessionUUID))
+						utf8_text = rlv_handler_t::cstrBlockedSendIM;
+				}
+				else if (mSpeakers)							// Conference chat: allow if all participants are sendim exceptions
+				{
+					LLSpeakerMgr::speaker_list_t speakers;
+					mSpeakers->getSpeakerList(&speakers, TRUE);
+
+					for (LLSpeakerMgr::speaker_list_t::const_iterator itSpeaker = speakers.begin(); 
+							itSpeaker != speakers.end(); ++itSpeaker)
+					{
+						LLSpeaker* pSpeaker = *itSpeaker;
+						if ( (gAgent.getID() != pSpeaker->mID) && (!gRlvHandler.isException(RLV_BHVR_SENDIM, pSpeaker->mID)) )
+						{
+							utf8_text = rlv_handler_t::cstrBlockedSendIM;
+							break;
+						}
+					}
+				}
+				else										// Catch all fall-through
+				{
+					utf8_text = rlv_handler_t::cstrBlockedSendIM;
+				}
+			}
+// [/RLVa:KB]
+
 			if ( mSessionInitialized )
 			{
 				deliver_message(utf8_text,

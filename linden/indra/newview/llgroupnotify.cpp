@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2006&license=viewergpl$
  * 
- * Copyright (c) 2006-2008, Linden Research, Inc.
+ * Copyright (c) 2006-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -220,8 +220,8 @@ LLGroupNotifyBox::LLGroupNotifyBox(const std::string& subject,
 	static const LLStyleSP headerstyle(new LLStyle(true,LLColor4::black,"SansSerifBig"));
 	static const LLStyleSP datestyle(new LLStyle(true,LLColor4::black,"serif"));
 
-	text->appendStyledText(subject,false,false,&headerstyle);
-	text->appendStyledText(time_buf,false,false,&datestyle);
+	text->appendStyledText(subject,false,false,headerstyle);
+	text->appendStyledText(time_buf,false,false,datestyle);
 	// Sadly, our LLTextEditor can't handle both styled and unstyled text
 	// at the same time.  Hence this space must be styled. JC
 	text->appendColoredText(std::string(" "),false,false,LLColor4::grey4);
@@ -248,9 +248,13 @@ LLGroupNotifyBox::LLGroupNotifyBox(const std::string& subject,
 	{
 			addChild(new NoticeText(std::string("subjecttitle"),LLRect(x,y,x + LABEL_WIDTH,y - LINE_HEIGHT),std::string("Attached: "),LLFontGL::sSansSerif));
 
-			LLUIImagePtr item_icon = get_item_icon(mInventoryOffer->mType,
-													LLInventoryType::IT_TEXTURE,
-													0, FALSE);
+
+			LLAssetType::EType atype;
+			LLInventoryType::EType itype;
+			atype = mInventoryOffer->mType;
+			itype = LLInventoryType::defaultForAssetType( atype );
+
+			LLUIImagePtr item_icon = get_item_icon(atype, itype, 0, FALSE);
 
 
 			x += LABEL_WIDTH + HPAD;

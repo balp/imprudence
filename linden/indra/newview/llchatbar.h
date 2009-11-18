@@ -4,7 +4,7 @@
  *
  * $LicenseInfo:firstyear=2002&license=viewergpl$
  * 
- * Copyright (c) 2002-2008, Linden Research, Inc.
+ * Copyright (c) 2002-2009, Linden Research, Inc.
  * 
  * Second Life Viewer Source Code
  * The source code in this file ("Source Code") is provided by Linden Lab
@@ -43,6 +43,7 @@ class LLUUID;
 class LLFrameTimer;
 class LLChatBarGestureObserver;
 class LLComboBox;
+class LLSpinCtrl;
 
 class LLChatBar
 :	public LLPanel
@@ -93,6 +94,8 @@ public:
 	static void startChat(const char* line);
 	static void stopChat();
 
+	void toggleChannelControl();
+
 protected:
 	void sendChat(EChatType type);
 	void updateChat();
@@ -109,6 +112,10 @@ protected:
 	LLComboBox*		mGestureCombo;
 
 	LLChatBarGestureObserver* mObserver;
+
+private:
+	BOOL				mChanCtrlEnabled;
+	LLSpinCtrl*			mChannelControl;
 };
 
 extern LLChatBar *gChatBar;
