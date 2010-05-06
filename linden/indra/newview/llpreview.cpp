@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -46,6 +47,9 @@
 #include "llviewerobjectlist.h"
 #include "lldbstrings.h"
 #include "llagent.h"
+#include "llfloatersearchreplace.h"
+#include "llpreviewnotecard.h"
+#include "llpreviewscript.h"
 #include "llvoavatar.h"
 #include "llselectmgr.h"
 #include "llinventoryview.h"
@@ -575,6 +579,24 @@ void LLMultiPreview::tabOpen(LLFloater* opened_floater, bool from_click)
 	{
 		opened_preview->loadAsset();
 	}
+
+	LLFloater* search_floater = LLFloaterSearchReplace::getInstance();
+	if ( (search_floater) && (search_floater->getDependee() == this) )
+	{
+		LLPreviewNotecard* notecard_preview; LLPreviewLSL* script_preview;
+		if ( (notecard_preview = dynamic_cast<LLPreviewNotecard*>(opened_preview)) != NULL )
+		{
+			LLFloaterSearchReplace::show(notecard_preview->getEditor());
+		}
+		else if ( (script_preview = dynamic_cast<LLPreviewLSL*>(opened_preview)) != NULL )
+		{
+			LLFloaterSearchReplace::show(script_preview->getEditor());
+		}
+		else
+		{
+			search_floater->setVisible(FALSE);
+		}
+	}
 }
 
 //static 
@@ -594,5 +616,33 @@ void LLMultiPreview::setAutoOpenInstance(LLMultiPreview* previewp, const LLUUID&
 	if (previewp)
 	{
 		sAutoOpenPreviewHandles[id] = previewp->getHandle();
+	}
+}
+
+void LLPreview::setAssetId(const LLUUID& asset_id)
+{
+	const LLViewerInventoryItem* item = getItem();
+	if(NULL == item)
+	{
+		return;
+	}
+
+	if(mObjectUUID.isNull())
+	{
+		// Update avatar inventory asset_id.
+		LLPointer<LLViewerInventoryItem> new_item = new LLViewerInventoryItem(item);
+		new_item->setAssetUUID(asset_id);
+		gInventory.updateItem(new_item);
+		gInventory.notifyObservers();
+	}
+	else
+	{
+		// Update object inventory asset_id.
+		LLViewerObject* object = gObjectList.findObject(mObjectUUID);
+		if(NULL == object)
+		{
+			return;
+		}
+		object->updateViewerInventoryAsset(item, asset_id);
 	}
 }

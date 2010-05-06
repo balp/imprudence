@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -338,10 +339,15 @@ protected:
 
 	std::string					mLabel;
 	std::string					mSearchableLabel;
-	std::string					mLabelAll;
-	std::string					mSearchableLabelAll;
+
 	std::string					mLabelCreator;
 	std::string					mSearchableLabelCreator;
+
+	std::string					mLabelDesc;
+	std::string					mSearchableLabelDesc;
+
+	std::string					mLabelAll;
+	std::string					mSearchableLabelAll;
 
 	std::string					mType;
 	S32							mLabelWidth;
@@ -469,7 +475,7 @@ public:
 	// viewed. This method will ask the viewed object itself.
 	const std::string& getName( void ) const;
 
-	const std::string& getSearchableLabel( void ) const;
+	const std::string& getSearchableLabel( U32 search_type ) const;
 
 	// This method returns the label displayed on the view. This
 	// method was primarily added to allow sorting on the folder

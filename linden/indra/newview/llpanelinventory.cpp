@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -121,7 +122,7 @@ public:
 	void showProperties();
 	void buyItem();
 	S32 getPrice();
-	static void commitBuyItem(S32 option, void* data);
+	static bool commitBuyItem(const LLSD& notification, const LLSD& response);
 
 	// LLFolderViewEventListener functionality
 	virtual const std::string& getName() const;
@@ -229,21 +230,21 @@ void LLTaskInvFVBridge::buyItem()
 	LLViewerObject* obj;
 	if( ( obj = gObjectList.findObject( mPanel->getTaskUUID() ) ) && obj->isAttachment() )
 	{
-		gViewerWindow->alertXml("Cannot_Purchase_an_Attachment");
+		LLNotifications::instance().add("Cannot_Purchase_an_Attachment");
 		llinfos << "Attempt to purchase an attachment" << llendl;
 		delete inv;
 	}
 	else
 	{
-        LLStringUtil::format_map_t args;
-        args["[PRICE]"] = llformat("%d",sale_info.getSalePrice());
-        args["[OWNER]"] = owner_name;
+        LLSD args;
+        args["PRICE"] = llformat("%d",sale_info.getSalePrice());
+        args["OWNER"] = owner_name;
         if (sale_info.getSaleType() != LLSaleInfo::FS_CONTENTS)
         {
         	U32 next_owner_mask = perm.getMaskNextOwner();
-        	args["[MODIFYPERM]"] = LLAlertDialog::getTemplateMessage((next_owner_mask & PERM_MODIFY) ? "PermYes" : "PermNo");
-        	args["[COPYPERM]"] = LLAlertDialog::getTemplateMessage((next_owner_mask & PERM_COPY) ? "PermYes" : "PermNo");
-        	args["[RESELLPERM]"] = LLAlertDialog::getTemplateMessage((next_owner_mask & PERM_TRANSFER) ? "PermYes" : "PermNo");
+        	args["MODIFYPERM"] = LLNotifications::instance().getGlobalString((next_owner_mask & PERM_MODIFY) ? "PermYes" : "PermNo");
+        	args["COPYPERM"] = LLNotifications::instance().getGlobalString((next_owner_mask & PERM_COPY) ? "PermYes" : "PermNo");
+        	args["RESELLPERM"] = LLNotifications::instance().getGlobalString((next_owner_mask & PERM_TRANSFER) ? "PermYes" : "PermNo");
         }
 
 		std::string alertdesc;
@@ -261,7 +262,11 @@ void LLTaskInvFVBridge::buyItem()
        		break;
        	}
 
-       	gViewerWindow->alertXml(alertdesc, args, LLTaskInvFVBridge::commitBuyItem, (void*)inv);
+		LLSD payload;
+		payload["task_id"] = inv->mTaskID;
+		payload["item_id"] = inv->mItemID;
+		payload["type"] = inv->mType;
+		LLNotifications::instance().add(alertdesc, args, payload, LLTaskInvFVBridge::commitBuyItem);
 	}
 }
 
@@ -279,14 +284,13 @@ S32 LLTaskInvFVBridge::getPrice()
 }
 
 // static
-void LLTaskInvFVBridge::commitBuyItem(S32 option, void* data)
+bool LLTaskInvFVBridge::commitBuyItem(const LLSD& notification, const LLSD& response)
 {
-	LLBuyInvItemData* inv = (LLBuyInvItemData*)data;
-	if(!inv) return;
+	S32 option = LLNotification::getSelectedOption(notification, response);
 	if(0 == option)
 	{
-		LLViewerObject* object = gObjectList.findObject(inv->mTaskID);
-		if(!object || !object->getRegion()) return;
+		LLViewerObject* object = gObjectList.findObject(notification["payload"]["task_id"].asUUID());
+		if(!object || !object->getRegion()) return false;
 
 
 		LLMessageSystem* msg = gMessageSystem;
@@ -295,13 +299,13 @@ void LLTaskInvFVBridge::commitBuyItem(S32 option, void* data)
 		msg->addUUIDFast(_PREHASH_AgentID, gAgent.getID());
 		msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
 		msg->nextBlockFast(_PREHASH_Data);
-		msg->addUUIDFast(_PREHASH_ObjectID, inv->mTaskID);
-		msg->addUUIDFast(_PREHASH_ItemID, inv->mItemID);
+		msg->addUUIDFast(_PREHASH_ObjectID, notification["payload"]["task_id"].asUUID());
+		msg->addUUIDFast(_PREHASH_ItemID, notification["payload"]["item_id"].asUUID());
 		msg->addUUIDFast(_PREHASH_FolderID,
-						 gInventory.findCategoryUUIDForType(inv->mType));
+			gInventory.findCategoryUUIDForType((LLAssetType::EType)notification["payload"]["type"].asInteger()));
 		msg->sendReliable(object->getRegion()->getHost());
 	}
-	delete inv;
+	return false;
 }
 
 const std::string& LLTaskInvFVBridge::getName() const
@@ -368,9 +372,9 @@ void LLTaskInvFVBridge::previewItem()
 
 BOOL LLTaskInvFVBridge::isItemRenameable() const
 {
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
+// [RLVa:KB] - Checked: 2009-10-10 (RLVa-1.0.5a) | Modified: RLVa-1.0.5a
 	LLViewerObject* object = gObjectList.findObject(mPanel->getTaskUUID());
-	if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.isDetachable(object)) )
+	if ( (rlv_handler_t::isEnabled()) && (gRlvHandler.isLockedAttachment(object, RLV_LOCK_REMOVE)) )
 	{
 		return FALSE;
 	}
@@ -394,8 +398,8 @@ BOOL LLTaskInvFVBridge::isItemRenameable() const
 BOOL LLTaskInvFVBridge::renameItem(const std::string& new_name)
 {
 	LLViewerObject* object = gObjectList.findObject(mPanel->getTaskUUID());
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
-	if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.isDetachable(object)) )
+// [RLVa:KB] - Checked: 2009-10-10 (RLVa-1.0.5a) | Modified: RLVa-1.0.5a
+	if ( (rlv_handler_t::isEnabled()) && (gRlvHandler.isLockedAttachment(object, RLV_LOCK_REMOVE)) )
 	{
 		return TRUE; // Fallback code [see LLTaskInvFVBridge::isItemRenameable()]
 	}
@@ -426,13 +430,13 @@ BOOL LLTaskInvFVBridge::isItemMovable()
 	//	return TRUE;
 	//}
 	//return FALSE;
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c) | Modified: RLVa-0.2.0g
+// [RLVa:KB] - Checked: 2009-10-10 (RLVa-1.0.5a) | Modified: RLVa-1.0.5a
 	if (rlv_handler_t::isEnabled())
 	{
 		LLViewerObject* pObj = gObjectList.findObject(mPanel->getTaskUUID());
 		if (pObj)
 		{
-			if (!gRlvHandler.isDetachable(pObj))
+			if (gRlvHandler.isLockedAttachment(pObj, RLV_LOCK_REMOVE))
 			{
 				return FALSE;
 			}
@@ -451,10 +455,10 @@ BOOL LLTaskInvFVBridge::isItemMovable()
 BOOL LLTaskInvFVBridge::isItemRemovable()
 {
 	LLViewerObject* object = gObjectList.findObject(mPanel->getTaskUUID());
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c) | Modified: RLVa-0.2.0g
+// [RLVa:KB] - Checked: 2009-10-10 (RLVa-1.0.5a) | Modified: RLVa-1.0.5a
 	if ( (object) && (rlv_handler_t::isEnabled()) )
 	{
-		if (!gRlvHandler.isDetachable(object))
+		if (gRlvHandler.isLockedAttachment(object, RLV_LOCK_REMOVE))
 		{
 			return FALSE;
 		}
@@ -479,25 +483,25 @@ BOOL LLTaskInvFVBridge::isItemRemovable()
 typedef std::pair<LLUUID, std::list<LLUUID> > two_uuids_list_t;
 typedef std::pair<LLPanelInventory*, two_uuids_list_t> remove_data_t;
 
-void remove_task_inventory_callback(S32 option, void* user_data)
+bool remove_task_inventory_callback(const LLSD& notification, const LLSD& response, LLPanelInventory* panel)
 {
-	remove_data_t* data = (remove_data_t*)user_data;
-	LLViewerObject* object = NULL;
-	object = gObjectList.findObject(data->second.first);
+	S32 option = LLNotification::getSelectedOption(notification, response);
+	LLViewerObject* object = gObjectList.findObject(notification["payload"]["task_id"].asUUID());
 	if(option == 0 && object)
 	{
 		// yes
-		std::list<LLUUID>::iterator list_it;
-		std::list<LLUUID>& id_list = data->second.second;
-		for (list_it = id_list.begin(); list_it != id_list.end(); ++list_it)
+		LLSD::array_const_iterator list_end = notification["payload"]["inventory_ids"].endArray();
+		for (LLSD::array_const_iterator list_it = notification["payload"]["inventory_ids"].beginArray();
+			list_it != list_end; 
+			++list_it)
 		{
-			object->removeInventory(*list_it);
+			object->removeInventory(list_it->asUUID());
 		}
 
 		// refresh the UI.
-		data->first->refresh();
+		panel->refresh();
 	}
-	delete data;
+	return false;
 }
 
 BOOL LLTaskInvFVBridge::removeItem()
@@ -519,7 +523,10 @@ BOOL LLTaskInvFVBridge::removeItem()
 				data->first = mPanel;
 				data->second.first = mPanel->getTaskUUID();
 				data->second.second.push_back(mUUID);
-				gViewerWindow->alertXml("RemoveItemWarn", remove_task_inventory_callback, (void*)data);
+				LLSD payload;
+				payload["task_id"] = mPanel->getTaskUUID();
+				payload["inventory_ids"].append(mUUID);
+				LLNotifications::instance().add("RemoveItemWarn", LLSD(), payload, boost::bind(&remove_task_inventory_callback, _1, _2, mPanel));
 				return FALSE;
 			}
 		}
@@ -542,15 +549,15 @@ void LLTaskInvFVBridge::removeBatch(LLDynamicArray<LLFolderViewEventListener*>& 
 
 	if (!object->permModify())
 	{
-		remove_data_t* data = new remove_data_t;
-		data->first = mPanel;
-		data->second.first = mPanel->getTaskUUID();
+		LLSD payload;
+		payload["task_id"] = mPanel->getTaskUUID();
 		for (S32 i = 0; i < (S32)batch.size(); i++)
 		{
 			LLTaskInvFVBridge* itemp = (LLTaskInvFVBridge*)batch[i];
-			data->second.second.push_back(itemp->getUUID());
+			payload["inventory_ids"].append(itemp->getUUID());
 		}
-		gViewerWindow->alertXml("RemoveItemWarn", remove_task_inventory_callback, (void*)data);
+		LLNotifications::instance().add("RemoveItemWarn", LLSD(), payload, boost::bind(&remove_task_inventory_callback, _1, _2, mPanel));
+		
 	}
 	else
 	{
@@ -611,9 +618,9 @@ BOOL LLTaskInvFVBridge::startDrag(EDragAndDropType* type, LLUUID* id) const
 				const LLPermissions& perm = inv->getPermissions();
 				bool can_copy = gAgent.allowOperation(PERM_COPY, perm,
 														GP_OBJECT_MANIPULATE);
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
+// [RLVa:KB] - Checked: 2009-10-10 (RLVa-1.0.5a) | Modified: RLVa-1.0.5a
 				// Kind of redundant due to the note below, but in case that ever gets fixed
-				if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.isDetachable(object)) )
+				if ( (rlv_handler_t::isEnabled()) && (gRlvHandler.isLockedAttachment(object, RLV_LOCK_REMOVE)) )
 				{
 					return FALSE;
 				}
@@ -691,9 +698,14 @@ void LLTaskInvFVBridge::performAction(LLFolderView* folder, LLInventoryModel* mo
 void LLTaskInvFVBridge::buildContextMenu(LLMenuGL& menu, U32 flags)
 {
 	LLInventoryItem* item = findItem();
-	if(!item) return;
 	std::vector<std::string> items;
 	std::vector<std::string> disabled_items;
+	
+	if (!item)
+	{
+		hideContextEntries(menu, items, disabled_items);
+		return;
+	}
 
 	 // *TODO: Translate
 	if(gAgent.allowOperation(PERM_OWNER, item->getPermissions(),
@@ -735,12 +747,16 @@ void LLTaskInvFVBridge::buildContextMenu(LLMenuGL& menu, U32 flags)
 		{
 			disabled_items.push_back(std::string("Task Open"));
 		}
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
-		else if ( (rlv_handler_t::isEnabled()) && 
-				  ((LLAssetType::AT_LSL_TEXT == item->getType()) || (LLAssetType::AT_NOTECARD == item->getType())) && 
-				  (!gRlvHandler.isDetachable(gObjectList.findObject(mPanel->getTaskUUID()))) )
+// [RLVa:KB] - Checked: 2009-10-13 (RLVa-1.0.5c) | Modified: RLVa-1.0.5c
+		else if (rlv_handler_t::isEnabled())
 		{
-			disabled_items.push_back(std::string("Task Open"));
+			bool fLocked = gRlvHandler.isLockedAttachment(gObjectList.findObject(mPanel->getTaskUUID()), RLV_LOCK_REMOVE);
+			if ( ((LLAssetType::AT_LSL_TEXT == item->getType()) && ((gRlvHandler.hasBehaviour(RLV_BHVR_VIEWSCRIPT)) || (fLocked))) ||
+				 ((LLAssetType::AT_NOTECARD == item->getType()) && ((gRlvHandler.hasBehaviour(RLV_BHVR_VIEWNOTE)) || (fLocked))) ||
+				 ((LLAssetType::AT_NOTECARD == item->getType()) && (gRlvHandler.hasBehaviour(RLV_BHVR_VIEWTEXTURE))) )
+			{
+				disabled_items.push_back(std::string("Task Open"));
+			}
 		}
 // [/RLVa:KB]
 	}
@@ -967,6 +983,13 @@ LLUIImagePtr LLTaskTextureBridge::getIcon() const
 
 void LLTaskTextureBridge::openItem()
 {
+// [RLVa:KB] - Checked: 2009-10-13 (RLVa-1.0.5c) | Added: RLVa-1.0.5c
+	if (gRlvHandler.hasBehaviour(RLV_BHVR_VIEWTEXTURE))
+	{
+		return;
+	}
+// [/RLVa:KB]
+
 	llinfos << "LLTaskTextureBridge::openItem()" << llendl;
 	if(!LLPreview::show(mUUID))
 	{
@@ -1248,9 +1271,10 @@ LLTaskLSLBridge::LLTaskLSLBridge(
 
 void LLTaskLSLBridge::openItem()
 {
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
+// [RLVa:KB] - Checked: 2009-10-13 (RLVa-1.0.5c) | Modified: RLVa-1.0.5c
 	LLViewerObject* object = gObjectList.findObject(mPanel->getTaskUUID());
-	if ( (rlv_handler_t::isEnabled()) && (!gRlvHandler.isDetachable(object)) )
+	if ( (rlv_handler_t::isEnabled()) && 
+		((gRlvHandler.hasBehaviour(RLV_BHVR_VIEWSCRIPT)) || (gRlvHandler.isLockedAttachment(object, RLV_LOCK_REMOVE))) )
 	{
 		return;
 	}
@@ -1376,8 +1400,9 @@ void LLTaskNotecardBridge::openItem()
 	{
 		return;
 	}
-// [RLVa:KB] - Checked: 2009-07-06 (RLVa-1.0.0c)
-	if ( (rlv_handler_t::isEnabled()) && ((gRlvHandler.hasBehaviour("viewnote")) || (!gRlvHandler.isDetachable(object))) )
+// [RLVa:KB] - Checked: 2009-10-10 (RLVa-1.0.5a) | Modified: RLVa-1.0.5a
+	if ( (rlv_handler_t::isEnabled()) && 
+		 ( (gRlvHandler.hasBehaviour(RLV_BHVR_VIEWNOTE)) || (gRlvHandler.isLockedAttachment(object, RLV_LOCK_REMOVE)) ) )
 	{
 		return;
 	}
@@ -2015,7 +2040,7 @@ void LLPanelInventory::draw()
 		// *TODO: Translate
 		if((LLUUID::null != mTaskUUID) && (!mHaveInventory))
 		{
-			LLFontGL::sSansSerif->renderUTF8(std::string("Loading contents..."), 0,
+			LLFontGL::getFontSansSerif()->renderUTF8(std::string("Loading contents..."), 0,
 										 (S32)(getRect().getWidth() * 0.5f),
 										 10,
 										 LLColor4( 1, 1, 1, 1 ),
@@ -2024,7 +2049,7 @@ void LLPanelInventory::draw()
 		}
 		else if(mHaveInventory)
 		{
-			LLFontGL::sSansSerif->renderUTF8(std::string("No contents"), 0,
+			LLFontGL::getFontSansSerif()->renderUTF8(std::string("No contents"), 0,
 										 (S32)(getRect().getWidth() * 0.5f),
 										 10,
 										 LLColor4( 1, 1, 1, 1 ),

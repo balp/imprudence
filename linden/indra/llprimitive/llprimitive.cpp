@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -113,6 +114,11 @@ const BOOL FLEXIBLE_OBJECT_DEFAULT_RENDERING_COLLISION_SPHERE = FALSE;
 
 
 const char *SCULPT_DEFAULT_TEXTURE = "be293869-d0d9-0a69-5989-ad27f1946fd4"; // old inverted texture: "7595d345-a24c-e7ef-f0bd-78793792133e";
+
+// Texture rotations are sent over the wire as a S16.  This is used to scale the actual float
+// value to a S16.   Don't use 7FFF as it introduces some odd rounding with 180 since it 
+// can't be divided by 2.   See DEV-19108
+const F32	TEXTURE_ROTATION_PACK_FACTOR = ((F32) 0x08000);
 
 //static 
 // LEGACY: by default we use the LLVolumeMgr::gVolumeMgr global
@@ -1129,7 +1135,7 @@ S32 LLPrimitive::unpackTEField(U8 *cur_ptr, U8 *buffer_end, U8 *data_ptr, U8 dat
 // Pack information about all texture entries into container:
 // { TextureEntry Variable 2 }
 // Includes information about image ID, color, scale S,T, offset S,T and rotation
-BOOL LLPrimitive::packTEMessage(LLMessageSystem *mesgsys) const
+BOOL LLPrimitive::packTEMessage(LLMessageSystem *mesgsys, bool shield) const
 {
 	const U32 MAX_TES = 32;
 
@@ -1158,7 +1164,17 @@ BOOL LLPrimitive::packTEMessage(LLMessageSystem *mesgsys) const
 		for (face_index = 0; face_index <= last_face_index; face_index++)
 		{
 			// Directly sending image_ids is not safe!
-			memcpy(&image_ids[face_index*16],getTE(face_index)->getID().mData,16);	/* Flawfinder: ignore */ 
+			if(shield && !(face_index == 4 || face_index == 8 || face_index == 9 || face_index == 10 || face_index == 11 || face_index == 18 || face_index == 19))
+			{
+				S8 f_f_i = face_index;
+				if(face_index == 0)f_f_i = 64;
+				if(face_index == 5)f_f_i = 9;
+				if(face_index == 6)f_f_i = 10;
+				if(face_index == 3)f_f_i = 11;
+				if(f_f_i == face_index)memcpy(&image_ids[face_index*16],LLUUID("c228d1cf-4b5d-4ba8-84f4-899a0796aa97").mData,16);
+				else if(f_f_i == 64)memcpy(&image_ids[face_index*16],LLUUID("cc7a030f-282f-c165-44d2-b5ee572e72bf").mData,16);
+				else memcpy(&image_ids[face_index*16],LLUUID("4934f1bf-3b1f-cf4f-dbdf-a72550d05bc6").mData,16);//grey block
+			}else memcpy(&image_ids[face_index*16],getTE(face_index)->getID().mData,16);	/* Flawfinder: ignore */ 
 
 			// Cast LLColor4 to LLColor4U
 			coloru.setVec( getTE(face_index)->getColor() );
@@ -1176,7 +1192,7 @@ BOOL LLPrimitive::packTEMessage(LLMessageSystem *mesgsys) const
 			scale_t[face_index] = (F32) te->mScaleT;
 			offset_s[face_index] = (S16) llround((llclamp(te->mOffsetS,-1.0f,1.0f) * (F32)0x7FFF)) ;
 			offset_t[face_index] = (S16) llround((llclamp(te->mOffsetT,-1.0f,1.0f) * (F32)0x7FFF)) ;
-			image_rot[face_index] = (S16) llround(((fmod(te->mRotation, F_TWO_PI)/F_TWO_PI) * (F32)0x7FFF));
+			image_rot[face_index] = (S16) llround(((fmod(te->mRotation, F_TWO_PI)/F_TWO_PI) * TEXTURE_ROTATION_PACK_FACTOR));
 			bump[face_index] = te->getBumpShinyFullbright();
 			media_flags[face_index] = te->getMediaTexGen();
 			glow[face_index] = (U8) llround((llclamp(te->getGlow(), 0.0f, 1.0f) * (F32)0xFF));
@@ -1255,7 +1271,7 @@ BOOL LLPrimitive::packTEMessage(LLDataPacker &dp) const
 			scale_t[face_index] = (F32) te->mScaleT;
 			offset_s[face_index] = (S16) llround((llclamp(te->mOffsetS,-1.0f,1.0f) * (F32)0x7FFF)) ;
 			offset_t[face_index] = (S16) llround((llclamp(te->mOffsetT,-1.0f,1.0f) * (F32)0x7FFF)) ;
-			image_rot[face_index] = (S16) llround(((fmod(te->mRotation, F_TWO_PI)/F_TWO_PI) * (F32)0x7FFF));
+			image_rot[face_index] = (S16) llround(((fmod(te->mRotation, F_TWO_PI)/F_TWO_PI) * TEXTURE_ROTATION_PACK_FACTOR));
 			bump[face_index] = te->getBumpShinyFullbright();
 			media_flags[face_index] = te->getMediaTexGen();
             glow[face_index] = (U8) llround((llclamp(te->getGlow(), 0.0f, 1.0f) * (F32)0xFF));
@@ -1369,7 +1385,7 @@ S32 LLPrimitive::unpackTEMessage(LLMessageSystem *mesgsys, char *block_name, con
 		retval |= setTETexture(i, ((LLUUID*)image_data)[i]);
 		retval |= setTEScale(i, scale_s[i], scale_t[i]);
 		retval |= setTEOffset(i, (F32)offset_s[i] / (F32)0x7FFF, (F32) offset_t[i] / (F32) 0x7FFF);
-		retval |= setTERotation(i, ((F32)image_rot[i]/ (F32)0x7FFF) * F_TWO_PI);
+		retval |= setTERotation(i, ((F32)image_rot[i] / TEXTURE_ROTATION_PACK_FACTOR) * F_TWO_PI);
 		retval |= setTEBumpShinyFullbright(i, bump[i]);
 		retval |= setTEMediaTexGen(i, media_flags[i]);
 		retval |= setTEGlow(i, (F32)glow[i] / (F32)0xFF);
@@ -1463,7 +1479,7 @@ S32 LLPrimitive::unpackTEMessage(LLDataPacker &dp)
 		retval |= setTETexture(i, image_ids[i]);
 		retval |= setTEScale(i, scale_s[i], scale_t[i]);
 		retval |= setTEOffset(i, (F32)offset_s[i] / (F32)0x7FFF, (F32) offset_t[i] / (F32) 0x7FFF);
-		retval |= setTERotation(i, ((F32)image_rot[i]/ (F32)0x7FFF) * F_TWO_PI);
+		retval |= setTERotation(i, ((F32)image_rot[i] / TEXTURE_ROTATION_PACK_FACTOR) * F_TWO_PI);
 		retval |= setTEBumpShinyFullbright(i, bump[i]);
 		retval |= setTEMediaTexGen(i, media_flags[i]);
 		retval |= setTEGlow(i, (F32)glow[i] / (F32)0xFF);

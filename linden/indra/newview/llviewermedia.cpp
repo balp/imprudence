@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -531,7 +532,21 @@ void LLViewerMedia::buildMediaManagerData( LLMediaManagerData* init_data )
 #elif LL_LINUX
 	std::string component_dir( gDirUtilp->getExpandedFilename( LL_PATH_APP_SETTINGS, "" ) );
 	component_dir += gDirUtilp->getDirDelimiter();
-	component_dir += "mozilla-runtime-linux-i686";
+
+  #if LINUX64 
+	component_dir += "mozilla-runtime-linux-x86_64";
+  #else
+ 	component_dir += "mozilla-runtime-linux-i686";
+  #endif
+
+#elif LL_SOLARIS
+	std::string component_dir( gDirUtilp->getExpandedFilename( LL_PATH_APP_SETTINGS, "" ) );
+	component_dir += gDirUtilp->getDirDelimiter();
+	#ifdef  __sparc
+		component_dir += "mozilla-solaris-sparc";
+	#else
+		component_dir += "mozilla-solaris-i686";
+	#endif
 #else
 	std::string component_dir( gDirUtilp->getExpandedFilename( LL_PATH_APP_SETTINGS, "" ) );
 	component_dir += gDirUtilp->getDirDelimiter();

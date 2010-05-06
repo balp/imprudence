@@ -14,10 +14,11 @@ if (OPENAL)
   use_prebuilt_binary(openal)
   
   if (WINDOWS)
-    find_library(OPENAL_LIB
-      NAMES openal32
-      PATHS ${CMAKE_SOURCE_DIR}/../libraries/i686-win32/lib/release
+    set(OPENAL_LIB
+	  optimized ${ARCH_PREBUILT_DIRS_RELEASE}/openal32.lib
+	  debug ${ARCH_PREBUILT_DIRS_DEBUG}/openal32.lib
       )
+  
   elseif (DARWIN)
     # Look for for system's OpenAL.framework
     find_library(OPENAL_LIB
@@ -40,7 +41,7 @@ if (OPENAL)
   # OPENAL_INCLUDE_DIR
 
   if (DARWIN)
-    set(OPENAL_INCLUDE_DIR "${LIBS_PREBUILT_DIR}/include/AL")        
+    set(OPENAL_INCLUDE_DIR ${LIBS_PREBUILT_DIR}/${LL_ARCH_DIR}/include/AL)
   else (DARWIN)
     find_path(OPENAL_INCLUDE_DIR
       NAMES al.h
@@ -59,9 +60,9 @@ if (OPENAL)
   # ALUT_LIB
 
   if (WINDOWS)
-   find_library(ALUT_LIB
-     NAMES alut freealut
-     PATHS ${CMAKE_SOURCE_DIR}/../libraries/i686-win32/lib/release
+   set(ALUT_LIB
+	 optimized ${ARCH_PREBUILT_DIRS_RELEASE}/alut.lib
+	 debug ${ARCH_PREBUILT_DIRS_DEBUG}/alut.lib
      )
   elseif (DARWIN)
     find_library( ALUT_LIB
@@ -85,7 +86,7 @@ if (OPENAL)
 
   find_path(ALUT_INCLUDE_DIR
     NAMES alut.h
-    PATHS ${LIBS_PREBUILT_DIR}/include/AL
+    PATHS ${OPENAL_INCLUDE_DIR}
     )
 
   if (NOT ALUT_INCLUDE_DIR)

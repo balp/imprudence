@@ -11,6 +11,7 @@ include(ELFIO)
 include(FMOD)
 include(OPENAL)
 include(FindOpenGL)
+include(LLAddBuildTest)
 include(LLAudio)
 include(LLCharacter)
 include(LLCommon)
@@ -30,9 +31,11 @@ include(LScript)
 include(Linking)
 include(Mozlib)
 include(NDOF)
+include(GooglePerfTools)
 include(TemplateCheck)
 include(UI)
 include(UnixInstall)
+include(ViewerArtwork)
 include(ViewerMiscLibs)
 
 if (WINDOWS)
@@ -40,6 +43,7 @@ if (WINDOWS)
 endif (WINDOWS)
 
 include_directories(
+    ${DBUSGLIB_INCLUDE_DIRS}
     ${ELFIO_INCLUDE_DIR}
     ${LLAUDIO_INCLUDE_DIRS}
     ${LLCHARACTER_INCLUDE_DIRS}
@@ -61,12 +65,14 @@ include_directories(
     )
 
 set(viewer_SOURCE_FILES
+    emeraldboobutils.cpp
     floaterlogin.cpp
     hippoGridManager.cpp
     hippoLimits.cpp
     hippoRestRequest.cpp
     jcfloater_animation_list.cpp
     llagent.cpp
+    llagentaccess.cpp
     llagentdata.cpp
     llagentlanguage.cpp
     llagentpilot.cpp
@@ -143,7 +149,6 @@ set(viewer_SOURCE_FILES
     llfloaterchat.cpp
     llfloaterchatterbox.cpp
     llfloaterclassified.cpp
-    llfloaterclothing.cpp
     llfloatercolorpicker.cpp
     llfloatercustomize.cpp
     llfloaterdaycycle.cpp
@@ -152,13 +157,18 @@ set(viewer_SOURCE_FILES
     llfloaterenvsettings.cpp
     llfloaterevent.cpp
     llfloaterfriends.cpp
+    llfloaterfonttest.cpp
     llfloatergesture.cpp
     llfloatergodtools.cpp
     llfloatergroupinfo.cpp
     llfloatergroupinvite.cpp
     llfloatergroups.cpp
+    llfloaterhandler.cpp
     llfloaterhardwaresettings.cpp
+    llfloaterhtml.cpp
+    llfloaterhtmlcurrency.cpp
     llfloaterhtmlhelp.cpp
+    llfloaterhtmlsimple.cpp
     llfloaterhud.cpp
     llfloaterimagepreview.cpp
     llfloaterinspect.cpp
@@ -172,10 +182,12 @@ set(viewer_SOURCE_FILES
     llfloatermute.cpp
     llfloaternamedesc.cpp
     llfloaternewim.cpp
+    llfloaternotificationsconsole.cpp
     llfloaterobjectiminfo.cpp
     llfloateropenobject.cpp
     llfloaterparcel.cpp
     llfloaterpermissionsmgr.cpp
+    llfloaterperms.cpp
     llfloaterpostcard.cpp
     llfloaterpostprocess.cpp
     llfloaterpreference.cpp
@@ -183,6 +195,7 @@ set(viewer_SOURCE_FILES
     llfloaterregioninfo.cpp
     llfloaterreporter.cpp
     llfloaterscriptdebug.cpp
+    llfloatersearchreplace.cpp
     llfloatersellland.cpp
     llfloatersettingsdebug.cpp
     llfloatersnapshot.cpp
@@ -202,7 +215,6 @@ set(viewer_SOURCE_FILES
     llfollowcam.cpp
     llframestats.cpp
     llframestatview.cpp
-    llgenepool.cpp
     llgesturemgr.cpp
     llgivemoney.cpp
     llglsandbox.cpp
@@ -231,6 +243,7 @@ set(viewer_SOURCE_FILES
     lljoystickbutton.cpp
     lllandmarklist.cpp
     lllogchat.cpp
+    llloginhandler.cpp
     llmanip.cpp
     llmaniprotate.cpp
     llmanipscale.cpp
@@ -307,6 +320,7 @@ set(viewer_SOURCE_FILES
     llpreviewscript.cpp
     llpreviewsound.cpp
     llpreviewtexture.cpp
+    llproductinforequest.cpp
     llprogressview.cpp
     llregionposition.cpp
     llremoteparcelrequest.cpp
@@ -328,6 +342,10 @@ set(viewer_SOURCE_FILES
     lltexturecache.cpp
     lltexturectrl.cpp
     lltexturefetch.cpp
+    lltextureinfo.cpp
+    lltextureinfodetails.cpp
+    lltexturestats.cpp
+    lltexturestatsuploader.cpp
     lltextureview.cpp
     lltoolbar.cpp
     lltoolbrush.cpp
@@ -404,6 +422,7 @@ set(viewer_SOURCE_FILES
     llvlcomposition.cpp
     llvlmanager.cpp
     llvoavatar.cpp
+    llvoavatardefines.cpp
     llvocache.cpp
     llvoclouds.cpp
     llvograss.cpp
@@ -438,6 +457,7 @@ set(viewer_SOURCE_FILES
     llworldmapview.cpp
     llxmlrpctransaction.cpp
     noise.cpp
+    panelradar.cpp
     pipeline.cpp
     primbackup.cpp
     rlvhandler.cpp
@@ -467,12 +487,14 @@ endif (LINUX)
 set(viewer_HEADER_FILES
     CMakeLists.txt
     ViewerInstall.cmake
+    emeraldboobutils.h
     floaterlogin.h
     hippoGridManager.h
     hippoLimits.h
     hippoRestRequest.h
     jcfloater_animation_list.h
     llagent.h
+    llagentaccess.h
     llagentdata.h
     llagentlanguage.h
     llagentpilot.h
@@ -551,7 +573,6 @@ set(viewer_HEADER_FILES
     llfloaterchat.h
     llfloaterchatterbox.h
     llfloaterclassified.h
-    llfloaterclothing.h
     llfloatercolorpicker.h
     llfloatercustomize.h
     llfloaterdaycycle.h
@@ -559,14 +580,19 @@ set(viewer_HEADER_FILES
     llfloatereditui.h
     llfloaterenvsettings.h
     llfloaterevent.h
+    llfloaterfonttest.h
     llfloaterfriends.h
     llfloatergesture.h
     llfloatergodtools.h
     llfloatergroupinfo.h
     llfloatergroupinvite.h
     llfloatergroups.h
+    llfloaterhandler.h
     llfloaterhardwaresettings.h
+    llfloaterhtml.h
+    llfloaterhtmlcurrency.h
     llfloaterhtmlhelp.h
+    llfloaterhtmlsimple.h
     llfloaterhud.h
     llfloaterimagepreview.h
     llfloaterinspect.h
@@ -580,6 +606,7 @@ set(viewer_HEADER_FILES
     llfloatermute.h
     llfloaternamedesc.h
     llfloaternewim.h
+    llfloaternotificationsconsole.h
     llfloaterobjectiminfo.h
     llfloateropenobject.h
     llfloaterparcel.h
@@ -587,9 +614,11 @@ set(viewer_HEADER_FILES
     llfloaterpostcard.h
     llfloaterpostprocess.h
     llfloaterpreference.h
+    llfloaterperms.h
     llfloaterproperties.h
     llfloaterregioninfo.h
     llfloaterreporter.h
+    llfloatersearchreplace.h
     llfloaterscriptdebug.h
     llfloatersellland.h
     llfloatersettingsdebug.h
@@ -610,7 +639,6 @@ set(viewer_HEADER_FILES
     llfollowcam.h
     llframestats.h
     llframestatview.h
-    llgenepool.h
     llgesturemgr.h
     llgivemoney.h
     llgroupmgr.h
@@ -638,6 +666,7 @@ set(viewer_HEADER_FILES
     lllandmarklist.h
     lllightconstants.h
     lllogchat.h
+    llloginhandler.h
     llmanip.h
     llmaniprotate.h
     llmanipscale.h
@@ -715,6 +744,7 @@ set(viewer_HEADER_FILES
     llpreviewscript.h
     llpreviewsound.h
     llpreviewtexture.h
+    llproductinforequest.h
     llprogressview.h
     llregionposition.h
     llremoteparcelrequest.h
@@ -738,6 +768,10 @@ set(viewer_HEADER_FILES
     lltexturecache.h
     lltexturectrl.h
     lltexturefetch.h
+    lltextureinfo.h
+    lltextureinfodetails.h
+    lltexturestats.h
+    lltexturestatsuploader.h
     lltextureview.h
     lltool.h
     lltoolbar.h
@@ -814,6 +848,7 @@ set(viewer_HEADER_FILES
     llvlcomposition.h
     llvlmanager.h
     llvoavatar.h
+    llvoavatardefines.h
     llvocache.h
     llvoclouds.h
     llvograss.h
@@ -851,6 +886,7 @@ set(viewer_HEADER_FILES
     llxmlrpctransaction.h
     macmain.h
     noise.h
+    panelradar.h
     pipeline.h
     primbackup.h
     randgauss.h
@@ -907,7 +943,6 @@ endif (DARWIN)
 
 if (LINUX)
     LIST(APPEND viewer_SOURCE_FILES llappviewerlinux.cpp)
-    LIST(APPEND viewer_SOURCE_FILES llappviewerlinux_api_dbus.cpp)
     LIST(APPEND CMAKE_EXE_LINKER_FLAGS -Wl,--as-needed)
 
     set(viewer_LIBRARIES
@@ -935,13 +970,13 @@ if (WINDOWS)
         PROPERTIES
         COMPILE_FLAGS "/Ycllviewerprecompiledheaders.h"
         )        
-    foreach( src_file ${viewer_SOURCE_FILES} )
-        set_source_files_properties(
-            ${src_file}
-            PROPERTIES
-            COMPILE_FLAGS "/Yullviewerprecompiledheaders.h"
-            )        
-    endforeach( src_file ${viewer_SOURCE_FILES} )
+    #foreach( src_file ${viewer_SOURCE_FILES} )
+    #    set_source_files_properties(
+    #        ${src_file}
+    #        PROPERTIES
+    #        COMPILE_FLAGS "/Yullviewerprecompiledheaders.h"
+    #        )        
+    #endforeach( src_file ${viewer_SOURCE_FILES} )
     list(APPEND viewer_SOURCE_FILES llviewerprecompiledheaders.cpp)
     
     # Add resource files to the project.
@@ -952,12 +987,9 @@ if (WINDOWS)
         res/arrowcop.cur
         res/arrowcopmulti.cur
         res/arrowdrag.cur
-        res/bitmap2.bmp
         res/circleandline.cur
-        res/icon1.ico
+        res/imp_icon.ico
         res/imprudence_icon.png
-        res/install_icon.BMP
-        res/install_icon.ico
         res/llarrow.cur
         res/llarrowdrag.cur
         res/llarrowdragmulti.cur
@@ -977,8 +1009,6 @@ if (WINDOWS)
         res/lltooltranslate.cur
         res/lltoolzoomin.cur
         res/lltoolzoomout.cur
-        res/ll_icon.ico
-        res/loginbackground.bmp
         res/resource.h
         res/toolbuy.cur
         res/toolopen.cur
@@ -988,8 +1018,6 @@ if (WINDOWS)
         res/toolpickobject3.cur
         res/toolpipette.cur
         res/toolsit.cur
-        res/uninstall_icon.BMP
-        res/uninstall_icon.ico
         )
 
     set_source_files_properties(${viewer_RESOURCE_FILES}
@@ -1071,7 +1099,6 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_chat_history.xml
     skins/default/xui/en-us/floater_chatterbox.xml
     skins/default/xui/en-us/floater_choose_group.xml
-    skins/default/xui/en-us/floater_clothing.xml
     skins/default/xui/en-us/floater_color_picker.xml
     skins/default/xui/en-us/floater_critical.xml
     skins/default/xui/en-us/floater_customize.xml
@@ -1079,13 +1106,15 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_device_settings.xml
     skins/default/xui/en-us/floater_directory.xml
     skins/default/xui/en-us/floater_env_settings.xml
+    skins/default/xui/en-us/floater_font_test.xml
     skins/default/xui/en-us/floater_gesture.xml
     skins/default/xui/en-us/floater_god_tools.xml
     skins/default/xui/en-us/floater_group_info.xml
     skins/default/xui/en-us/floater_hardware_settings.xml
+    skins/default/xui/en-us/floater_html.xml
+    skins/default/xui/en-us/floater_html_simple.xml
     skins/default/xui/en-us/floater_hud.xml
     skins/default/xui/en-us/floater_image_preview.xml
-    skins/default/xui/en-us/floater_import.xml
     skins/default/xui/en-us/floater_im.xml
     skins/default/xui/en-us/floater_inspect.xml
     skins/default/xui/en-us/floater_instant_message_ad_hoc.xml
@@ -1109,12 +1138,15 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_name_description.xml
     skins/default/xui/en-us/floater_new_im.xml
     skins/default/xui/en-us/floater_new_outfit_dialog.xml
+    skins/default/xui/en-us/floater_notifications_console.xml
+    skins/default/xui/en-us/floater_notification.xml
     skins/default/xui/en-us/floater_object_im_info.xml
     skins/default/xui/en-us/floater_openobject.xml
     skins/default/xui/en-us/floater_pay_object.xml
     skins/default/xui/en-us/floater_pay.xml
     skins/default/xui/en-us/floater_postcard.xml
     skins/default/xui/en-us/floater_post_process.xml
+    skins/default/xui/en-us/floater_perm_prefs.xml
     skins/default/xui/en-us/floater_preferences.xml
     skins/default/xui/en-us/floater_preview_animation.xml
     skins/default/xui/en-us/floater_preview_classified.xml
@@ -1144,6 +1176,7 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_sim_release_message.xml
     skins/default/xui/en-us/floater_snapshot.xml
     skins/default/xui/en-us/floater_sound_preview.xml
+    skins/default/xui/en-us/floater_statistics.xml
     skins/default/xui/en-us/floater_telehub.xml
     skins/default/xui/en-us/floater_test.xml
     skins/default/xui/en-us/floater_texture_ctrl.xml
@@ -1156,6 +1189,12 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/floater_wearable_save_as.xml
     skins/default/xui/en-us/floater_windlight_options.xml
     skins/default/xui/en-us/floater_world_map.xml
+    skins/default/xui/en-us/fonts.xml
+    skins/default/xui/en-us/legacy_menu_pie_attachment.xml
+	skins/default/xui/en-us/legacy_menu_pie_avatar.xml
+	skins/default/xui/en-us/legacy_menu_pie_land.xml
+	skins/default/xui/en-us/legacy_menu_pie_object.xml
+	skins/default/xui/en-us/legacy_menu_pie_self.xml
     skins/default/xui/en-us/menu_inventory.xml
     skins/default/xui/en-us/menu_login.xml
     skins/default/xui/en-us/menu_mini_map.xml
@@ -1163,11 +1202,13 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/menu_pie_avatar.xml
     skins/default/xui/en-us/menu_pie_hud.xml
     skins/default/xui/en-us/menu_pie_land.xml
+    skins/default/xui/en-us/menu_mini_map.xml
     skins/default/xui/en-us/menu_pie_object.xml
     skins/default/xui/en-us/menu_pie_self.xml
     skins/default/xui/en-us/menu_slurl.xml
     skins/default/xui/en-us/menu_viewer.xml
     skins/default/xui/en-us/mime_types.xml
+    skins/default/xui/en-us/notifications.xml
     skins/default/xui/en-us/notify.xml
     skins/default/xui/en-us/panel_audio_device.xml
     skins/default/xui/en-us/panel_audio.xml
@@ -1190,13 +1231,13 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/panel_groups.xml
     skins/default/xui/en-us/panel_group_voting.xml
     skins/default/xui/en-us/panel_group.xml
-    skins/default/xui/en-us/panel_land_covenant.xml
     skins/default/xui/en-us/panel_login.xml
     skins/default/xui/en-us/panel_master_volume.xml
     skins/default/xui/en-us/panel_media_controls.xml
     skins/default/xui/en-us/panel_media_remote_expanded.xml
     skins/default/xui/en-us/panel_media_remote.xml
     skins/default/xui/en-us/panel_mini_map.xml
+    skins/default/xui/en-us/panel_notifications_channel.xml
     skins/default/xui/en-us/panel_overlaybar.xml
     skins/default/xui/en-us/panel_place_small.xml
     skins/default/xui/en-us/panel_place.xml
@@ -1208,8 +1249,11 @@ set(viewer_XUI_FILES
     skins/default/xui/en-us/panel_preferences_input.xml
     skins/default/xui/en-us/panel_preferences_network.xml
     skins/default/xui/en-us/panel_preferences_popups.xml
+    skins/default/xui/en-us/panel_preferences_skins.xml
     skins/default/xui/en-us/panel_preferences_voice.xml
     skins/default/xui/en-us/panel_preferences_web.xml
+    skins/default/xui/en-us/panel_progress.xml
+    skins/default/xui/en-us/panel_radar.xml
     skins/default/xui/en-us/panel_region_covenant.xml
     skins/default/xui/en-us/panel_region_debug.xml
     skins/default/xui/en-us/panel_region_estate.xml
@@ -1315,7 +1359,7 @@ if (FMOD)
         PROPERTIES
         BUILD_WITH_INSTALL_RPATH 1
         INSTALL_NAME_DIR "@executable_path/../Resources"
-        LINK_FLAGS "-unexported_symbols_list ../newview/fmod_hidden_symbols.exp"
+        LINK_FLAGS "-unexported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/fmod_hidden_symbols.exp"
         )
     endif (DARWIN)
     set(FMODWRAPPER_LIBRARY fmodwrapper)
@@ -1340,6 +1384,14 @@ check_message_template(${VIEWER_BINARY_NAME})
 set(PACKAGE OFF CACHE BOOL
     "Add a package target that builds an installer package.")
 
+
+add_custom_target(
+  ChangeLog ALL
+  COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/make_changelog.py
+  COMMENT "Generating ChangeLog.txt."
+  )
+
+
 if (WINDOWS)
     if(MSVC71)
         set(release_flags "/MAP:Release/${VIEWER_BINARY_NAME}.map /MAPINFO:LINES")
@@ -1349,8 +1401,8 @@ if (WINDOWS)
     
     set_target_properties(${VIEWER_BINARY_NAME}
         PROPERTIES
-        LINK_FLAGS "/debug /NODEFAULTLIB:MSVCRT /SUBSYSTEM:WINDOWS"
-        LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:MSVCRTD"
+        LINK_FLAGS "/debug /NODEFAULTLIB:LIBCMT /SUBSYSTEM:WINDOWS"
+        LINK_FLAGS_DEBUG "/NODEFAULTLIB:\"LIBCMT;LIBCMTD;MSVCRT\""
         LINK_FLAGS_RELEASE ${release_flags}
         )
 
@@ -1409,7 +1461,7 @@ if (WINDOWS)
           --source=${CMAKE_CURRENT_SOURCE_DIR}
               --artwork=${ARTWORK_DIR}
               --build=${CMAKE_CURRENT_BINARY_DIR}
-              --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}
+              --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/package
               --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/touched.bat
         DEPENDS ${VIEWER_BINARY_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
         )
@@ -1420,7 +1472,6 @@ if (WINDOWS)
 endif (WINDOWS)
 
 target_link_libraries(${VIEWER_BINARY_NAME}
-    ${NDOF_LIBRARY}
     ${LLAUDIO_LIBRARIES}
     ${LLCHARACTER_LIBRARIES}
     ${LLIMAGE_LIBRARIES}
@@ -1438,6 +1489,7 @@ target_link_libraries(${VIEWER_BINARY_NAME}
     ${LSCRIPT_LIBRARIES}
     ${LLMATH_LIBRARIES}
     ${LLCOMMON_LIBRARIES}
+    ${NDOF_LIBRARY}
     ${viewer_LIBRARIES}
     ${BOOST_PROGRAM_OPTIONS_LIBRARY}
     ${BOOST_REGEX_LIBRARY}
@@ -1491,7 +1543,7 @@ if (LINUX)
 
   if (NOT INSTALL)
     add_custom_target(package ALL DEPENDS ${product}.tar.bz2)
-    add_dependencies(package linux-crash-logger-stripped)
+    add_dependencies(package linux-crash-logger-strip-target)
   endif (NOT INSTALL)
 endif (LINUX)
 
@@ -1548,9 +1600,30 @@ if (DARWIN)
           ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
       )
 
+
+      add_custom_command(
+        TARGET package POST_BUILD
+        COMMAND ${PYTHON_EXECUTABLE}
+        ARGS
+          ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
+          --grid=${GRID}
+          --configuration=${CMAKE_CFG_INTDIR}
+          --channel=${VIEWER_CHANNEL}
+          --login_channel=${VIEWER_LOGIN_CHANNEL}
+          --source=${CMAKE_CURRENT_SOURCE_DIR}
+          --artwork=${ARTWORK_DIR}
+          --build=${CMAKE_CURRENT_BINARY_DIR}
+          --dest=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${product}.app
+          --touch=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/.${product}.touched
+        DEPENDS
+          ${CMAKE_CURRENT_SOURCE_DIR}/viewer_manifest.py
+      )
+
   endif (PACKAGE)
 endif (DARWIN)
 
 if (INSTALL)
   include(${CMAKE_CURRENT_SOURCE_DIR}/ViewerInstall.cmake)
 endif (INSTALL)
+
+ADD_VIEWER_BUILD_TEST(llagentaccess viewer)

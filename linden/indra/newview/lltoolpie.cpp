@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -187,8 +188,7 @@ BOOL LLToolPie::pickAndShowMenu(BOOL always_show)
 		switch(mClickAction)
 		{
 		case CLICK_ACTION_TOUCH:
-		default:
-			// nothing
+			// touch behavior down below...
 			break;
 		case CLICK_ACTION_SIT:
 			if ((gAgent.getAvatarObject() != NULL) && (!gAgent.getAvatarObject()->mIsSitting) && !gSavedSettings.getBOOL("BlockClickSit")) // agent not already sitting
@@ -204,18 +204,33 @@ BOOL LLToolPie::pickAndShowMenu(BOOL always_show)
 				// pay event goes to object actually clicked on
 				mClickActionObject = object;
 				mLeftClickSelection = LLToolSelect::handleObjectSelection(mPick, FALSE, TRUE);
+				if (LLSelectMgr::getInstance()->selectGetAllValid())
+				{
+					// call this right away, since we have all the info we need to continue the action
+					selectionPropertiesReceived();
+				}
 				return TRUE;
 			}
 			break;
 		case CLICK_ACTION_BUY:
 			mClickActionObject = parent;
 			mLeftClickSelection = LLToolSelect::handleObjectSelection(mPick, FALSE, TRUE, TRUE);
+			if (LLSelectMgr::getInstance()->selectGetAllValid())
+			{
+				// call this right away, since we have all the info we need to continue the action
+				selectionPropertiesReceived();
+			}
 			return TRUE;
 		case CLICK_ACTION_OPEN:
 			if (parent && parent->allowOpen())
 			{
 				mClickActionObject = parent;
 				mLeftClickSelection = LLToolSelect::handleObjectSelection(mPick, FALSE, TRUE, TRUE);
+				if (LLSelectMgr::getInstance()->selectGetAllValid())
+				{
+					// call this right away, since we have all the info we need to continue the action
+					selectionPropertiesReceived();
+				}
 			}
 			return TRUE;
 		case CLICK_ACTION_PLAY:
@@ -225,6 +240,9 @@ BOOL LLToolPie::pickAndShowMenu(BOOL always_show)
 			// mClickActionObject = object;
 			handle_click_action_open_media(object);
 			return TRUE;
+		default:
+			// nothing
+			break;
 		}
 	}
 
@@ -676,51 +694,63 @@ BOOL LLToolPie::handleDoubleClick(S32 x, S32 y, MASK mask)
 		llinfos << "LLToolPie handleDoubleClick (becoming mouseDown)" << llendl;
 	}
 
-	if (gSavedSettings.getBOOL("DoubleClickAutoPilot") || gSavedSettings.getBOOL("DoubleClickTeleport"))
+	LLViewerObject *object = mPick.getObject();
+	if(object)
+	{
+		//Zwagoth: No more teleport to HUD attachments. >:o
+		if (object->isHUDAttachment())
+		{
+			LL_DEBUGS("DoubleClicks") << "Double clicked HUD" << LL_ENDL;
+			return FALSE;
+		}
+
+		//Armin: No more teleport to other attachments or Avatars including self ...
+		if (object->isAttachment())
+		{
+			LL_DEBUGS("DoubleClicks") << "Double clicked attachment (not HUD)" << LL_ENDL;
+			return FALSE;
+		}
+
+		if (object->isAvatar()&& object == gAgent.getAvatarObject() )
+		{
+			LL_DEBUGS("DoubleClicks") << "Double clicked self" << LL_ENDL;
+			return FALSE;
+		}
+
+		if (object->isAvatar())
+		{
+			LL_DEBUGS("DoubleClicks") << "Double clicked other Avatar" << LL_ENDL;
+			return FALSE;// or what about open profile or IM session or ...
+		}
+	}
+
+	std::string action = gSavedSettings.getString("DoubleClickAction");
+	LLStringUtil::toLower(action);
+	if (action == "none")
+	{
+		return FALSE;
+	}
+	else if (action == "go")
 	{
 		if (mPick.mPickType == LLPickInfo::PICK_LAND
 			&& !mPick.mPosGlobal.isExactlyZero())
 		{
-			handle_go_to();
+			handle_go_to_confirm();
 			return TRUE;
 		}
 		else if (mPick.mObjectID.notNull()
 				 && !mPick.mPosGlobal.isExactlyZero())
 		{
-			//Zwagoth: No more teleport to HUD attachments. >:o
-			if(mPick.getObject().notNull() && mPick.getObject()->isHUDAttachment())
-				return FALSE;
-
-			handle_go_to();
+			handle_go_to_confirm();
 			return TRUE;
 		}
 	}
+	else
+	{
+		llwarns << "Unhandled DoubleClickAction setting: " << action << llendl;
+	}
 
 	return FALSE;
-
-	/* JC - don't do go-there, because then double-clicking on physical
-	objects gets you into trouble.
-
-	// If double-click on object or land, go there.
-	LLViewerObject *object = gViewerWindow->getLastPick().getObject();
-	if (object)
-	{
-		if (object->isAvatar())
-		{
-			LLFloaterAvatarInfo::showFromAvatar(object->getID());
-		}
-		else
-		{
-			handle_go_to(NULL);
-		}
-	}
-	else if (!gLastHitPosGlobal.isExactlyZero())
-	{
-		handle_go_to(NULL);
-	}
-
-	return TRUE;
-	*/
 }
 
 

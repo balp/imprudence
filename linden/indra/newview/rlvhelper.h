@@ -9,6 +9,15 @@
 #include "llwlparamset.h"
 #include "rlvdefines.h"
 
+#ifdef LL_WINDOWS
+	#pragma warning (push)
+	#pragma warning (disable : 4702) // warning C4702: unreachable code
+#endif
+#include <boost/variant.hpp>
+#ifdef LL_WINDOWS
+	#pragma warning (pop)
+#endif
+
 // ============================================================================
 // RlvCommand
 //
@@ -28,10 +37,12 @@ public:
 	const std::string& getOption() const        { return m_strOption; }
 	const std::string& getParam() const         { return m_strParam; }
 	ERlvParamType      getParamType() const     { return m_eParamType; }
+	bool               isStrict() const			{ return m_fStrict; }
 	bool               isValid() const          { return m_fValid; }
 
 	static ERlvBehaviour      getBehaviourFromString(const std::string& strBhvr);
 	static const std::string& getStringFromBehaviour(ERlvBehaviour eBhvr);
+	static bool               hasStrictVariant(ERlvBehaviour eBhvr);
 
 	static void initLookupTable();
 protected:
@@ -50,6 +61,7 @@ protected:
 	bool         	m_fValid;
 	std::string  	m_strBehaviour;
 	ERlvBehaviour	m_eBehaviour;
+	bool            m_fStrict;
 	std::string  	m_strOption;
 	std::string  	m_strParam;
 	ERlvParamType	m_eParamType;
@@ -78,10 +90,8 @@ public:
 	bool removeCommand(const RlvCommand& rlvCmd);
 
 	std::string getStatusString(const std::string& strMatch) const;
-	bool        hasBehaviour(ERlvBehaviour eBehaviour) const;
-	bool        hasBehaviour(const std::string& strBehaviour) const;
-	bool        hasBehaviour(ERlvBehaviour eBehaviour, const std::string& strOption) const;
-	bool        hasBehaviour(const std::string& strBehaviour, const std::string& strOption) const;
+	bool        hasBehaviour(ERlvBehaviour eBehaviour, bool fStrictOnly) const;
+	bool        hasBehaviour(ERlvBehaviour eBehaviour, const std::string& strOption, bool fStrictOnly) const;
 
 	const rlv_command_list_t* getCommandList() const { return &m_Commands; }
 
@@ -96,6 +106,80 @@ protected:
 	rlv_command_list_t m_Commands;			// List of behaviours held by this object (in the order they were received)
 
 	friend class RlvHandler;
+};
+
+// ============================================================================
+// RlvAttachmentManager - Self contained helper class that automagically takes care of the nitty gritty of force detaching/reattaching
+//
+
+class RlvAttachmentManager
+{
+public:
+	RlvAttachmentManager() : m_pTimer(NULL) {}
+	~RlvAttachmentManager() { delete m_pTimer; }
+
+	/*
+	 * Member functions
+	 */
+public:
+	static void forceAttach(const LLUUID& idItem, S32 idxAttachPt);
+	static void forceDetach(LLViewerJointAttachment* pAttachPt);
+protected:
+	void startTimer() { if (!m_pTimer) m_pTimer = new RlvAttachmentManagerTimer(this); }
+
+	/*
+	 * Event handlers
+	 */
+public:
+	void onAttach(LLViewerJointAttachment* pAttachPt);
+	void onDetach(LLViewerJointAttachment* pAttachPt);
+	void onSavedAssetIntoInventory(const LLUUID& idItem);
+	BOOL onTimer();
+	void onWearAttachment(const LLUUID& idItem);
+
+	/*
+	 * Member variables
+	 */
+protected:
+	typedef std::map<S32, LLUUID> rlv_detach_map_t;
+	rlv_detach_map_t m_PendingDetach;
+
+	struct RlvReattachInfo
+	{
+		RlvReattachInfo(const LLUUID& itemid) : idItem(itemid), fAssetSaved(false), tsAttach(0) 
+			{ tsDetach = LLFrameTimer::getElapsedSeconds(); }
+
+		LLUUID idItem;
+		bool   fAssetSaved;
+		F64    tsDetach;
+		F64    tsAttach;
+	protected:
+		RlvReattachInfo();
+	};
+	typedef std::map<S32, RlvReattachInfo> rlv_attach_map_t;
+	rlv_attach_map_t m_PendingAttach;
+
+	struct RlvWearInfo
+	{
+		RlvWearInfo(LLUUID itemid) : idItem(itemid) { tsWear = LLFrameTimer::getElapsedSeconds(); }
+
+		LLUUID idItem;
+		F64    tsWear;
+		std::map<S32, LLUUID> attachPts;
+	protected:
+		RlvWearInfo();
+	};
+	typedef std::map<LLUUID, RlvWearInfo> rlv_wear_map_t;
+	rlv_wear_map_t   m_PendingWear;
+
+	class RlvAttachmentManagerTimer : public LLEventTimer
+	{
+	public:
+		RlvAttachmentManagerTimer(RlvAttachmentManager* pMgr) : LLEventTimer(10), m_pMgr(pMgr) {}
+		virtual ~RlvAttachmentManagerTimer() { m_pMgr->m_pTimer = NULL; }
+		virtual BOOL tick() { return m_pMgr->onTimer(); }
+		RlvAttachmentManager* m_pMgr;
+	} *m_pTimer;
 };
 
 // ============================================================================
@@ -190,6 +274,24 @@ private:
 typedef std::list<RlvRetainedCommand> rlv_retained_list_t;
 
 // ============================================================================
+// RlvException
+//
+
+typedef boost::variant<std::string, LLUUID, S32, ERlvBehaviour> RlvExceptionOption;
+
+struct RlvException
+{
+public:
+	LLUUID				idObject;    // UUID of the object that added the exception
+	ERlvBehaviour		eBehaviour;  // Behaviour the exception applies to
+	RlvExceptionOption	varOption;   // Exception data (type is dependent on eBehaviour)
+
+	RlvException(const LLUUID& idObj, ERlvBehaviour eBhvr, const RlvExceptionOption& option) : idObject(idObj), eBehaviour(eBhvr), varOption(option) {}
+private:
+	RlvException();
+};
+
+// ============================================================================
 // RlvWLSnapshot
 //
 
@@ -225,7 +327,7 @@ public:
 	static BOOL getDebug()					{ return rlvGetSettingBOOL(RLV_SETTING_DEBUG, FALSE); }
 	static BOOL getForbidGiveToRLV()		{ return rlvGetSettingBOOL(RLV_SETTING_FORBIDGIVETORLV, TRUE); }
 
-	static BOOL getEnableWear()				{ return rlvGetSettingBOOL(RLV_SETTING_ENABLEWEAR, FALSE); }
+	static BOOL getEnableWear();
 	static BOOL getHideLockedLayers()		{ return rlvGetSettingBOOL(RLV_SETTING_HIDELOCKEDLAYER, FALSE); }		
 	static BOOL getHideLockedAttach()		{ return rlvGetSettingBOOL(RLV_SETTING_HIDELOCKEDATTACH, FALSE); }
 	static BOOL getHideLockedInventory()	{ return rlvGetSettingBOOL(RLV_SETTING_HIDELOCKEDINVENTORY, FALSE); }
@@ -267,7 +369,10 @@ public:
 
 struct RlvSelectHasLockedAttach : public LLSelectedNodeFunctor
 {
+	RlvSelectHasLockedAttach(ERlvLockMask eLock) : m_eLock(eLock) {}
 	virtual bool apply(LLSelectNode* pNode);
+protected:
+	ERlvLockMask m_eLock;
 };
 
 struct RlvSelectIsOwnedByOrGroupOwned : public LLSelectedNodeFunctor
@@ -290,12 +395,12 @@ struct RlvSelectIsSittingOn : public LLSelectedNodeFunctor
 
 BOOL rlvAttachToEnabler(void* pParam);
 bool rlvCanDeleteOrReturn();
+BOOL rlvEnableWearEnabler(void* pParam);
 S32  rlvGetDirectDescendentsCount(const LLInventoryCategory* pFolder, LLAssetType::EType type);
 bool rlvIsEmote(const std::string& strUTF8Text);
 bool rlvIsValidReplyChannel(S32 nChannel);
 bool rlvIsWearingItem(const LLInventoryItem* pItem);
 
-void rlvForceDetach(LLViewerJointAttachment* pAttachPt);
 void rlvSendBusyMessage(const LLUUID& idTo, const std::string& strMsg, const LLUUID& idSession = LLUUID::null);
 bool rlvSendChatReply(const std::string& strChannel, const std::string& strReply);
 bool rlvSendChatReply(S32 nChannel, const std::string& strReply);
@@ -341,6 +446,22 @@ inline void RlvCurrentlyWorn::fetchItem(const LLUUID& idItem)
 		LLInventoryFetchObserver::item_ref_t idItems; 
 		idItems.push_back(idItem);
 		fetchItems(idItems);
+	}
+}
+
+inline bool RlvCommand::hasStrictVariant(ERlvBehaviour eBhvr)
+{
+	switch (eBhvr)
+	{
+		case RLV_BHVR_RECVCHAT:
+		case RLV_BHVR_RECVEMOTE:
+		case RLV_BHVR_RECVIM:
+		case RLV_BHVR_SENDIM:
+		case RLV_BHVR_TPLURE:
+		case RLV_BHVR_SENDCHANNEL:
+			return true;
+		default:
+			return false;
 	}
 }
 

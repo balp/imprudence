@@ -19,7 +19,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -97,7 +98,16 @@ LLFloaterChatterBox::LLFloaterChatterBox(const LLSD& seed) :
 {
 	mAutoResize = FALSE;
 
-	LLUICtrlFactory::getInstance()->buildFloater(this, "floater_chatterbox.xml", NULL, FALSE);
+	// check if vertical tabs is selected
+	if (gSavedSettings.getBOOL("VerticalIMTabs"))
+	{
+		LLUICtrlFactory::getInstance()->buildFloater(this, "floater_chatterbox_vertical.xml", NULL, FALSE);
+	}
+	else
+	{
+		LLUICtrlFactory::getInstance()->buildFloater(this, "floater_chatterbox.xml", NULL, FALSE);
+	}
+	
 	if (gSavedSettings.getBOOL("ContactsTornOff"))
 	{
 		LLFloaterMyFriends* floater_contacts = LLFloaterMyFriends::getInstance(0);

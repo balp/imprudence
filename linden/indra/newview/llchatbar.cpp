@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -153,7 +154,7 @@ BOOL LLChatBar::postBuild()
 		mInputEditor->setPassDelete(TRUE);
 		mInputEditor->setReplaceNewlinesWithSpaces(FALSE);
 
-		mInputEditor->setMaxTextLength(1023);
+		mInputEditor->setMaxTextLength(DB_CHAT_MSG_STR_LEN);
 		mInputEditor->setEnableLineHistory(TRUE);
 	}
 
@@ -565,7 +566,8 @@ void LLChatBar::onInputEditorKeystroke( LLLineEditor* caller, void* userdata )
 		{
 			if (self->mInputEditor)
 			{
-				self->mInputEditor->setText(utf8_out_str);
+				std::string rest_of_match = utf8_out_str.substr(utf8_trigger.size());
+				self->mInputEditor->setText(utf8_trigger + rest_of_match); // keep original capitalization for user-entered part
 				S32 outlength = self->mInputEditor->getLength(); // in characters
 			
 				// Select to end of line, starting from the character
@@ -622,8 +624,12 @@ void LLChatBar::sendChatFromViewer(const LLWString &wtext, EChatType type, BOOL 
 
 	LLWString out_text = stripChannelNumber(wtext, &channel);
 	std::string utf8_out_text = wstring_to_utf8str(out_text);
-	std::string utf8_text = wstring_to_utf8str(wtext);
+	if (!utf8_out_text.empty())
+	{
+		utf8_out_text = utf8str_truncate(utf8_out_text, MAX_MSG_STR_LEN);
+	}
 
+	std::string utf8_text = wstring_to_utf8str(wtext);
 	utf8_text = utf8str_trim(utf8_text);
 	if (!utf8_text.empty())
 	{
@@ -634,11 +640,11 @@ void LLChatBar::sendChatFromViewer(const LLWString &wtext, EChatType type, BOOL 
 	if ( (0 == channel) && (rlv_handler_t::isEnabled()) )
 	{
 		// Adjust the (public) chat "volume" on chat and gestures (also takes care of playing the proper animation)
-		if ( ((CHAT_TYPE_SHOUT == type) || (CHAT_TYPE_NORMAL == type)) && (gRlvHandler.hasBehaviour("chatnormal")) )
+		if ( ((CHAT_TYPE_SHOUT == type) || (CHAT_TYPE_NORMAL == type)) && (gRlvHandler.hasBehaviour(RLV_BHVR_CHATNORMAL)) )
 			type = CHAT_TYPE_WHISPER;
-		else if ( (CHAT_TYPE_SHOUT == type) && (gRlvHandler.hasBehaviour("chatshout")) )
+		else if ( (CHAT_TYPE_SHOUT == type) && (gRlvHandler.hasBehaviour(RLV_BHVR_CHATSHOUT)) )
 			type = CHAT_TYPE_NORMAL;
-		else if ( (CHAT_TYPE_WHISPER == type) && (gRlvHandler.hasBehaviour("chatwhisper")) )
+		else if ( (CHAT_TYPE_WHISPER == type) && (gRlvHandler.hasBehaviour(RLV_BHVR_CHATWHISPER)) )
 			type = CHAT_TYPE_NORMAL;
 
 		animate &= !gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT);
@@ -692,11 +698,11 @@ void send_chat_from_viewer(std::string utf8_out_text, EChatType type, S32 channe
 		if (0 == channel)
 		{
 			// (We already did this before, but LLChatHandler::handle() calls this directly)
-			if ( ((CHAT_TYPE_SHOUT == type) || (CHAT_TYPE_NORMAL == type)) && (gRlvHandler.hasBehaviour("chatnormal")) )
+			if ( ((CHAT_TYPE_SHOUT == type) || (CHAT_TYPE_NORMAL == type)) && (gRlvHandler.hasBehaviour(RLV_BHVR_CHATNORMAL)) )
 				type = CHAT_TYPE_WHISPER;
-			else if ( (CHAT_TYPE_SHOUT == type) && (gRlvHandler.hasBehaviour("chatshout")) )
+			else if ( (CHAT_TYPE_SHOUT == type) && (gRlvHandler.hasBehaviour(RLV_BHVR_CHATSHOUT)) )
 				type = CHAT_TYPE_NORMAL;
-			else if ( (CHAT_TYPE_WHISPER == type) && (gRlvHandler.hasBehaviour("chatwhisper")) )
+			else if ( (CHAT_TYPE_WHISPER == type) && (gRlvHandler.hasBehaviour(RLV_BHVR_CHATWHISPER)) )
 				type = CHAT_TYPE_NORMAL;
 
 			// Redirect chat if needed
@@ -707,20 +713,20 @@ void send_chat_from_viewer(std::string utf8_out_text, EChatType type, S32 channe
 			}
 
 			// Filter public chat if sendchat restricted (and filter anything that redirchat didn't redirect)
-			if ( (gRlvHandler.hasBehaviour("sendchat")) || (gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT)) )
+			if ( (gRlvHandler.hasBehaviour(RLV_BHVR_SENDCHAT)) || (gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT)) )
 				gRlvHandler.filterChat(utf8_out_text, true);
 		}
 		else
 		{
 			// Don't allow chat on a non-public channel if sendchannel restricted (unless the channel is an exception)
-			if ( (gRlvHandler.hasBehaviour("sendchannel")) && (!gRlvHandler.hasBehaviour("sendchannel", llformat("%d", channel))) )
+			if ( (gRlvHandler.hasBehaviour(RLV_BHVR_SENDCHANNEL)) && (!gRlvHandler.isException(RLV_BHVR_SENDCHANNEL, channel)) )
 				return;
 
 			// Don't allow chat on debug channel if @sendchat, @redirchat or @rediremote restricted (shows as public chat on viewers)
 			if (channel >= CHAT_CHANNEL_DEBUG)
 			{
 				bool fIsEmote = rlvIsEmote(utf8_out_text);
-				if ( (gRlvHandler.hasBehaviour("sendchat")) || 
+				if ( (gRlvHandler.hasBehaviour(RLV_BHVR_SENDCHAT)) || 
 					 ((!fIsEmote) && (gRlvHandler.hasBehaviour(RLV_BHVR_REDIRCHAT))) || 
 					 ((fIsEmote) && (gRlvHandler.hasBehaviour(RLV_BHVR_REDIREMOTE))) )
 				{
@@ -792,10 +798,11 @@ class LLChatHandler : public LLCommandHandler
 {
 public:
 	// not allowed from outside the app
-	LLChatHandler() : LLCommandHandler("chat", false) { }
+	LLChatHandler() : LLCommandHandler("chat", true) { }
 
     // Your code here
-	bool handle(const LLSD& tokens, const LLSD& queryMap)
+	bool handle(const LLSD& tokens, const LLSD& query_map,
+				LLWebBrowserCtrl* web)
 	{
 		if (tokens.size() < 2) return false;
 		S32 channel = tokens[0].asInteger();

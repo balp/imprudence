@@ -18,7 +18,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -46,6 +47,7 @@
 #include "llviewercontrol.h"
 #include "llfloateravatarinfo.h"
 #include "llfloatermap.h"
+#include "panelradar.h"
 #include "llfloaterworldmap.h"
 #include "llframetimer.h"
 #include "llmutelist.h"
@@ -358,7 +360,7 @@ void LLNetMap::draw()
 			pos_map = globalPosToView(positions[i], rotate_map);
 			
 			// Save this entry to draw last
-			if (LLFloaterMap::getSelected() == avatar_ids[i])
+			if (LLFloaterMap::getInstance()->getRadar()->getSelected() == avatar_ids[i])
 			{
 				selected = i;
 				continue;
@@ -370,7 +372,7 @@ void LLNetMap::draw()
 				{
 					glyph_color = muted_color;
 				}
-				else if (LLFloaterMap::isImpDev(avatar_ids[i]))
+				else if (PanelRadar::isImpDev(avatar_ids[i]))
 				{
 					glyph_color = imp_dev_color;
 				}
@@ -514,7 +516,7 @@ void LLNetMap::draw()
 
 	LLView::draw();
 
-	LLFloaterMap::updateRadar();
+	LLFloaterMap::getInstance()->getRadar()->populateRadar();
 }
 
 void LLNetMap::reshape(S32 width, S32 height, BOOL called_from_parent)
@@ -655,6 +657,8 @@ BOOL LLNetMap::handleToolTip( S32 x, S32 y, std::string& msg, LLRect* sticky_rec
 		buffer = region->getHost().getString();
 		msg.append(buffer);
 #endif
+		msg.append("\n");
+		msg.append(getToolTip());
 
 		S32 SLOP = 4;
 		localPointToScreen( 

@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -54,13 +55,9 @@ std::string LLImage::sLastErrorMessage;
 LLMutex* LLImage::sMutex = NULL;
 
 //static
-void LLImage::initClass(LLWorkerThread* workerthread)
+void LLImage::initClass()
 {
 	sMutex = new LLMutex(NULL);
-	if (workerthread)
-	{
-		LLImageWorker::initImageWorker(workerthread);
-	}
 	LLImageJ2C::openDSO();
 }
 
@@ -68,7 +65,6 @@ void LLImage::initClass(LLWorkerThread* workerthread)
 void LLImage::cleanupClass()
 {
 	LLImageJ2C::closeDSO();
-	LLImageWorker::cleanupImageWorker();
 	delete sMutex;
 	sMutex = NULL;
 }
@@ -1136,7 +1132,7 @@ file_extensions[] =
 	{ "dxt", IMG_CODEC_DXT },
 	{ "png", IMG_CODEC_PNG }
 };
-#define NUM_FILE_EXTENSIONS sizeof(file_extensions)/sizeof(file_extensions[0])
+#define NUM_FILE_EXTENSIONS LL_ARRAY_SIZE(file_extensions)
 
 static std::string find_file(std::string &name, S8 *codec)
 {
@@ -1241,25 +1237,28 @@ bool LLImageRaw::createFromFile(const std::string &filename, bool j2c_lowest_mip
 	ifs.read ((char*)buffer, length);	/* Flawfinder: ignore */
 	ifs.close();
 	
-	image->updateData();
-	
-	if (j2c_lowest_mip_only && codec == IMG_CODEC_J2C)
-	{
-		S32 width = image->getWidth();
-		S32 height = image->getHeight();
-		S32 discard_level = 0;
-		while (width > 1 && height > 1 && discard_level < MAX_DISCARD_LEVEL)
-		{
-			width >>= 1;
-			height >>= 1;
-			discard_level++;
-		}
-		((LLImageJ2C *)((LLImageFormatted*)image))->setDiscardLevel(discard_level);
-	}
-	
-	BOOL success = image->decode(this, 100000.0f);
-	image = NULL; // deletes image
+	BOOL success;
 
+	success = image->updateData();
+	if (success)
+	{
+		if (j2c_lowest_mip_only && codec == IMG_CODEC_J2C)
+		{
+			S32 width = image->getWidth();
+			S32 height = image->getHeight();
+			S32 discard_level = 0;
+			while (width > 1 && height > 1 && discard_level < MAX_DISCARD_LEVEL)
+			{
+				width >>= 1;
+				height >>= 1;
+				discard_level++;
+			}
+			((LLImageJ2C *)((LLImageFormatted*)image))->setDiscardLevel(discard_level);
+		}
+		success = image->decode(this, 100000.0f);
+	}
+
+	image = NULL; // deletes image
 	if (!success)
 	{
 		deleteData();
@@ -1512,7 +1511,9 @@ BOOL LLImageFormatted::load(const std::string &filename)
 	resetLastError();
 
 	S32 file_size = 0;
-	apr_file_t* apr_file = ll_apr_file_open(filename, LL_APR_RB, &file_size);
+	LLAPRFile infile ;
+	infile.open(filename, LL_APR_RB, LLAPRFile::global, &file_size);
+	apr_file_t* apr_file = infile.getFileHandle();
 	if (!apr_file)
 	{
 		setLastError("Unable to open file for reading", filename);
@@ -1521,7 +1522,6 @@ BOOL LLImageFormatted::load(const std::string &filename)
 	if (file_size == 0)
 	{
 		setLastError("File is empty",filename);
-		apr_file_close(apr_file);
 		return FALSE;
 	}
 
@@ -1539,8 +1539,7 @@ BOOL LLImageFormatted::load(const std::string &filename)
 	{
 		res = updateData();
 	}
-	apr_file_close(apr_file);
-
+	
 	return res;
 }
 
@@ -1548,16 +1547,16 @@ BOOL LLImageFormatted::save(const std::string &filename)
 {
 	resetLastError();
 
-	apr_file_t* apr_file = ll_apr_file_open(filename, LL_APR_WB);
-	if (!apr_file)
+	LLAPRFile outfile ;
+	outfile.open(filename, LL_APR_WB, LLAPRFile::global);
+	if (!outfile.getFileHandle())
 	{
 		setLastError("Unable to open file for writing", filename);
 		return FALSE;
 	}
 	
-	ll_apr_file_write(apr_file, getData(), 	getDataSize());
-	apr_file_close(apr_file);
-
+	outfile.write(getData(), 	getDataSize());
+	outfile.close() ;
 	return TRUE;
 }
 

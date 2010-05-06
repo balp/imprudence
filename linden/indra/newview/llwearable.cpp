@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -47,6 +48,8 @@
 #include "llviewerregion.h"
 #include "llvoavatar.h"
 #include "llwearable.h"
+
+using namespace LLVOAvatarDefines;
 
 // static
 S32 LLWearable::sCurrentDefinitionVersion = 1;
@@ -149,12 +152,9 @@ EWearableType LLWearable::typeNameToType( const std::string& type_name )
 	}
 	return WT_INVALID;
 }
-
-
 std::string terse_F32_to_string( F32 f )
 {
 	std::string r = llformat( "%.2f", f );
-
 	// "1.20"  -> "1.2"
 	// "24.00" -> "24."
 	S32 len = r.length();
@@ -183,6 +183,50 @@ std::string terse_F32_to_string( F32 f )
 	}
 
 	return r;
+}
+
+// reX: new function
+BOOL LLWearable::FileExportParams( FILE* file )
+{
+	// wearable type 
+	S32 type = (S32)mType;
+	fprintf( file, "type %d\n", type );
+
+	// parameters
+	S32 num_parameters = mVisualParamMap.size();
+	fprintf( file, "parameters %d\n", num_parameters );
+
+	for (param_map_t::iterator iter = mVisualParamMap.begin();
+		 iter != mVisualParamMap.end(); ++iter)
+	{
+		S32 param_id = iter->first;
+		F32 param_weight = iter->second;
+		fprintf( file, "%d %s\n", param_id, terse_F32_to_string(param_weight).c_str() );
+	}
+
+	return TRUE;
+}
+
+// reX: new function
+BOOL LLWearable::FileExportTextures( FILE* file )
+{
+	// wearable type 
+	S32 type = (S32)mType;
+	fprintf( file, "type %d\n", type );
+
+	// texture entries
+	S32 num_textures = mTEMap.size();
+	fprintf( file, "textures %d\n", num_textures );
+	
+	for (te_map_t::iterator iter = mTEMap.begin();
+		 iter != mTEMap.end(); ++iter)
+	{
+		S32 te = iter->first;
+		LLUUID& image_id = iter->second;
+		fprintf( file, "%d %s\n", te, image_id.asString().c_str() );
+    }
+
+	return TRUE;
 }
 
 BOOL LLWearable::exportFile( LLFILE* file )
@@ -391,6 +435,7 @@ BOOL LLWearable::importFile( LLFILE* file )
 	}
 	else
 	{
+		mType = WT_COUNT;
 		llwarns << "Bad Wearable asset: bad type #" << type <<  llendl;
 		return FALSE;
 	}
@@ -500,9 +545,9 @@ BOOL LLWearable::isOldVersion()
 
 
 	S32 te_count = 0;
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == mType )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == mType )
 		{
 			te_count++;
 			if( !is_in_map(mTEMap, te ) )
@@ -546,17 +591,60 @@ BOOL LLWearable::isDirty()
 			weight = llclamp( weight, param->getMinWeight(), param->getMaxWeight() );
 			
 			U8 a = F32_to_U8( param->getWeight(), param->getMinWeight(), param->getMaxWeight() );
-			U8 b = F32_to_U8( weight,             param->getMinWeight(), param->getMaxWeight() );
+
+			if(avatar->getAppearanceFlag() == true)
+			{
+				//boob
+				if(param->getID() == 507)
+				{
+						weight = get_if_there(mVisualParamMap, param->getID(), avatar->getActualBoobGrav());
+						weight = llclamp( weight, param->getMinWeight(), param->getMaxWeight() );
+				}
+				//butt
+				if(param->getID() == 795)
+				{
+						weight = get_if_there(mVisualParamMap, param->getID(), avatar->getActualButtGrav());
+						weight = llclamp( weight, param->getMinWeight(), param->getMaxWeight() );
+				}
+				//fat
+				if(param->getID() == 157)
+				{
+						weight = get_if_there(mVisualParamMap, param->getID(), avatar->getActualFatGrav());
+						weight = llclamp( weight, param->getMinWeight(), param->getMaxWeight() );
+				}
+			}
+			else
+			{
+				//boob
+				if(param->getID() == 507)
+				{
+						a = F32_to_U8( avatar->getActualBoobGrav(), param->getMinWeight(), param->getMaxWeight() );
+				}
+				//butt
+				if(param->getID() == 795)
+				{
+						a = F32_to_U8( avatar->getActualButtGrav(), param->getMinWeight(), param->getMaxWeight() );
+				}
+				//fat
+				if(param->getID() == 157)
+				{
+						a = F32_to_U8( avatar->getActualFatGrav(), param->getMinWeight(), param->getMaxWeight() );
+				}
+			}
+
+			
+			U8 b = F32_to_U8( weight, param->getMinWeight(), param->getMaxWeight() );
 			if( a != b  )
 			{
+				llwarns << "param ID " << param->getID() << " was changed." << llendl;
 				return TRUE;
 			}
 		}
 	}
 
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == mType )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == mType )
 		{
 			LLViewerImage* avatar_image = avatar->getTEImage( te );
 			if( !avatar_image )
@@ -564,7 +652,7 @@ BOOL LLWearable::isDirty()
 				llassert( 0 );
 				continue;
 			}
-			const LLUUID& image_id = get_if_there(mTEMap,  te, LLVOAvatar::getDefaultTEImageID( te ) );
+			const LLUUID& image_id = get_if_there(mTEMap,  te, LLVOAvatar::getDefaultTEImageID((ETextureIndex) te ) );
 			if( avatar_image->getID() != image_id )
 			{
 				return TRUE;
@@ -606,11 +694,11 @@ void LLWearable::setParamsToDefaults()
 void LLWearable::setTexturesToDefaults()
 {
 	mTEMap.clear();
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == mType )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == mType )
 		{
-			mTEMap[te] = LLVOAvatar::getDefaultTEImageID( te );
+			mTEMap[te] = LLVOAvatar::getDefaultTEImageID((ETextureIndex) te );
 		}
 	}
 }
@@ -634,6 +722,16 @@ void LLWearable::writeToAvatar( BOOL set_by_user )
 		{
 			S32 param_id = param->getID();
 			F32 weight = get_if_there(mVisualParamMap, param_id, param->getDefaultWeight());
+
+			//ZOMG: When switching shapes from inventory
+			if(param_id == 507)
+				avatar->setActualBoobGrav(weight);
+			if(param_id == 795)
+				avatar->setActualButtGrav(weight);
+			if(param_id == 157)
+				avatar->setActualFatGrav(weight);
+				
+
 			// only animate with user-originated changes
 			if (set_by_user)
 			{
@@ -653,11 +751,11 @@ void LLWearable::writeToAvatar( BOOL set_by_user )
 	}
 
 	// Pull texture entries
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == mType )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == mType )
 		{
-			const LLUUID& image_id = get_if_there(mTEMap, te, LLVOAvatar::getDefaultTEImageID( te ) );
+			const LLUUID& image_id = get_if_there(mTEMap, te, LLVOAvatar::getDefaultTEImageID((ETextureIndex) te ) );
 			LLViewerImage* image = gImageList.getImage( image_id );
 			avatar->setLocTexTE( te, image, set_by_user );
 		}
@@ -694,7 +792,7 @@ void LLWearable::writeToAvatar( BOOL set_by_user )
 
 //	if( set_by_user )
 //	{
-//		gAgent.sendAgentSetAppearance();
+		gAgent.sendAgentSetAppearance();
 //	}
 }
 
@@ -730,9 +828,9 @@ void LLWearable::removeFromAvatar( EWearableType type, BOOL set_by_user )
 
 	// Pull textures
 	LLViewerImage* image = gImageList.getImage( IMG_DEFAULT_AVATAR );
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == type )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == type )
 		{
 			avatar->setLocTexTE( te, image, set_by_user );
 		}
@@ -771,14 +869,30 @@ void LLWearable::readFromAvatar()
 	{
 		if( (((LLViewerVisualParam*)param)->getWearableType() == mType) && (param->getGroup() == VISUAL_PARAM_GROUP_TWEAKABLE ) )
 		{
+			
+			//pretty sure is right
+			if(param->getID() == 507)
+				avatar->setActualBoobGrav(param->getWeight());
+			if(param->getID() == 151)
+				avatar->setActualButtGrav(param->getWeight());
+			if(param->getID() == 157)
+				avatar->setActualFatGrav(param->getWeight());
+			
+			//if(param->getID() == 507)
+			//{
+			//	llwarns << "current = " << avatar->getActualBoobGrav() << llendl;
+			//	llwarns << "param weight = " << param->getWeight() << llendl;
+			//}
+				
+
 			mVisualParamMap[param->getID()] = param->getWeight();
 		}
 	}
 
 	mTEMap.clear();
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == mType )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == mType )
 		{
 			LLViewerImage* image = avatar->getTEImage( te );
 			if( image )
@@ -822,16 +936,37 @@ void LLWearable::copyDataFrom( LLWearable* src )
 		{
 			S32 id = param->getID();
 			F32 weight = get_if_there(src->mVisualParamMap, id, param->getDefaultWeight() );
+			//llwarns << "------------------------------" << llendl;
+			//llwarns << "copydatafrom" << llendl;
+			//llwarns << "------------------------------" << llendl;
+			
+			//if(id == 507)
+			//{
+			//	llwarns << "weight = " << weight << llendl;
+			//	llwarns << "actual = " << avatar->getActualBoobGrav() << llendl;
+			//	llwarns << "mVisualParamMap[id] = " << mVisualParamMap[id] << llendl;
+			//}
+
+			//pretty sure right
+			if(id == 507)
+				avatar->setActualBoobGrav(weight);
+			if(id == 795)
+				avatar->setActualButtGrav(weight);
+			if(id == 157)
+				avatar->setActualFatGrav(weight);
+			
+			
+
 			mVisualParamMap[id] = weight;
 		}
 	}
 
 	// Deep copy of mTEMap (copies only those tes that are current, filling in defaults where needed)
-	for( S32 te = 0; te < LLVOAvatar::TEX_NUM_ENTRIES; te++ )
+	for( S32 te = 0; te < TEX_NUM_INDICES; te++ )
 	{
-		if( LLVOAvatar::getTEWearableType( te ) == mType )
+		if( LLVOAvatar::getTEWearableType((ETextureIndex) te ) == mType )
 		{
-			const LLUUID& image_id = get_if_there(src->mTEMap, te, LLVOAvatar::getDefaultTEImageID( te ) );
+			const LLUUID& image_id = get_if_there(src->mTEMap, te, LLVOAvatar::getDefaultTEImageID((ETextureIndex) te ) );
 			mTEMap[te] = image_id;
 		}
 	}
@@ -867,9 +1002,9 @@ void LLWearable::saveNewAsset()
 		std::string buffer = llformat("Unable to save '%s' to wearable file.", mName.c_str());
 		llwarns << buffer << llendl;
 		
-		LLStringUtil::format_map_t args;
-		args["[NAME]"] = mName;
-		gViewerWindow->alertXml("CannotSaveWearableOutOfSpace", args);
+		LLSD args;
+		args["NAME"] = mName;
+		LLNotifications::instance().add("CannotSaveWearableOutOfSpace", args);
 		return;
 	}
 
@@ -915,9 +1050,9 @@ void LLWearable::onSaveNewAssetComplete(const LLUUID& new_asset_id, void* userda
 	{
 		std::string buffer = llformat("Unable to save %s to central asset store.", type_name.c_str());
 		llwarns << buffer << " Status: " << status << llendl;
-		LLStringUtil::format_map_t args;
-		args["[NAME]"] = type_name;
-		gViewerWindow->alertXml("CannotSaveToAssetStore", args);
+		LLSD args;
+		args["NAME"] = type_name;
+		LLNotifications::instance().add("CannotSaveToAssetStore", args);
 	}
 
 	// Delete temp file

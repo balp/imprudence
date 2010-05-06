@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -134,18 +135,14 @@ LLLineEditor::LLLineEditor(const std::string& name, const LLRect& rect,
 		mSelectAllonCommit( TRUE ),
 		mPassDelete(FALSE),
 		mReadOnly(FALSE),
+		mHaveHistory(FALSE),
 		mImage( sImage ),
 		mReplaceNewlinesWithSpaces( TRUE )
 {
 	llassert( max_length_bytes > 0 );
 
-	// line history support:
-	// - initialize line history list
-	mLineHistory.insert( mLineHistory.end(), "" );
-	// - disable line history by default
-	mHaveHistory = FALSE;
-	// - reset current history line pointer
-	mCurrentHistoryLine = 0;
+	// Initialize current history line iterator
+	mCurrentHistoryLine = mLineHistory.begin();
 
 	if (font)
 	{
@@ -153,7 +150,7 @@ LLLineEditor::LLLineEditor(const std::string& name, const LLRect& rect,
 	}
 	else
 	{
-		mGLFont = LLFontGL::sSansSerifSmall;
+		mGLFont = LLFontGL::getFontSansSerifSmall();
 	}
 
 	setFocusLostCallback(focus_lost_callback);
@@ -243,16 +240,31 @@ void LLLineEditor::updateHistory()
 	// reset current history line number.
 	// Be sure only to remember lines that are not empty and that are
 	// different from the last on the list.
-	if( mHaveHistory && mText.length() && ( mLineHistory.empty() || getText() != mLineHistory.back() ) )
+	if( mHaveHistory && getLength() )
 	{
-		// discard possible empty line at the end of the history
-		// inserted by setText()
-		if( !mLineHistory.back().length() )
+		if( !mLineHistory.empty() )
 		{
-			mLineHistory.pop_back();
+			// When not empty, last line of history should always be blank.
+			if( mLineHistory.back().empty() )
+			{
+				// discard the empty line
+				mLineHistory.pop_back();
+			}
+			else
+			{
+				LL_WARNS("") << "Last line of history was not blank." << LL_ENDL;
+			}
 		}
-		mLineHistory.insert( mLineHistory.end(), getText() );
-		mCurrentHistoryLine = mLineHistory.size() - 1;
+
+		// Add text to history, ignoring duplicates
+		if( mLineHistory.empty() || getText() != mLineHistory.back() )
+		{
+			mLineHistory.push_back( getText() );
+		}
+
+		// Restore the blank line and set mCurrentHistoryLine to point at it
+		mLineHistory.push_back( "" );
+		mCurrentHistoryLine = mLineHistory.end() - 1;
 	}
 }
 
@@ -323,11 +335,8 @@ void LLLineEditor::setText(const LLStringExplicit &new_text)
 	}
 	setCursor(llmin((S32)mText.length(), getCursor()));
 
-	// Newly set text goes always in the last line of history.
-	// Possible empty strings (as with chat line) will be deleted later.
-	mLineHistory.insert( mLineHistory.end(), new_text );
 	// Set current history line to end of history.
-	mCurrentHistoryLine = mLineHistory.size() - 1;
+	mCurrentHistoryLine = mLineHistory.end() - 1;
 
 	mPrevText = mText;
 }
@@ -342,7 +351,7 @@ void LLLineEditor::setCursorAtLocalPos( S32 local_mouse_x )
 	{
 		for (S32 i = 0; i < mText.length(); i++)
 		{
-			asterix_text += '*';
+			asterix_text += (llwchar) 0x2022L;
 		}
 		wtext = asterix_text.c_str();
 	}
@@ -366,7 +375,7 @@ void LLLineEditor::setCursor( S32 pos )
 	{
 		S32 width_chars_to_left = mGLFont->getWidth(mText.getWString().c_str(), 0, mScrollHPos);
 		S32 last_visible_char = mGLFont->maxDrawableChars(mText.getWString().c_str(), llmax(0.f, (F32)(mMaxHPixels - mMinHPixels + width_chars_to_left))); 
-		S32 min_scroll = mGLFont->firstDrawableChar(mText.getWString().c_str(), (F32)(mMaxHPixels - mMinHPixels), mText.length(), getCursor());
+		S32 min_scroll = mGLFont->firstDrawableChar(mText.getWString().c_str(), (F32)(mMaxHPixels - mMinHPixels - UI_LINEEDITOR_CURSOR_THICKNESS - UI_LINEEDITOR_H_PAD), mText.length(), getCursor());
 		if (old_cursor_pos == last_visible_char)
 		{
 			mScrollHPos = llmin(mText.length(), llmax(min_scroll, mScrollHPos + SCROLL_INCREMENT_ADD));
@@ -1199,9 +1208,9 @@ BOOL LLLineEditor::handleSpecialKey(KEY key, MASK mask)
 	case KEY_UP:
 		if( mHaveHistory && ( MASK_CONTROL == mask ) )
 		{
-			if( mCurrentHistoryLine > 0 )
+			if( mCurrentHistoryLine > mLineHistory.begin() )
 			{
-				mText.assign( mLineHistory[ --mCurrentHistoryLine ] );
+				mText.assign( *(--mCurrentHistoryLine) );
 				setCursor(llmin((S32)mText.length(), getCursor()));
 			}
 			else
@@ -1216,9 +1225,9 @@ BOOL LLLineEditor::handleSpecialKey(KEY key, MASK mask)
 	case KEY_DOWN:
 		if( mHaveHistory  && ( MASK_CONTROL == mask ) )
 		{
-			if( !mLineHistory.empty() && mCurrentHistoryLine < mLineHistory.size() - 1 )
+			if( !mLineHistory.empty() && mCurrentHistoryLine < mLineHistory.end() - 1 )
 			{
-				mText.assign( mLineHistory[ ++mCurrentHistoryLine ] );
+				mText.assign( *(++mCurrentHistoryLine) );
 				setCursor(llmin((S32)mText.length(), getCursor()));
 			}
 			else
@@ -1475,7 +1484,7 @@ void LLLineEditor::draw()
 		std::string text;
 		for (S32 i = 0; i < mText.length(); i++)
 		{
-			text += '*';
+			text += "\xe2\x80\xa2";
 		}
 		mText = text;
 	}
@@ -2201,6 +2210,8 @@ LLXMLNodePtr LLLineEditor::getXML(bool save_children) const
 {
 	LLXMLNodePtr node = LLUICtrl::getXML();
 
+	node->setName(LL_LINE_EDITOR_TAG);
+
 	node->createChild("max_length", TRUE)->setIntValue(mMaxLengthBytes);
 
 	node->createChild("font", TRUE)->setStringValue(LLFontGL::nameFromFont(mGLFont));
@@ -2788,6 +2799,16 @@ void LLSearchEditor::onClearSearch(void* user_data)
 	{
 		search_editor->mSearchCallback(LLStringUtil::null, search_editor->mCallbackUserData);
 	}
+}
+
+// virtual
+LLXMLNodePtr LLSearchEditor::getXML(bool save_children) const
+{
+	LLXMLNodePtr node = LLUICtrl::getXML();
+
+	node->setName(LL_SEARCH_EDITOR_TAG);
+
+	return node;
 }
 
 // static

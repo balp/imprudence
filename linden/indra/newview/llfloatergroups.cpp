@@ -17,7 +17,8 @@
  * There are special exceptions to the terms and conditions of the GPL as
  * it is applied to this Source Code. View the full text of the exception
  * in the file doc/FLOSS-exception.txt in this software distribution, or
- * online at http://secondlifegrid.net/programs/open_source/licensing/flossexception
+ * online at
+ * http://secondlifegrid.net/programs/open_source/licensing/flossexception
  * 
  * By copying, modifying or distributing this software, you acknowledge
  * that you have read and understood your obligations described above,
@@ -61,7 +62,7 @@
 std::map<const LLUUID, LLFloaterGroupPicker*> LLFloaterGroupPicker::sInstances;
 
 // helper functions
-void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, U64 powers_mask = GP_ALL_POWERS);
+void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, const std::string& none_text, U64 powers_mask = GP_ALL_POWERS);
 
 ///----------------------------------------------------------------------------
 /// Class LLFloaterGroupPicker
@@ -116,7 +117,8 @@ void LLFloaterGroupPicker::setPowersMask(U64 powers_mask)
 
 BOOL LLFloaterGroupPicker::postBuild()
 {
-	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID(), mPowersMask);
+	const std::string none_text = getString("none");
+	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID(), none_text, mPowersMask);
 
 	childSetAction("OK", onBtnOK, this);
 
@@ -200,7 +202,8 @@ void LLPanelGroups::reset()
 	childSetTextArg("groupcount", "[COUNT]", llformat("%d",gAgent.mGroups.count()));
 	childSetTextArg("groupcount", "[MAX]", llformat("%d",MAX_AGENT_GROUPS));
 
-	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID());
+	const std::string none_text = getString("none");
+	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID(), none_text);
 	enableButtons();
 }
 
@@ -211,7 +214,8 @@ BOOL LLPanelGroups::postBuild()
 	childSetTextArg("groupcount", "[COUNT]", llformat("%d",gAgent.mGroups.count()));
 	childSetTextArg("groupcount", "[MAX]", llformat("%d",MAX_AGENT_GROUPS));
 
-	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID());
+	const std::string none_text = getString("none");
+	init_group_list(getChild<LLScrollListCtrl>("group list"), gAgent.getGroupID(), none_text);
 
 	childSetAction("Activate", onBtnActivate, this);
 
@@ -405,10 +409,11 @@ void LLPanelGroups::leave()
 		}
 		if(i < count)
 		{
-			LLUUID* cb_data = new LLUUID((const LLUUID&)group_id);
-			LLStringUtil::format_map_t args;
-			args["[GROUP]"] = gAgent.mGroups.get(i).mName;
-			gViewerWindow->alertXml("GroupLeaveConfirmMember", args, callbackLeaveGroup, (void*)cb_data);
+			LLSD args;
+			args["GROUP"] = gAgent.mGroups.get(i).mName;
+			LLSD payload;
+			payload["group_id"] = group_id;
+			LLNotifications::instance().add("GroupLeaveConfirmMember", args, payload, callbackLeaveGroup);
 		}
 	}
 }
@@ -434,10 +439,11 @@ void LLPanelGroups::invite()
 }
 
 // static
-void LLPanelGroups::callbackLeaveGroup(S32 option, void* userdata)
+bool LLPanelGroups::callbackLeaveGroup(const LLSD& notification, const LLSD& response)
 {
-	LLUUID* group_id = (LLUUID*)userdata;
-	if(option == 0 && group_id)
+	S32 option = LLNotification::getSelectedOption(notification, response);
+	LLUUID group_id = notification["payload"]["group_id"].asUUID();
+	if(option == 0)
 	{
 		LLMessageSystem* msg = gMessageSystem;
 		msg->newMessageFast(_PREHASH_LeaveGroupRequest);
@@ -445,10 +451,10 @@ void LLPanelGroups::callbackLeaveGroup(S32 option, void* userdata)
 		msg->addUUIDFast(_PREHASH_AgentID, gAgent.getID());
 		msg->addUUIDFast(_PREHASH_SessionID, gAgent.getSessionID());
 		msg->nextBlockFast(_PREHASH_GroupData);
-		msg->addUUIDFast(_PREHASH_GroupID, *group_id);
+		msg->addUUIDFast(_PREHASH_GroupID, group_id);
 		gAgent.sendReliableMessage();
 	}
-	delete group_id;
+	return false;
 }
 
 void LLPanelGroups::onGroupList(LLUICtrl* ctrl, void* userdata)
@@ -457,7 +463,7 @@ void LLPanelGroups::onGroupList(LLUICtrl* ctrl, void* userdata)
 	if(self) self->enableButtons();
 }
 
-void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, U64 powers_mask)
+void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, const std::string& none_text, U64 powers_mask)
 {
 	S32 count = gAgent.mGroups.count();
 	LLUUID id;
@@ -499,7 +505,7 @@ void init_group_list(LLScrollListCtrl* ctrl, const LLUUID& highlight_id, U64 pow
 		LLSD element;
 		element["id"] = LLUUID::null;
 		element["columns"][0]["column"] = "name";
-		element["columns"][0]["value"] = "none"; // *TODO: Translate
+		element["columns"][0]["value"] = none_text;
 		element["columns"][0]["font"] = "SANSSERIF";
 		element["columns"][0]["font-style"] = style;
 
